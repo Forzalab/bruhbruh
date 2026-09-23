@@ -1,0 +1,244 @@
+# CSCI 26 — Gates of Babylon Web Project
+
+**Owner:** Tony (repo owner, architect) · **Team:** TBD
+**Due:** Thu Oct 1, 2026 — time TBD · **Points:** 20
+**Revised:** Tue Sep 22, 18:00 PT. Nine days on the clock.
+
+Everything here is tentative. Bring a reason, not a preference, and it changes.
+
+---
+
+## 1. Spec (Kerney, Canvas)
+
+| # | Item |
+|---|------|
+| 1 | Simulate AND, OR, NOT, NAND, NOR, XOR. Connect gates with wires. |
+| 2 | Truth table for the circuit. Manually toggle inputs on/off. |
+| 3 | Web UI: drag and drop gates, wire them, show truth table + components. |
+| EC | Logic Gates Dating Sim — more done, more EC: modular dialogue tree, multiple endings, 4th wall breaks, original art (**AI art NOT allowed**), voice acting. |
+
+**Admin:** GitHub repo, invite `william.kerney@scccd.edu` + each other. Screenshot the activity log; every member commits. Host on `csci4x.com`, new port (~6677), approved by Kerney. No GitHub Pages.
+
+## 2. Working model
+
+- **Tony designs** — architecture, data shape, look, plot. **Claude implements.** Tony writes no code.
+- Whoever owns a piece explains it out loud, file closed. Applies to Tony for the architecture.
+- AI / vibe coding allowed on projects. AI art is not.
+- **Design law:** the one clearest action is the only dominating thing on screen. Unseen features do not ship.
+
+## 3. Shape — one page, two modes
+
+| Mode | What it is | Look |
+|---|---|---|
+| **LOGIC** | logic.ly, stripped down. The graded core. CE practice tool. | §6 (v1 locked) |
+| **DATE** | Same circuit, now alive. Gates date, fight, breed, decay. | §7 |
+
+- Same page. Same circuit state. Mode flip = instant full UI recomposition ("flashbang"), no reload, no route change.
+- Logic mode: six-gate palette, input switches, output LEDs, drag/drop/wire, truth table. XOR label `^`.
+- Evolution rules run in **Date mode only** (proposal — see §12).
+
+## 4. Non-goals
+
+- No K-map. No truth-table expansion UI (columns/rows explosion). No "hidden message" features.
+- No clock, flip-flops, sequential logic.
+- No save/load, accounts, database, server. Static site only.
+- No live AI calls from the browser. No API key in shipped code.
+
+## 5. Stack
+
+| Layer | Pick | Role |
+|---|---|---|
+| Build | Vite | Dev server + bundler → `dist/` (the `g++` + Makefile) |
+| UI | React | Components from state (the library you `#include`) |
+| Canvas | React Flow (`@xyflow/react`) | Drag, wires, zoom |
+| Style | Tailwind + CSS tokens | Mode = token swap |
+| Logic | `sim.js` — pure JS, no UI | Evaluates the circuit. Graded core. Never knows dating exists. |
+
+## 6. Visual — LOGIC mode (v1 LOCKED, Tue Sep 22 16:05)
+
+**Name:** Swiss sheet, subway weight, one live color.
+**Precedence:** Swiss decides layout. NYC subway decides weight. The accent obeys logic. On conflict, Swiss wins.
+
+| Source | Takes |
+|---|---|
+| Swiss / Emil Ruder (Swiss Themes tribute template) | Visible grid, hairlines, numbered rows, two-pole type scale |
+| NYCTA Standards Manual 1970 (Vignelli/Noorda) | Black header band, left tool rail, bold labels, contrast |
+| Bauhaus run | Gate palette sidebar, black truth-table block, paper tone |
+| Vercel Geist | Tokens, Geist + Geist Mono |
+| DESIGN.md (`VoltAgent/awesome-design-md`) | Agent-readable style contract, committed |
+
+1. **Grid.** Visible 1px hairline columns. Numbered rows at left edge (`01 02 03`). 8px base. "SHOW GRID" toggle.
+2. **Frame.** Black header band, fixed height. Giant white "Logic" wordmark inside. Never overlaps the canvas.
+3. **Rails.** Left: black tool rail (select, wire) + gate palette. Right: truth table.
+4. **Gates.** Standard distinctive (IEEE) shapes, black outline, label inside. No circle badges.
+5. **Truth table.** Numbered index rows, mono 0/1, hairline rules, bold header. Option: black block, white digits.
+6. **Type.** Geist + Geist Mono only. Two poles: huge wordmark, small uppercase labels.
+7. **Color.** Black, white, paper off-white. Accent = signal orange = **logic 1**, nothing else. One state block fills orange when OUT = 1.
+8. **Motion.** None in Logic mode. State snaps. React Flow edges `animated: false`.
+9. **Banned.** Decorative shapes, taglines, gradients, shadows, glass blur, rounded pills, emoji, second accent.
+
+**Reference mockups (project files), read through the rules above:**
+
+| File | Run | Take | Reject |
+|---|---|---|---|
+| `1000099084.png` | Swiss — **base** | Layout, hairline grid, numbered rows, true gate shapes, "SHOW GRID", mono table | Title overlapping canvas, dead bottom row, no palette |
+| `1000099088.png` | NYC — **weight** | Black header band, left tool rail, bold labels, contrast | Circle-badge gates, arrow badge |
+| `1000099086.png` | Bauhaus — **color dynamic** | Palette sidebar, black table block, paper tone | Decorative shapes, taglines, red as decor |
+
+Teammates like the mockups except the NYC one — noted, no change made. Mockups are AI-generated, direction only, never shipped.
+
+## 7. Visual — DATE mode
+
+**Name:** Adult-site blue, love hotel with the lights cut, comic bubbles on top.
+Colorway and arrangement parody an adult video site (XNXX screenshots, analyzed in chat Sep 22). **PG-13.** No brand name, no logo copy, no thumbnails, no search bar, no video grid. Only the *feel*.
+
+**Palette** (sampled from screenshot; compression makes values ±):
+
+| Token | Hex | Where it came from | Our use |
+|---|---|---|---|
+| `--date-header` | `#00004B` | Top header band | Header band |
+| `--date-strip` | `#0038AD` | Nav strip, search input | Top strip (carries the marquee) |
+| `--date-page` | `#00016C` | Page + sidebar | Page + sidebar |
+| `--date-panel` | `#00008F` | Age-gate modal body, outline button fill | Windows, panels |
+| `--date-primary` | `#014BE8` | Filled primary button | Primary button, neon glow color |
+| `--date-outline` | `~#002BBC` | Outline button border | Secondary button border |
+| `--date-text` | `#DDE0FF` | White-lavender text | Body text |
+| `--date-accent` | `~#F6F342` | Yellow highlight word | **Logic 1** in Date mode + highlighted words. Only accent. |
+| `--date-title` | `~#B1A03B` | Gold section title | Merge into `--date-accent` unless it reads wrong |
+| `--hurt` | red, TBD | — | Temporary state only (hate pair), never decor |
+
+**Arrangement map** (their layout → ours, minimal):
+
+| Theirs | Ours |
+|---|---|
+| Big chrome logo, top-left | "Logic" wordmark **shrinks** to top-left of header band |
+| Search bar | Removed |
+| Language / content dropdowns, top-right | Optional: one small mode selector |
+| Royal-blue nav strip, uppercase links, one gold tab | Top strip = propaganda marquee |
+| Left category list, dense text links | Gate palette as a text list; each row shows **live population count** per gate type |
+| Gold bold section title left + big counter right | Gold title left + live "N gates alive" counter right |
+| Thumbnail grid | Canvas (dim navy, gates glow `--date-primary`) |
+| Centered age-gate modal over dimmed page | Candidate for the Date-mode entry moment (proposal) |
+| Truth table | Hidden in Date mode (one clearest action) — proposal |
+
+**Look rules (Date mode):**
+- Page dims hard — lights cut. Each gate block glows like a neon tube in the dark (glow allowed in Date mode only).
+- Square-ish corners (radius 0–2px), flat panels, system sans bold for titles — matches the source.
+- Speech bubbles are **white in both modes**.
+- Flip = one frame. No transition. No strobe.
+
+**Motion:** Only the browser `prefers-reduced-motion` setting is respected. Marquee scrolls unless that setting is on; then it sits still. The red "hurt" fade snaps instead of fading under that setting.
+
+**Date-mode references (project files):**
+
+| File | What | Use |
+|---|---|---|
+| `1000099097.webp` | Adult-site screenshot, age-gate modal (full UI) | Palette + arrangement source (tokens above sampled here) |
+| `1000099096.png` | Same site, cropped, blurred | Logo-shrink reference |
+| `1000099093.jpg` | Neon "lets get weird" sign in a pink room | Neon-glow feel, love-hotel dimness (recolor to Date blue) |
+| `1000099091.jpg` | Comic bubbles: joined, butted, bold-italic emphasis | Bubble shape + lettering |
+| `1000099092.jpg` | Whisper (dashed), muted gray, plain bubbles | Whisper / love-bombing bubble |
+
+- Bubble grammar source: Blambot, *Comic Book Grammar & Tradition* — `https://blambot.com/pages/comic-book-grammar-tradition` (all 36 images reviewed Sep 22).
+
+**Bubble grammar (Blambot, the parts we use):**
+- Tail points at the speaker's mouth → at the gate body.
+- Dialogue in caps. Emphasis = bold italic.
+- Interrupted speech = `--`. No em dash.
+- Foreign language inside `< >` → Chinese lines: `<我们是天生一对>`.
+- Burst balloon = shout → hate pair. Dashed outline = whisper → love-bombing.
+- Radio balloon (jagged tail) = speech through a speaker → default for gates.
+- Wavy balloon + shrinking text = distress / dying → decaying gate.
+- No tangents: bubbles never brush other elements.
+
+## 8. Dating sim — behavior
+
+**Entry to Date mode:**
+- A single hand-drawn "shitty doodle" that says *click me for surprises* → flip. (Counts as original art.)
+- Auto-flip once after 45s on Logic mode. Remembered in `localStorage`. After that, manual only.
+- Double-click the big "Logic" wordmark → toggle Logic ↔ Date.
+
+**Characters:** the gates on the canvas are the dateables. Personality = truth table.
+
+**Charge:** positive vs negative gates. Proposal: inverting bubble = negative (NOT, NAND, NOR); no bubble = positive (AND, OR, XOR).
+
+**Evolution rules (Date mode):**
+- Positive attracts negative.
+- Single gates decay. Tony's draft: lifetime `1/exp(N)` s, with an unknown braking coefficient. Candidate model: logistic growth, dN/dt = rN(1 − N/K), K = carrying capacity. **Open.**
+- A good pair, wired, spawns a random child gate after 15s, connected to both parents.
+- Every 30s each gate randomly attaches to some gate.
+
+**Pair reactions:**
+- (+ −) → borders glow positive, all bubbles clear, one "meant to be together" line — SpongeBob × Taylor Swift mashup.
+- (+ +) or (− −) → left block: "We Are Never Ever", right block: "Getting Back Together". Order fixed L→R. Both blocks + borders go red "hurt", no flash, 2–3s, then back. More "I hate you" puns TBD.
+- Song and show references use **titles only**, no lyric lines.
+
+**Speech bubbles:** each gate pops a bubble instantly, random English/Chinese mix, both modes. Content TBD.
+
+**4th wall (in):** a gate renames the wordmark; NOT flips your input switch by itself; love-bombing (doodle → full takeover).
+
+**Border propaganda:** port `PropagandaFrame.jsx` from `Forzalab/rsa-cha-cha` — four edge strips, `pointer-events: none`. Recolor to Date palette. New lines: short, punchy Chinese puns on love, dating, logic gates; all glory to **THE RIGHT TO GATE MARRIAGE**.
+
+**Emergence lore:** never explain rules; players discover. Real Boolean identities as lore — NAND is universal (the impersonator), NOT(NOT x) = x (getting back together), x ^ x = 0 (dating your clone), x OR 1 = 1 (clingy), x AND 1 = x (supportive). Endings = which identity the circuit hits.
+
+**Tone line:** audience is Kerney + classmates in a classroom. Innuendo lands; anything explicit risks the grade and the room.
+
+## 9. Extra credit mapping
+
+| EC item | Owner | Build |
+|---|---|---|
+| Modular dialogue tree | Claude (engine), Tony (plot) | JSON, keyed by circuit state |
+| Multiple endings | Tony (writing) | Endings = Boolean identities hit |
+| 4th wall breaks | Tony | Wordmark rename, NOT self-flip, love-bombing |
+| Original art | Human — TBD | The doodle + any portraits. No AI. |
+| Voice acting | Tony (direction) | AI TTS, pre-rendered `.mp3`, committed static |
+
+**TTS candidates:** Gemini 3.1 Flash TTS (inline tags), ElevenLabs Eleven v3 (inline tags, priciest), OpenAI gpt-4o-mini-tts (steerable, cheapest).
+
+## 10. Ownership
+
+| Item | Owner |
+|---|---|
+| Repo + invites, deploy | Tony |
+| Architecture + data shape | Tony |
+| Implementation | Claude |
+| Plot, endings, voice direction | Tony |
+| Doodle / art | TBD |
+| Teammate roles | TBD — leave them room; JSON content is an easy lane |
+
+## 11. Roadmap
+
+| When | Milestone |
+|---|---|
+| Tue Sep 22 | Logic look locked. Date look drafted. Repo + invites. DESIGN.md committed. |
+| Wed Sep 23 | **Architecture session:** data shape (gates, wires, inputs), eval order, truth table contract, mode/token plan. |
+| Thu Sep 24 | Switch → AND → LED lights up. Geist tokens in. |
+| Fri Sep 25 | All six gates + wiring + Logic-mode styling. |
+| Sun Sep 27 | Truth table panel. |
+| Mon Sep 28 | Deploy on csci4x, drill once. |
+| Tue Sep 29 | **Freeze core.** EC only after this. |
+| Tue–Wed | Date mode: tokens, flip, bubbles, rules, marquee, TTS render, doodle drop-in. |
+| Wed Sep 30 | Activity log screenshot. Rehearse. |
+| Thu Oct 1 | Submit. |
+
+## 12. Architecture — proposal, for the Sep 23 session
+
+"One state, one clock, many small rules."
+
+```
+sim.js          pure circuit eval. Never knows dating exists.
+store           { gates, wires, mode, flags, bubbles, effects }
+clock           one 1s tick. Runs rules only in Date mode.
+rules/          one file per rule, same signature:
+                  (world, now) → actions[]
+                  decay · spawn · attach · pairing · autoflip
+reducer         addGate, addWire, removeGate, say(bubble), effect(hurt, ms), setMode
+content/*.json  lines · reactions · propaganda · dialogue
+theme           <html data-mode="logic|date"> → CSS tokens swap
+layout          same components, different CSS grid areas per mode;
+                canvas stays mounted across the flip
+```
+
+- New behavior = one file in `rules/`. Remove = one line.
+- New joke = one JSON line. Teammates can own content → real commits for the activity log.
+- New look = tokens. Components never ask which mode they are in.
