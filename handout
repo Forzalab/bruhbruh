@@ -8,6 +8,12 @@ Everything here is tentative. Bring a reason, not a preference, and it changes.
 
 ---
 
+## 0. Design goals
+
+- Fly to the sun, burn, and crash.
+- Rigged-up demo style with very short lifetime, so reactions and MVPs matter most.
+- Nitpicking don't have a place here, as this plan ALWAYS changes based on team vibe. Team vibe and human decisions are final.
+
 ## 1. Spec (Kerney, Canvas)
 
 | # | Item |
@@ -164,7 +170,7 @@ Colorway and arrangement parody an adult video site (XNXX screenshots, analyzed 
 
 **Evolution rules (Date mode):**
 - Positive attracts negative.
-- Single gates decay. Tony's draft: lifetime `1/exp(N)` s, with an unknown braking coefficient. Candidate model: logistic growth, dN/dt = rN(1 − N/K), K = carrying capacity. **Open.**
+- Single gates decay. Tony's draft: lifetime `1/exp(N)` s, with an unknown braking coefficient. Candidate model: logistic growth, dN/dt = rN(1 − N/K), K = carrying capacity. New candidate: half-life decay function.
 - A good pair, wired, spawns a random child gate after 15s, connected to both parents.
 - Every 30s each gate randomly attaches to some gate.
 
