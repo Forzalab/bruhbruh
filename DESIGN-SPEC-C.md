@@ -12,3 +12,4 @@ Measured on r2/C.png at 1440x810 with Pillow. Refs: ref1 = refs/ref1-swiss-layou
 - The black table panel is removed, so the black-and-orange mass no longer competes with the wordmark (seed 3).
 - Gates are filled black with white 16px/800 labels. Strokes are 3px (RUBRIC §6).
 - Orange #ff5a1f appears only on logic-1 wires, ON switch cores, the lamp and the live row (RUBRIC §5). There is no animation, and prefers-reduced-motion is respected.
+- Interaction states are instant, with no transitions. Hover on a switch gives it a grey fill, pressing inverts it to black, and hovering the primary disk adds an outline ring and underline. Focus rings are 2px (WCAG 2.4.7 Focus Visible). A dragged wire is a dashed 3px path, and a valid target handle grows into a ringed 14px dot (Carbon interaction states). A rejected connection turns the footer black with an orange-marked message (GOV.UK error-message guidance).

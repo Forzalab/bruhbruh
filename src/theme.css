@@ -115,3 +115,19 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* Interaction states: instant, no transitions (WCAG 2.4.7 focus visible; Carbon interaction states). */
+.switch:hover { background: #ececec; }
+.switch:active { background: var(--ink); }
+.switch:active .switch-core { border-color: var(--on-ink); }
+.primary:hover .disk { outline: 3px solid var(--ink); outline-offset: 4px; }
+.primary:hover .txt { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
+.primary:active .disk { background: #333; }
+.react-flow__handle { cursor: crosshair; }
+.react-flow__handle:hover { box-shadow: 0 0 0 4px var(--ink); }
+.react-flow__connection-path { stroke: var(--ink); stroke-width: 3px; stroke-dasharray: 6 4; }
+.react-flow__handle.connectingto { box-shadow: 0 0 0 4px var(--ink); }
+.react-flow__handle.connectingto.valid { background: var(--bg); box-shadow: 0 0 0 3px var(--ink); width: 14px; height: 14px; }
+.react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: 8 4; }
+.status.bad { background: var(--ink); }
+.status.bad .msg, .status.bad .label { color: var(--on-ink); }
