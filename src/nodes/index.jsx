@@ -1,5 +1,5 @@
 import { Handle as RFHandle, Position } from '@xyflow/react';
-import { switchGeom, andGeom, lampGeom, SW, AND, LAMP, PAD, KNOB } from './geom.js';
+import { switchGeom, andGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
 
 const SWG = switchGeom(), ANDG = andGeom(), LAMPG = lampGeom();
 const HB = 20; // handle box centred on the knob chord: the wire end lands 10px out, inside the knob ink ring (6..12)
@@ -11,11 +11,11 @@ const REACH = KNOB + 30; // how far a hit zone extends past the knob tip
 const SW_X1 = PAD + SW.side;
 const SW_ZONES = { out: { x: SW_X1, y: 0, w: REACH, h: SWG.h } };
 
-const AND_X0 = PAD, AND_CX = AND_X0 + AND.a, AND_CY = ANDG.out[1], AND_OX = ANDG.out[0];
+const AND_X0 = PAD, AND_CY = ANDG.out[1], AND_OX = ANDG.out[0];
 const AND_ZONES = {
   in0: { x: AND_X0 - REACH, y: 0, w: REACH, h: AND_CY },
   in1: { x: AND_X0 - REACH, y: AND_CY, w: REACH, h: ANDG.h - AND_CY },
-  out: { x: AND_CX, y: 0, w: AND_OX - AND_CX + REACH, h: ANDG.h },
+  out: { x: AND_OX, y: 0, w: REACH, h: ANDG.h }, // starts at the curve apex: the body itself stays a drag target
 };
 
 const LAMP_KX = LAMPG.in[0];
