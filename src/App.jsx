@@ -75,6 +75,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {['01', '02', '03'].map((n, i) => <span key={n} className={`num n${i + 1}`} aria-hidden="true">{n}</span>)}
       <h1 className="wordmark" aria-label="Logic">Logic</h1>
       <div className="cell-head" aria-hidden="true" />
       <a className="cell-cta" href="#canvas">
