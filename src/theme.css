@@ -45,7 +45,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Wordmark: black grotesk, L cap = 24vh, tracking -0.045em; the g breaks the row rule, drawn above the canvas. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  font: 900 calc(24vh / var(--capr))/1 var(--font); letter-spacing: -0.045em; color: var(--ink);
+  font: 900 calc(24vh / var(--capr))/1 var(--font); letter-spacing: -0.005em; color: var(--ink);
   left: 59px; top: -10px;
 }
 
@@ -53,7 +53,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .disk { position: absolute; left: 25px; top: 74px; width: 153px; height: 153px; border-radius: 50%; border: 0; padding: 0;
   background: var(--ink); cursor: pointer; display: grid; place-items: center; }
 .disk svg { width: 100px; height: 100px; overflow: visible; }
-.disk path { fill: none; stroke: var(--paper); stroke-width: 9; stroke-linecap: butt; stroke-linejoin: miter; }
+.disk path { fill: none; stroke: var(--paper); stroke-width: 12; stroke-linecap: butt; stroke-linejoin: miter; }
 .disk:hover { background: #000; box-shadow: 0 0 0 4px var(--paper), 0 0 0 7px var(--ink); }
 .disk[aria-pressed='true'] svg { transform: rotate(90deg); }
 .lockup { position: absolute; left: 206px; top: 96px; margin: 0; font: 900 58px/52px var(--font); letter-spacing: -0.02em; text-transform: uppercase; }
@@ -104,6 +104,9 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth th { font: 800 30px/22px var(--font); padding: 0 0 17px; text-align: center; border-bottom: var(--rule) solid var(--ink); }
 .truth td { font: 800 34px/1 var(--font); height: 68px; padding: 0; text-align: center; border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums; }
 .truth th:first-child, .truth td:first-child { text-align: left; padding-left: 8px; }
+/* Column widths set so column centres land on ref3's (A 1129, B 1248, OUT 1366 at 1440 wide). */
+.truth th:nth-child(1) { width: 22.25%; } .truth th:nth-child(2) { width: 23.62%; }
+.truth th:nth-child(3) { width: 30.73%; } .truth th:nth-child(4) { width: 23.40%; }
 .truth tr.live td { background: var(--one); color: var(--paper); }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
@@ -119,6 +122,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 1.4; }
 .help .mouse .q { fill: var(--ink); stroke: none; }
 /* BKSP chip: square corners, 1.5px ink border, outer height = cap height (delta 6), label Medium. */
-.help kbd { display: inline-block; height: 12px; padding: 0 3px; vertical-align: baseline; border: 1.5px solid var(--ink); border-radius: 0; overflow: hidden;
-  font: 500 8.5px/9px var(--font); letter-spacing: .06em; margin-right: .4em; }
+/* BKSP chip (Delta 6 correction): label = help cap (12px, Medium); line-height 12px makes the line box
+   exactly the cap band, so 2.5px padding + 1.5px border = a 20px box centred on the caps. Square corners. */
+.help kbd { display: inline-block; vertical-align: baseline; padding: 2.5px 5px 3.5px calc(5px + .08em); border: 1.5px solid var(--ink); border-radius: 0;
+  font: 500 16.5px/12px var(--font); letter-spacing: .08em; margin: 0 .4em 0 .05em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

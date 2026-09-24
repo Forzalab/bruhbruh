@@ -29,6 +29,7 @@ export default function App() {
   const [view, setView, onViewChange] = useNodesState(VIEW);
   const [showGrid, setShowGrid] = useState(false);
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
+  const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
   const [status, setStatus] = useState({ text: '', bad: false });
 
@@ -53,6 +54,7 @@ export default function App() {
     targetHandle: `in${w.pin}`,
     type: 'step',
     className: values[w.source] ? 'on' : '',
+    selected: edgeSel.has(w.id),
   }));
 
   const onConnect = ({ source, target, targetHandle }) => {
@@ -65,7 +67,7 @@ export default function App() {
     setReject(null);
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
-    setStatus({ text: 'Connected.', bad: false });
+    setStatus({ text: '', bad: false }); // silent success: ref3 leaves row 03 empty
   };
 
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
@@ -85,7 +87,7 @@ export default function App() {
       wires: Object.fromEntries(Object.entries(c.wires).filter(([, w]) => !ids.includes(w.source) && !ids.includes(w.target))),
     }));
     setReject(null); setPending(null);
-    setStatus({ text: `Deleted ${ids.map((i) => i.toUpperCase()).join(', ')}`, bad: false });
+    setStatus({ text: '', bad: false });
   };
   const onNodesChange = (changes) => {
     removeNodes(changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id));
@@ -93,6 +95,8 @@ export default function App() {
   };
 
   const onEdgesChange = (changes) => {
+    const sel = changes.filter((ch) => ch.type === 'select');
+    if (sel.length) setEdgeSel((prev) => { const next = new Set(prev); sel.forEach((ch) => (ch.selected ? next.add(ch.id) : next.delete(ch.id))); return next; });
     const gone = changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id);
     if (!gone.length) return;
     setCircuit((c) => ({ ...c, wires: Object.fromEntries(Object.entries(c.wires).filter(([id]) => !gone.includes(id))) }));

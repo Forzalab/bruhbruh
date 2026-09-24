@@ -30,7 +30,7 @@ export function SwitchNode({ id, data }) {
   return (
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
       <Shape g={SWG} on={data.on} />
-      <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
+      <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={() => data.onToggle()} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} type="source" position={Position.Right} id="out" />
     </div>
