@@ -14,6 +14,10 @@
 @font-face { font-family: 'Roboto Flex Fallback'; src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold'), local('HelveticaNeue-Bold');
   font-weight: 600 1000; size-adjust: 100.5%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
 
+/* Wordmark fallback: Roboto Flex runs the wordmark at YTUC 660 (cap .66em), so the generic fallback's cap is too
+   tall there. Own face, size-adjust fitted with Pillow to the 194u L cap (CSS Fonts 5 §size-adjust). */
+@font-face { font-family: 'Logic Wordmark Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('Helvetica Neue Bold'); size-adjust: 96.2%; }
+
 /* Swiss grid, light only. Tokens first; components read tokens.
    Grid: Müller-Brockmann, Grid Systems in Graphic Design (1981): fixed field proportions,
    one rule weight, numbered fields. Measured targets in scratchpad/r5/I-SPEC.md. */
@@ -74,6 +78,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   font: 760 calc(294.2 * var(--u))/1 var(--font); font-stretch: 108%;
   font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
   letter-spacing: -0.03em; color: var(--ink);
+  font-family: 'Roboto Flex Variable', 'Logic Wordmark Fallback', sans-serif;
   left: calc(55 * var(--u)); top: calc(-13 * var(--u));
 }
 
@@ -172,6 +177,19 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    4px padding above and below the cap band. */
 .help kbd { display: inline-block; vertical-align: baseline; height: calc(20 * var(--u)); padding: 0 calc(4 * var(--u)); border: calc(2 * var(--u)) solid var(--ink); border-radius: 0;
   font: 500 calc(16.9 * var(--u))/calc(16 * var(--u)) var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
-.sr { position: absolute; width: calc(1 * var(--u)); height: calc(1 * var(--u)); overflow: hidden; clip: rect(0 0 0 0); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
 .help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }
+
+/* Small lines: hinted Linux text rounds every advance to whole px, so a 16.9u line drifts +-4.5% as --u changes.
+   geometricPrecision keeps fractional advances (MDN: text-rendering); a 0.013em track restores the 1440 width. */
+.help p, .help kbd { text-rendering: geometricPrecision; letter-spacing: 0.013em; }
+.rownum { text-rendering: geometricPrecision; }
+/* opsz pinned to each element's 1440 size: font-optical-sizing: auto would change glyph widths with --u (MDN). */
+.rownum { font-variation-settings: 'opsz' 18.3; }
+.rownum .f1 { font-variation-settings: 'opsz' 18.3, 'XTRA' 603; }
+.lockup { font-variation-settings: 'opsz' 57.9; }
+.truth .label { font-variation-settings: 'opsz' 43.7; }
+.truth th { font-variation-settings: 'opsz' 32.4; }
+.truth td { font-variation-settings: 'opsz' 35.8; }
+.truth td .f1 { font-variation-settings: 'opsz' 35.8, 'XTRA' 520; }

@@ -25,7 +25,9 @@ const VIEW = [
 let nextWire = 1;
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
-const fig = (v) => [...String(v)].map((c, k) => <span key={k} className={'f' + c}>{c}</span>);
+// Glyph spans are aria-hidden; one visually hidden run carries the whole word ("01", not "0 1").
+const fig = (v) => [<span key="t" className="sr">{String(v)}</span>,
+  <span key="g" aria-hidden="true">{[...String(v)].map((c, k) => <span key={k} className={'f' + c}>{c}</span>)}</span>];
 
 export default function App() {
   const [circuit, setCircuit] = useState(START);
@@ -131,7 +133,7 @@ export default function App() {
         </button>
         <p className="lockup">Circuit<br />editor</p>
       </div>
-      <h1 className="wordmark" aria-label="Logic"><span className="wL">L</span><span className="wo">o</span><span className="wg">g</span><span className="wi">i</span><span className="wc">c</span></h1>
+      <h1 className="wordmark" aria-label="Logic"><span className="sr">Logic</span><span aria-hidden="true"><span className="wL">L</span><span className="wo">o</span><span className="wg">g</span><span className="wi">i</span><span className="wc">c</span></span></h1>
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       <main className="cell c-main r2 canvas">
@@ -161,7 +163,7 @@ export default function App() {
       <aside className="cell c-side r2 truth" aria-label="Truth table">
         <h2 className="label">Truth table</h2>
         <table>
-          <thead><tr><th><span className="hN">#</span></th><th><span className="hA">A</span></th><th><span className="hB">B</span></th><th aria-label="OUT"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></th></tr></thead>
+          <thead><tr><th><span className="hN">#</span></th><th><span className="hA">A</span></th><th><span className="hB">B</span></th><th aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
           <tbody>
             {rows.map(([x, y], i) => (
               <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
@@ -183,7 +185,7 @@ export default function App() {
             <rect x="1" y="1" width="12" height="18" rx="6" />
             <path d="M7 1V9M1 9H13" />
           </svg>
-          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
+          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i><span className="sr">, </span>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><span className="sr">, </span><kbd>Bksp</kbd> to delete
         </p>
       </div>
     </div>
