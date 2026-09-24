@@ -149,3 +149,35 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .reject { position: absolute; right: calc(100% + 16px); transform: translateY(-50%); margin: 0; white-space: nowrap;
   padding: 4px 0 4px 10px; border-left: 4px solid var(--wire-1); background: var(--bg);
   font: 700 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); z-index: 10; }
+
+/* ===== R4-H (each rule cited in DESIGN-SPEC-H.md) ===== */
+/* Wordmark lifted 33px so the g crosses the y314 rule by ~48px (RUBRIC 2: 45–50px). */
+.wordmark { top: calc(var(--r1) - 0.97em + 5px); }
+
+/* Truth table in ref2 style (ref2 x1120-1436 y290-600; RUBRIC 3 + 8). */
+.truth th { font: 800 22px/1 var(--font); text-transform: uppercase; padding-bottom: 14px; border-bottom: 3px solid var(--ink); }
+.truth td { font: 800 24px/1 var(--font); }
+.truth tr.live td { color: var(--wire-1); }
+.truth tr.live td:first-child { box-shadow: inset 6px 0 0 var(--wire-1); padding-left: 16px; }
+
+/* Focus: 3px orange ring on every tabbable (WCAG 2.2 SC 2.4.7 / 2.4.11 / 2.4.13). */
+.react-flow__node:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 6px; }
+.react-flow__node:focus { outline: none; }
+.react-flow__node:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 6px; }
+.react-flow__handle:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 3px; width: 14px; height: 14px; }
+.switch:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 3px; }
+
+/* Switch = ref2 bold outlined square, solid inner square when ON (ref2 A x168-222 y330-384). */
+.switch { width: 44px; height: 44px; padding: 8px; border: 4px solid var(--ink); }
+.switch-core { border: 0; background: transparent; }
+.switch.on .switch-core { background: var(--wire-1); }
+.switch:hover .switch-core { background: transparent; }
+.switch.on:hover .switch-core { background: var(--wire-1); }
+
+/* Rejection: ref2 bold caps 14px; the rejected port is the orange signal. */
+.reject { font: 800 14px/1.2 var(--font); letter-spacing: 0; border-left: 0; padding: 0; color: var(--ink); }
+.react-flow__handle.invalid { background: var(--wire-1); width: 14px; height: 14px; box-shadow: 0 0 0 3px var(--wire-1); }
+.status { gap: 0; padding: 0 14px 0 16px; }
+.status .msg { font: 800 14px var(--font); letter-spacing: 0; }
+.status .msg.bad { color: var(--ink); }
+* { transition: none !important; animation: none !important; }

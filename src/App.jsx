@@ -25,7 +25,7 @@ let nextWire = 1;
 
 export default function App() {
   const [circuit, setCircuit] = useState(START);
-  const [view, , onViewChange] = useNodesState(VIEW);
+  const [view, setView, onViewChange] = useNodesState(VIEW);
   const [showGrid, setShowGrid] = useState(false);
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [status, setStatus] = useState({ text: 'Drag from a dot to a dot to wire. Click a switch to flip it.', bad: false });
@@ -52,10 +52,29 @@ export default function App() {
     className: values[w.source] ? 'on' : '',
   }));
 
+  // Node delete (double-click, or select + Backspace/Delete): node and every attached wire leave the sim.
+  const removeNodes = (ids) => {
+    if (!ids.length) return;
+    setView((v) => v.filter((n) => !ids.includes(n.id)));
+    setCircuit((c) => ({
+      nodes: Object.fromEntries(Object.entries(c.nodes).filter(([id]) => !ids.includes(id))),
+      wires: Object.fromEntries(Object.entries(c.wires).filter(([, w]) => !ids.includes(w.source) && !ids.includes(w.target))),
+    }));
+    setReject(null);
+    setStatus({ text: `Deleted ${ids.map((i) => i.toUpperCase()).join(', ')} and its wires.`, bad: false });
+  };
+  const onNodesChange = (changes) => {
+    removeNodes(changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id));
+    onViewChange(changes.filter((ch) => ch.type !== 'remove'));
+  };
+
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
-    if (!check.ok) return setReject({ node: target, handle: targetHandle, text: `Can't connect: ${check.reason}` });
+    if (!check.ok) {
+      setReject({ node: target, handle: targetHandle, text: `Can't connect: ${check.reason}` });
+      return setStatus({ text: `Rejected: ${check.reason}`, bad: true });
+    }
     setReject(null);
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
@@ -92,7 +111,10 @@ export default function App() {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
-          onNodesChange={onViewChange}
+          onNodesChange={onNodesChange}
+          onNodeDoubleClick={(_, n) => removeNodes([n.id])}
+          deleteKeyCode={['Backspace', 'Delete']}
+          zoomOnDoubleClick={false}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           snapToGrid
@@ -116,13 +138,12 @@ export default function App() {
             ))}
           </tbody>
         </table>
-        <p className="hint">Select a wire + Backspace to delete</p>
+        <p className="hint">Backspace or double-click deletes</p>
       </aside>
 
       <div className="cell c-margin r3"><span className="rownum">03</span></div>
       <footer className="cell c-main r3 status">
-        <span className="label">Logic circuit editor</span>
-        <span className="msg" role="status">{status.text}</span>
+        <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
       <div className="cell c-side r3" />
     </div>
