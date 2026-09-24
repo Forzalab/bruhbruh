@@ -24,6 +24,9 @@ const VIEW = [
 
 let nextWire = 1;
 
+// Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
+const fig = (v) => [...String(v)].map((c, k) => <span key={k} className={'f' + c}>{c}</span>);
+
 export default function App() {
   const [circuit, setCircuit] = useState(START);
   const [view, setView, onViewChange] = useNodesState(VIEW);
@@ -108,7 +111,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="cell c-margin r1"><span className="rownum">01</span></div>
+      <div className="cell c-margin r1"><span className="rownum">{fig('01')}</span></div>
       <div className="cell c-main r1" />
       <div className="cell c-side r1">
         <button className="disk" aria-pressed={showGrid} aria-label={showGrid ? 'Hide grid' : 'Show grid'} title={showGrid ? 'Hide grid' : 'Show grid'}
@@ -117,9 +120,9 @@ export default function App() {
         </button>
         <p className="lockup">Circuit<br />editor</p>
       </div>
-      <h1 className="wordmark" aria-label="Logic">Logic</h1>
+      <h1 className="wordmark" aria-label="Logic"><span className="wL">L</span><span className="wo">o</span><span className="wg">g</span><span className="wi">i</span><span className="wc">c</span></h1>
 
-      <div className="cell c-margin r2"><span className="rownum">02</span></div>
+      <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       <main className="cell c-main r2 canvas">
         <ReactFlow
           nodes={nodes}
@@ -142,18 +145,18 @@ export default function App() {
       <aside className="cell c-side r2 truth" aria-label="Truth table">
         <h2 className="label">Truth table</h2>
         <table>
-          <thead><tr><th>#</th><th>A</th><th>B</th><th>OUT</th></tr></thead>
+          <thead><tr><th><span className="hN">#</span></th><th><span className="hA">A</span></th><th><span className="hB">B</span></th><th aria-label="OUT"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></th></tr></thead>
           <tbody>
             {rows.map(([x, y], i) => (
               <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
-                <td>{String(i + 1).padStart(2, '0')}</td><td>{x}</td><td>{y}</td><td>{x & y}</td>
+                <td>{fig(String(i + 1).padStart(2, '0'))}</td><td>{fig(x)}</td><td>{fig(y)}</td><td>{fig(x & y)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </aside>
 
-      <div className="cell c-margin r3"><span className="rownum">03</span></div>
+      <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">
         <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
@@ -164,7 +167,7 @@ export default function App() {
             <rect x="1" y="1" width="12" height="18" rx="6" />
             <path d="M7 1V9M1 9H13" />
           </svg>
-          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag to wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
+          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
         </p>
       </div>
     </div>
