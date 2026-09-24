@@ -1,0 +1,52 @@
+/* Mode = token swap. Components read tokens, never the mode. */
+:root[data-mode='logic'] {
+  --bg: #f4f4f1;
+  --ink: #111111;
+  --mute: #8a8a84;
+  --grid: #e2e2dc;
+  --wire-0: #111111;
+  --wire-1: #ff5a1f; /* signal orange = logic 1 */
+  --font: 'Geist', system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+
+.bar {
+  display: flex; align-items: baseline; gap: 16px;
+  padding: 16px 24px; border-bottom: 3px solid var(--ink);
+}
+.wordmark { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; }
+.hint { font-family: var(--mono); font-size: 12px; color: var(--mute); }
+
+.status {
+  font-family: var(--mono); font-size: 13px; padding: 10px 24px;
+  border-top: 1px solid var(--grid); min-height: 38px;
+}
+.status.bad { color: var(--wire-1); }
+
+.react-flow__edge-path { stroke: var(--wire-0); stroke-width: 3; }
+.react-flow__edge.on .react-flow__edge-path { stroke: var(--wire-1); }
+.react-flow__handle { width: 10px; height: 10px; background: var(--ink); border: 0; border-radius: 0; }
+
+.switch {
+  width: 64px; height: 40px; border: 3px solid var(--ink); background: var(--bg);
+  font: 600 16px var(--mono); color: var(--ink); cursor: pointer;
+}
+.switch.on { background: var(--wire-1); border-color: var(--wire-1); color: #fff; }
+.switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.gate svg path { fill: var(--bg); stroke: var(--ink); stroke-width: 3; }
+.gate.on svg path { stroke: var(--wire-1); }
+.gate-label { font: 600 11px var(--mono); text-align: center; margin-top: 2px; }
+
+.lamp { width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--ink); background: var(--bg); }
+.lamp.on { background: var(--wire-1); border-color: var(--wire-1); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
