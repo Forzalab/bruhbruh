@@ -1,7 +1,8 @@
-@import '@fontsource/inter-tight/500.css';
-@import '@fontsource/inter-tight/700.css';
-@import '@fontsource/inter-tight/800.css';
-@import '@fontsource/inter-tight/900.css';
+/* One family, Mona Sans (GitHub x Degarism, SIL OFL), self-hosted via @fontsource-variable. The 'standard'
+   file carries both registered axes, wdth 75-125 and wght 200-900 (MDN: font-stretch maps to 'wdth',
+   font-weight to 'wght'). Width comes from the letterforms through the width axis, never from tracking.
+   Chosen over 30 renders of 20 families on Pillow evidence (glyph widths, stems, single-storey g): see K-SPEC. */
+@import '@fontsource-variable/mona-sans/standard.css';
 
 /* Swiss grid, light only. Tokens first; components read tokens.
    Grid: Müller-Brockmann, Grid Systems in Graphic Design (1981): fixed field proportions,
@@ -12,15 +13,16 @@
   --ink: #111111;
   --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
   --grid: #e2e2e2;
-  --font: 'Inter Tight', 'Helvetica Neue', Arial, sans-serif;
-  --capr: 0.7273;          /* Inter Tight cap height / em */
+  --font: 'Mona Sans Variable', 'Helvetica Neue', Arial, sans-serif;
+  --capr: 0.729;           /* Mona Sans cap height / em (OS/2 sCapHeight 729 / 1000 upm) */
   --rule: 2px;
   --stroke: 6px;
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased;
+  font-kerning: normal; font-feature-settings: 'kern' 1; font-synthesis: none; }
 /* Composited, non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
 .app { will-change: transform; }
 
@@ -37,7 +39,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .r3 { border-bottom: 0; }
 
 /* Field numerals: bold, cap 12px, set in the gutter (Müller-Brockmann: numbered fields). */
-.rownum { position: absolute; left: 17px; font: 700 16.5px/1 var(--font); letter-spacing: 0; }
+/* cap 13 (ref3 13), wdth 114 / wght 800 so "01" = 19px wide and the stem = 3px, as in ref3. */
+.rownum { position: absolute; left: 16px; font: 800 17.8px/1 var(--font); font-stretch: 114%; letter-spacing: 0; }
 .r1 .rownum { bottom: 20px; }
 .r2 .rownum { top: 26px; }
 .r3 .rownum { top: 50%; transform: translateY(-50%); }
@@ -45,7 +48,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Wordmark: black grotesk, L cap = 24vh, tracking -0.045em; the g breaks the row rule, drawn above the canvas. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  font: 900 calc(24vh / var(--capr))/1 var(--font); letter-spacing: -0.005em; color: var(--ink);
+  font: 900 calc(24vh / var(--capr))/1 var(--font); font-stretch: 125%; letter-spacing: -0.045em; color: var(--ink);
   left: 59px; top: -10px;
 }
 
@@ -56,7 +59,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .disk path { fill: none; stroke: var(--paper); stroke-width: 12; stroke-linecap: butt; stroke-linejoin: miter; }
 .disk:hover { background: #000; box-shadow: 0 0 0 4px var(--paper), 0 0 0 7px var(--ink); }
 .disk[aria-pressed='true'] svg { transform: rotate(90deg); }
-.lockup { position: absolute; left: 206px; top: 96px; margin: 0; font: 900 58px/52px var(--font); letter-spacing: -0.02em; text-transform: uppercase; }
+/* cap 43 (ref3 43/42), wdth 95 / wght 850: CIRCUIT 229px wide, I stem 11px (ref3 229 / 11). */
+.lockup { position: absolute; left: 206px; top: 96px; margin: 0; font: 850 59px/53px var(--font); font-stretch: 95%; letter-spacing: 0; text-transform: uppercase; }
 
 /* Canvas */
 .canvas { background: var(--paper); }
@@ -69,8 +73,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .shape .lit { fill: var(--one); stroke: none; }
 .node { position: relative; }
 .switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
-.sw:has(.switch:hover) .body { fill: #ececec; }
-.sw:has(.switch:active) .body { fill: #d6d6d6; }
 
 /* Ports: invisible 16px boxes centred on the knob; the knob itself is part of the outline path. */
 .react-flow__handle.port { position: absolute; z-index: 1; transform: none; right: auto; bottom: auto; min-width: 0; min-height: 0;
@@ -99,31 +101,34 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 20px; }
-.truth .label { margin: 0 0 0 4px; font: 800 38px/28px var(--font); text-transform: uppercase; letter-spacing: -0.01em; }
+.truth .label { margin: 0 0 0 4px; font: 850 41.2px/30px var(--font); font-stretch: 95%; text-transform: uppercase; letter-spacing: 0; }
 .truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 32px; }
-.truth th { font: 800 30px/22px var(--font); padding: 0 0 17px; text-align: center; border-bottom: var(--rule) solid var(--ink); }
-.truth td { font: 800 34px/1 var(--font); height: 68px; padding: 0; text-align: center; border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums; }
+.truth th { font: 900 31.6px/23px var(--font); font-stretch: 90%; padding: 0 0 17px; text-align: center; border-bottom: var(--rule) solid var(--ink); }
+.truth td { font: 800 34.6px/1 var(--font); font-stretch: 97%; height: 68px; padding: 0; text-align: center; border-bottom: 1px solid var(--ink); font-variant-numeric: normal; }
 .truth th:first-child, .truth td:first-child { text-align: left; padding-left: 8px; }
 /* Column widths set so column centres land on ref3's (A 1129, B 1248, OUT 1366 at 1440 wide). */
 .truth th:nth-child(1) { width: 22.25%; } .truth th:nth-child(2) { width: 23.62%; }
 .truth th:nth-child(3) { width: 30.73%; } .truth th:nth-child(4) { width: 23.40%; }
+/* Tabular setting without Mona's tnum glyphs (tnum swaps in a dotted zero and a footed one, unlike ref3's plain
+   figures): each figure of the row number sits centred in a fixed 0.62em cell (= the tabular advance, 600/1000 + 2%). */
+.truth td .tf { display: inline-block; width: .62em; text-align: center; }
 .truth tr.live td { background: var(--one); color: var(--paper); }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 16px; }
-.status .msg { font: 500 16.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.status .msg { font: 500 16.5px/1 var(--font); font-stretch: 82.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
 .status .msg.bad { font-weight: 700; border-left: 4px solid var(--ink); padding-left: 10px; }
 
 .help { display: flex; align-items: center; justify-content: flex-end; padding: 0 16px 0 8px; }
-.help p { margin: 0; white-space: nowrap; font: 500 16.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+/* Delta 6: Medium caps, cap 12px (16.5px x 0.729), +0.08em, ink. wdth 82.5 so the word widths equal ref3's
+   at the same cap height although the tracking is open (the tracking is Tony's spec, the width is the letterforms'). */
+.help p { margin: 0; white-space: nowrap; font: 500 16.5px/20px var(--font); font-stretch: 82.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
 .help i { font-style: normal; margin: 0 .45em; }
-/* Mouse icon: inline SVG in em units; height = cap height exactly; stroke = Medium stem (~0.085em). */
-.help .mouse { display: inline-block; height: calc(var(--capr) * 1em); width: calc(var(--capr) * 1em * 8 / 12); vertical-align: baseline; margin-right: .45em; overflow: visible; }
-.help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+/* Delta 7: mouse = chip box height (20px), width 14 (0.70; even so the 2px split sits on whole pixels), 2px stroke = chip border; centred on the cap band. */
+.help .mouse { display: inline-block; width: 14px; height: 20px; vertical-align: -4px; margin-right: .5em; overflow: visible; }
+.help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 2; }
 .help .mouse .q { fill: var(--ink); stroke: none; }
-/* BKSP chip: square corners, 1.5px ink border, outer height = cap height (delta 6), label Medium. */
-/* BKSP chip (Delta 6 correction): label = help cap (12px, Medium); line-height 12px makes the line box
-   exactly the cap band, so 2.5px padding + 1.5px border = a 20px box centred on the caps. Square corners. */
-.help kbd { display: inline-block; vertical-align: baseline; padding: 2.5px 5px 3.5px calc(5px + .08em); border: 1.5px solid var(--ink); border-radius: 0;
-  font: 500 16.5px/12px var(--font); letter-spacing: .08em; margin: 0 .4em 0 .05em; }
+/* BKSP chip: square corners, 2px ink border, 20px box = 12px label cap + 4px each side, centred on the cap band. */
+.help kbd { display: inline-block; box-sizing: border-box; height: 20px; vertical-align: -4px; padding: 0 5px 0 calc(5px + .08em); border: 2px solid var(--ink); border-radius: 0;
+  font: 500 16.5px/16px var(--font); font-stretch: 82.5%; letter-spacing: .08em; margin: 0 .45em 0 .1em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

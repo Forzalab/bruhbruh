@@ -146,7 +146,7 @@ export default function App() {
           <tbody>
             {rows.map(([x, y], i) => (
               <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
-                <td>{String(i + 1).padStart(2, '0')}</td><td>{x}</td><td>{y}</td><td>{x & y}</td>
+                <td>{[...String(i + 1).padStart(2, '0')].map((d, k) => <span className="tf" key={k}>{d}</span>)}</td><td>{x}</td><td>{y}</td><td>{x & y}</td>
               </tr>
             ))}
           </tbody>
@@ -159,10 +159,10 @@ export default function App() {
       </footer>
       <div className="cell c-side r3 help">
         <p>
-          <svg className="mouse" viewBox="0 0 8 12" aria-hidden="true">
-            <rect x=".7" y=".7" width="6.6" height="10.6" rx="3.3" />
-            <path className="q" d="M4 .7A3.3 3.3 0 0 0 .7 4v1.4H4Z" />
-            <path d="M4 .7V5.4M.7 5.4H7.3" />
+          <svg className="mouse" width="14" height="20" viewBox="0 0 14 20" aria-hidden="true">
+            <rect x="1" y="1" width="12" height="18" rx="6" />
+            <path className="q" d="M7 1A6 6 0 0 0 1 7V9H7Z" />
+            <path d="M7 1V9M1 9H13" />
           </svg>
           <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag to wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
         </p>
