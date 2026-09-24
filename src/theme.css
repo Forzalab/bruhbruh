@@ -48,10 +48,10 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Wordmark: black grotesk, L cap = 24vh, tracking -0.045em; the g breaks the row rule, drawn above the canvas. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  font: 850 294.2px/1 var(--font); font-stretch: 110%;
+  font: 760 294.2px/1 var(--font); font-stretch: 108%;
   font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
   letter-spacing: -0.03em; color: var(--ink);
-  left: 55px; top: -10px;
+  left: 55px; top: -13px;
 }
 
 /* Top-right: ink disk + two-line caps lockup. */
@@ -103,10 +103,10 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 20px; }
-.truth .label { margin: 0 0 0 4px; font: 700 43.7px/31px var(--font); font-stretch: 100%; text-transform: uppercase; letter-spacing: 0; }
+.truth .label { margin: 0 0 0 4px; font: 800 42.3px/30px var(--font); font-stretch: 100%; text-transform: uppercase; letter-spacing: 0; }
 .truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 32px; }
 .truth th { font: 700 32.4px/23px var(--font); font-stretch: 100%; padding: 0 0 17px; text-align: center; border-bottom: var(--rule) solid var(--ink); }
-.truth td { font: 700 36.5px/1 var(--font); font-stretch: 112%; height: 68px; padding: 0; text-align: center; border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums; }
+.truth td { font: 800 35.2px/1 var(--font); font-stretch: 125%; height: 68px; padding: 0; text-align: center; border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums; }
 .truth th:first-child, .truth td:first-child { text-align: left; padding-left: 8px; }
 /* Column widths set so column centres land on ref3's (A 1129, B 1248, OUT 1366 at 1440 wide). */
 .truth th:nth-child(1) { width: 22.25%; } .truth th:nth-child(2) { width: 23.62%; }
