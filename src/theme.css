@@ -18,7 +18,7 @@
   --mono: 'JetBrains Mono', 'DejaVu Sans Mono', ui-monospace, monospace;
   --margin: 46px;          /* row-numeral margin column */
   --side: 30%;             /* right column = 0.30 of width */
-  --r1: 40.5%;             /* header row = 0.405 of height */
+  --r1: 38.9%;             /* RUBRIC measured: ref1 rule y327/840 */             /* header row = 0.405 of height */
   --r3: 68px;
   --hair: 1px;
   --stroke: 3px;
@@ -52,9 +52,9 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 /* Giant wordmark: sits in row 01 and its descender breaks into row 02. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.97em + 17px);
+  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.97em + 38px);
   font: 800 25.8vw/1 var(--font); letter-spacing: -0.05em; color: var(--ink);
-  font-size: min(25.4vw, 366px);
+  font-size: min(26.1vw, 375px); /* L cap 271px = 33.5% of 810 (RUBRIC measured) */
 }
 
 .canvas { background: var(--bg); }
@@ -78,13 +78,12 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .primary .disk svg { width: 56px; height: 56px; }
 .primary .txt { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; }
 .primary .sub { display: block; margin-top: 8px; font: 500 12px var(--mono); letter-spacing: .1em; }
-.primary:focus-visible, .switch:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+.primary:focus-visible .disk, .switch:focus-visible, .react-flow__handle:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 2px; }
+.primary:focus-visible { outline: 0; }
 .primary[aria-pressed="true"] .disk svg { transform: rotate(90deg); }
 
 .status { display: flex; align-items: center; gap: 32px; padding: 0 14px; }
 .status .msg { font: 500 12px var(--mono); color: #111; text-transform: uppercase; letter-spacing: .12em; }
-.status.bad .msg { color: var(--ink); font-weight: 700; }
-.status.bad .msg::before { content: '\25A0  '; color: var(--wire-1); }
 
 /* Wires + handles */
 .react-flow__edge-path { stroke: var(--wire-0); stroke-width: var(--stroke); }
@@ -129,5 +128,24 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .react-flow__handle.connectingto { box-shadow: 0 0 0 4px var(--ink); }
 .react-flow__handle.connectingto.valid { background: var(--bg); box-shadow: 0 0 0 3px var(--ink); width: 14px; height: 14px; }
 .react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: 8 4; }
-.status.bad { background: var(--ink); }
-.status.bad .msg, .status.bad .label { color: var(--on-ink); }
+
+
+/* Table rules inset 24px both sides (RUBRIC 7): rules drawn on an inset pseudo-free approach via margin. */
+.truth table { width: calc(100% - 48px); margin-left: 24px; margin-right: 24px; }
+.truth th:first-child, .truth td:first-child { padding-left: 0; }
+.truth th:last-child, .truth td:last-child { padding-right: 0; }
+.truth tr.live td:first-child { box-shadow: none; }
+
+/* Stronger hover (RUBRIC 12a): full inversion / ring, instant. */
+.switch:hover { background: var(--ink); }
+.switch:hover .switch-core { border-color: var(--on-ink); }
+.switch.on:hover .switch-core { border-color: var(--wire-1); }
+.react-flow__handle:hover { width: 14px; height: 14px; background: var(--bg); box-shadow: 0 0 0 3px var(--ink); }
+.react-flow__node-G:hover .gate svg path { stroke-width: 7px; }
+.react-flow__node-G:hover .gate svg { outline: 0; }
+.react-flow__node { cursor: grab; }
+
+/* Inline rejection beside the failed port (GOV.UK error message; WCAG 3.3.1). */
+.reject { position: absolute; right: calc(100% + 16px); transform: translateY(-50%); margin: 0; white-space: nowrap;
+  padding: 4px 0 4px 10px; border-left: 4px solid var(--wire-1); background: var(--bg);
+  font: 700 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); z-index: 10; }

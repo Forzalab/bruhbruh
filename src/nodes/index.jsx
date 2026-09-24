@@ -26,6 +26,9 @@ export function GateNode({ data }) {
       <Handle type="target" position={Position.Left} id="in0" style={{ top: 22 }} />
       <Handle type="target" position={Position.Left} id="in1" style={{ top: 58 }} />
       <Handle type="source" position={Position.Right} id="out" style={{ top: 40 }} />
+      {data.reject && (
+        <p className="reject" role="alert" style={{ top: data.reject.handle === 'in0' ? 22 : 58 }}>{data.reject.text}</p>
+      )}
     </div>
   );
 }
@@ -35,6 +38,7 @@ export function LampNode({ data }) {
     <div className="lamp-wrap">
       <span className="node-tag">OUT</span>
       <Handle type="target" position={Position.Left} id="in0" />
+      {data.reject && <p className="reject" role="alert" style={{ top: 'auto', bottom: 18 }}>{data.reject.text}</p>}
       <div className={`lamp ${data.on ? 'on' : ''}`} role="img" aria-label={data.on ? 'lamp on' : 'lamp off'} />
     </div>
   );

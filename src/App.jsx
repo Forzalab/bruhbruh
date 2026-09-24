@@ -27,6 +27,7 @@ export default function App() {
   const [circuit, setCircuit] = useState(START);
   const [view, , onViewChange] = useNodesState(VIEW);
   const [showGrid, setShowGrid] = useState(false);
+  const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [status, setStatus] = useState({ text: 'Drag from a dot to a dot to wire. Click a switch to flip it.', bad: false });
 
   // Compute everything, then React commits the frame once. Drags never reach here.
@@ -37,7 +38,8 @@ export default function App() {
 
   const nodes = view.map((n) => ({
     ...n,
-    data: { ...circuit.nodes[n.id], on: values[n.id], onToggle: () => toggle(n.id) },
+    data: { ...circuit.nodes[n.id], on: values[n.id], onToggle: () => { setReject(null); toggle(n.id); },
+      reject: reject && reject.node === n.id ? reject : null },
   }));
 
   const edges = Object.values(circuit.wires).map((w) => ({
@@ -53,7 +55,8 @@ export default function App() {
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
-    if (!check.ok) return setStatus({ text: `Can't connect: ${check.reason}.`, bad: true });
+    if (!check.ok) return setReject({ node: target, handle: targetHandle, text: `Can't connect: ${check.reason}` });
+    setReject(null);
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
     setStatus({ text: 'Connected.', bad: false });
@@ -117,7 +120,7 @@ export default function App() {
       </aside>
 
       <div className="cell c-margin r3"><span className="rownum">03</span></div>
-      <footer className={`cell c-main r3 status ${status.bad ? 'bad' : ''}`}>
+      <footer className="cell c-main r3 status">
         <span className="label">Logic circuit editor</span>
         <span className="msg" role="status">{status.text}</span>
       </footer>
