@@ -98,6 +98,21 @@ export default function App() {
     setStatus({ text: '', bad: false }); // silent success: ref3 leaves row 03 empty
   };
 
+  // React Flow picks the drop target on pointermove. A fast release while the main thread is busy
+  // (first load: fonts, first render) can end the drag before that move is processed, and the wire
+  // is lost. On release with no target, read the port under the pointer and connect to it ourselves.
+  const onConnectEnd = (e, cs) => {
+    if (cs.toHandle || !cs.fromHandle) return;
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
+    const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__handle');
+    const node = el?.closest('.react-flow__node')?.dataset.id;
+    if (!node || el.classList.contains(cs.fromHandle.type)) return; // nothing there, or same-kind port
+    const from = { node: cs.fromHandle.nodeId, handle: cs.fromHandle.id };
+    const to = { node, handle: el.dataset.handleid };
+    const [src, dst] = cs.fromHandle.type === 'source' ? [from, to] : [to, from];
+    onConnect({ source: src.node, target: dst.node, targetHandle: dst.handle });
+  };
+
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
   const onPort = (node, handle) => {
     if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: pick an input`, bad: false }); }
@@ -162,6 +177,7 @@ export default function App() {
           zoomOnDoubleClick={false}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onConnectEnd={onConnectEnd}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
