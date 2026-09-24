@@ -1,164 +1,141 @@
 @import '@fontsource/inter-tight/500.css';
-@import '@fontsource/inter-tight/700.css';
 @import '@fontsource/inter-tight/800.css';
-@import '@fontsource/jetbrains-mono/500.css';
-@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/inter-tight/900.css';
 
-/* Mode = token swap. Components read tokens, never the mode. */
-:root[data-mode='logic'] {
-  --bg: #ffffff;
-  --ink: #000000;
-  --rule: #1a1a1a;
-  --mute: #6b6b6b;
-  --grid: #d9d9d9;
-  --wire-0: #000000;
-  --wire-1: #ff5a1f; /* signal orange: the only accent */
-  --on-ink: #ffffff;
-  --font: 'Inter Tight', 'Helvetica Neue', 'Liberation Sans', Arial, sans-serif;
-  --mono: 'JetBrains Mono', 'DejaVu Sans Mono', ui-monospace, monospace;
-  --margin: 46px;          /* row-numeral margin column */
-  --side: 30%;             /* right column = 0.30 of width */
-  --r1: 38.9%;             /* RUBRIC measured: ref1 rule y327/840 */             /* header row = 0.405 of height */
-  --r3: 68px;
-  --hair: 1px;
-  --stroke: 3px;
+/* Light only (Tony delta 4). One ink, one paper, one signal.
+   NYCTA Graphics Standards Manual (Unimark, 1970): black on white, one bold grotesk, strict module.
+   Signal orange = logic 1 only (+ the live table row). */
+:root {
+  --paper: #ffffff;
+  --ink: #111111;
+  --sig: #ff5a1f;
+  --grid: #dddddd;
+  --font: 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  /* Frame module, measured on ref3 @1440x810: gutter rule x53, column rule x959, row rules y252 / y741. */
+  --rule: 2px;
+  --gutter: 53px;   /* + 2px frame = rule centred on x53 */
+  --side: 477px;    /* column rule centred on x959 */
+  --r1: 252px;      /* + 2px frame = rule centred on y252 */
+  --r3: 65px;       /* rule centred on y741 */
+  --stroke: 6px;    /* the one stroke of the circuit system */
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 .app {
   position: relative; height: 100%; overflow: hidden;
   display: grid;
-  grid-template-columns: var(--margin) 1fr var(--side);
+  grid-template-columns: var(--gutter) 1fr var(--side);
   grid-template-rows: var(--r1) 1fr var(--r3);
-  border: var(--hair) solid var(--rule);
+  border: var(--rule) solid var(--ink);
 }
-.cell { border-right: var(--hair) solid var(--rule); border-bottom: var(--hair) solid var(--rule); min-width: 0; min-height: 0; position: relative; }
+.cell { position: relative; min-width: 0; min-height: 0;
+  border-right: var(--rule) solid var(--ink); border-bottom: var(--rule) solid var(--ink); }
 .c-side { border-right: 0; }
 .r3 { border-bottom: 0; }
-.c-margin.r1 { }
 
-.rownum { position: absolute; left: 14px; font: 500 13px var(--mono); letter-spacing: .04em; }
-.r1 .rownum { bottom: 14px; }
-.r2 .rownum { top: 20px; }
+/* Row numerals: bold, 13px figure height, centred in the gutter. */
+.rownum { position: absolute; left: 0; right: 0; text-align: center; font: 800 18px/1 var(--font); letter-spacing: -0.01em; }
+.r1 .rownum { bottom: 19px; }
+.r2 .rownum { top: 27px; }
 .r3 .rownum { top: 50%; transform: translateY(-50%); }
 
-.label {
-  font: 500 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; margin: 0;
-}
-
-/* Giant wordmark: sits in row 01 and its descender breaks into row 02. */
+/* Wordmark: L cap = 24% vh (Tony delta 1), tracking -0.035em, g descender breaks the row rule,
+   drawn above the canvas. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.97em + 38px);
-  font: 800 25.8vw/1 var(--font); letter-spacing: -0.05em; color: var(--ink);
-  font-size: min(26.1vw, 375px); /* L cap 271px = 33.5% of 810 (RUBRIC measured) */
+  left: 59px; top: -9px;
+  font: 900 267px/1 var(--font); letter-spacing: -0.035em; color: var(--ink);
 }
 
-.canvas { background: var(--bg); }
-.react-flow { background: transparent; }
-
-/* Truth table: hairline-ruled rows on paper, flush to the cell (ref1 x1040-1436). */
-.truth { display: flex; flex-direction: column; padding: 0; }
-.truth .label { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; color: var(--ink); padding: 20px 24px 0; }
-.truth table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-.truth th { font: 800 20px var(--font); text-align: left; padding: 0 24px 12px; border-bottom: var(--hair) solid var(--rule); }
-.truth td { font: 800 24px/1 var(--font); height: 57px; padding: 0 24px; border-bottom: var(--hair) solid var(--rule); font-variant-numeric: tabular-nums; }
-.truth th:last-child, .truth td:last-child { text-align: right; }
-.truth tr.live td { color: var(--wire-1); }
-.truth tr.live td:first-child { box-shadow: inset 4px 0 0 var(--wire-1); }
-.truth .hint { margin: auto 24px 16px; font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #111; }
-
-/* The one primary action (ref2 arrow-in-circle). */
-.primary { position: absolute; left: 24px; bottom: 24px; display: flex; align-items: center; gap: 20px;
-  background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink); text-align: left; }
-.primary .disk { width: 110px; height: 110px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; flex: none; }
-.primary .disk svg { width: 56px; height: 56px; }
-.primary .txt { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; }
-.primary .sub { display: block; margin-top: 8px; font: 500 12px var(--mono); letter-spacing: .1em; }
-.primary:focus-visible .disk, .switch:focus-visible, .react-flow__handle:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 2px; }
-.primary:focus-visible { outline: 0; }
+/* Top-right cell: the one primary action (ink disk + arrow), 2-line caps label. */
+.primary { position: absolute; left: 25px; top: 74px; display: flex; align-items: center; gap: 28px;
+  background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink); text-align: left; font: inherit; }
+.primary .disk { width: 153px; height: 153px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; flex: none; }
+.primary .disk svg { width: 64px; height: 64px; }
+.primary .txt { position: relative; top: -4px; margin-left: -2px; font: 900 59px/53px var(--font); text-transform: uppercase; letter-spacing: -0.02em; }
 .primary[aria-pressed="true"] .disk svg { transform: rotate(90deg); }
-
-.status { display: flex; align-items: center; gap: 32px; padding: 0 14px; }
-.status .msg { font: 500 12px var(--mono); color: #111; text-transform: uppercase; letter-spacing: .12em; }
-
-/* Wires + handles */
-.react-flow__edge-path { stroke: var(--wire-0); stroke-width: var(--stroke); }
-.react-flow__edge.on .react-flow__edge-path { stroke: var(--wire-1); stroke-width: 3; }
-.react-flow__handle { width: 8px; height: 8px; min-width: 0; min-height: 0; background: var(--ink); border: 0; border-radius: 50%; }
-
-.node-tag { display: block; text-align: center; font: 800 15px var(--font); letter-spacing: .04em; margin-bottom: 6px; }
-
-.sw-wrap { position: relative; }
-.switch {
-  width: 44px; height: 44px; padding: 7px; border: var(--stroke) solid var(--ink); background: var(--bg);
-  display: grid; cursor: pointer;
-}
-.switch-core { border: var(--stroke) solid var(--ink); background: var(--bg); }
-.switch.on .switch-core { background: var(--wire-1); border-color: var(--wire-1); }
-.sw-wrap .react-flow__handle { top: auto; bottom: 18px; }
-
-.gate { position: relative; width: 104px; height: 80px; }
-.gate svg { display: block; overflow: visible; }
-.gate svg path { fill: var(--ink); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
-.gate-label { position: absolute; left: 0; width: 76px; top: 50%; transform: translateY(-50%); text-align: center; font: 800 16px var(--font); letter-spacing: .06em; color: var(--on-ink); }
-
-.lamp-wrap { position: relative; }
-.lamp { width: 44px; height: 44px; border-radius: 50%; border: var(--stroke) solid var(--ink); background: var(--bg); }
-.lamp.on { background: var(--wire-1); }
-.lamp-wrap .react-flow__handle { top: auto; bottom: 18px; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
-}
-
-/* Interaction states: instant, no transitions (WCAG 2.4.7 focus visible; Carbon interaction states). */
-.switch:hover { background: #ececec; }
-.switch:active { background: var(--ink); }
-.switch:active .switch-core { border-color: var(--on-ink); }
 .primary:hover .disk { outline: 3px solid var(--ink); outline-offset: 4px; }
-.primary:hover .txt { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
 .primary:active .disk { background: #333; }
-.react-flow__handle { cursor: crosshair; }
-.react-flow__handle:hover { box-shadow: 0 0 0 4px var(--ink); }
-.react-flow__connection-path { stroke: var(--ink); stroke-width: 3px; stroke-dasharray: 6 4; }
-.react-flow__handle.connectingto { box-shadow: 0 0 0 4px var(--ink); }
-.react-flow__handle.connectingto.valid { background: var(--bg); box-shadow: 0 0 0 3px var(--ink); width: 14px; height: 14px; }
-.react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: 8 4; }
 
+/* Canvas */
+.canvas { background: var(--paper); }
+.react-flow { background: transparent; --xy-edge-stroke-width-default: 6; }
 
-/* Table rules inset 24px both sides (RUBRIC 7): rules drawn on an inset pseudo-free approach via margin. */
-.truth table { width: calc(100% - 48px); margin-left: 24px; margin-right: 24px; }
-.truth th:first-child, .truth td:first-child { padding-left: 0; }
-.truth th:last-child, .truth td:last-child { padding-right: 0; }
-.truth tr.live td:first-child { box-shadow: none; }
+/* Wires: orthogonal steps, 6px, ink = 0, orange = 1. */
+.react-flow__edge-path { stroke: var(--ink); stroke-width: var(--stroke); stroke-linecap: butt; }
+.react-flow__edge.on .react-flow__edge-path { stroke: var(--sig); }
+.react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: 12 6; }
+.react-flow__connection-path { stroke: var(--ink); stroke-width: 2px; stroke-dasharray: 6 4; }
 
-/* Stronger hover (RUBRIC 12a): full inversion / ring, instant. */
-.switch:hover { background: var(--ink); }
-.switch:hover .switch-core { border-color: var(--on-ink); }
-.switch.on:hover .switch-core { border-color: var(--wire-1); }
-.react-flow__handle:hover { width: 14px; height: 14px; background: var(--bg); box-shadow: 0 0 0 3px var(--ink); }
-.react-flow__node-G:hover .gate svg path { stroke-width: 7px; }
-.react-flow__node-G:hover .gate svg { outline: 0; }
+/* Components: SVG body, one 6px stroke; outline always ink. */
+.body { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: block; }
+.body .knob { fill: var(--ink); }
+.body .outline { fill: none; stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
+/* Pass 1 of the lit inset: fill + 18px paper stroke clipped inside = 3px under ink + 6px gap. */
+.body .fill { fill: var(--paper); stroke: var(--paper); stroke-width: 18px; }
+.body .fill.on { fill: var(--sig); }
+
 .react-flow__node { cursor: grab; }
+.react-flow__node.selected { outline: 2px dashed var(--ink); outline-offset: 10px; }
+.sw-wrap, .gate, .lamp-wrap { position: relative; }
+.switch { position: absolute; inset: 0; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; display: block; }
+.switch:hover:not(.on) .fill { fill: #e4e4e4; }
+.switch:active .outline { stroke-width: 10px; }
+
+/* Handles: invisible hit box centred on the knob (the knob itself is drawn in the SVG, under the outline). */
+.react-flow__handle { width: 10px; height: 10px; min-width: 0; min-height: 0; background: transparent; border: 0; border-radius: 50%; cursor: crosshair; }
+.react-flow__handle::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; }
+.react-flow__handle:hover, .react-flow__handle.connectingto { box-shadow: 0 0 0 2px var(--paper), 0 0 0 5px var(--ink); }
+.react-flow__handle.connectingto.valid { background: var(--ink); }
+.react-flow__handle.picked { background: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 5px var(--ink); }
+
+/* Focus: 3px ink ring, offset, on every tab stop (WCAG 2.2 SC 2.4.7 / 2.4.11; GOV.UK focus state). */
+.primary:focus-visible { outline: 0; }
+.primary:focus-visible .disk { outline: 3px solid var(--ink); outline-offset: 5px; }
+.switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 6px; }
+.react-flow .react-flow__node:focus-visible { outline: 3px solid var(--ink) !important; outline-offset: 8px; }
+.react-flow__handle:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
 /* Inline rejection beside the failed port (GOV.UK error message; WCAG 3.3.1). */
-.reject { position: absolute; right: calc(100% + 16px); transform: translateY(-50%); margin: 0; white-space: nowrap;
-  padding: 4px 0 4px 10px; border-left: 4px solid var(--wire-1); background: var(--bg);
-  font: 700 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); z-index: 10; }
+.reject { position: absolute; right: calc(100% + 18px); transform: translateY(-50%); margin: 0; white-space: nowrap;
+  padding: 5px 10px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink);
+  font: 800 14px/1.1 var(--font); text-transform: uppercase; letter-spacing: 0.02em; z-index: 10; }
 
-/* R4-G ------------------------------------------------------------ */
-/* Focus: 3px accent ring on every tab stop (WCAG 2.2 SC 2.4.7, 2.4.11, 2.4.13). */
-.react-flow .react-flow__node:focus-visible { outline: 3px solid var(--wire-1) !important; outline-offset: 4px; }
-.react-flow__handle:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 3px; width: 14px; height: 14px; }
-.react-flow__handle.picked { background: var(--wire-1); width: 14px; height: 14px; }
-/* Rejection in ref2 grotesk caps voice (RUBRIC 3). */
-.reject { font: 800 14px/1.2 var(--font); letter-spacing: 0; text-transform: uppercase; }
-.status .msg.bad { font: 800 14px var(--font); letter-spacing: 0; color: var(--ink); border-left: 4px solid var(--wire-1); padding-left: 10px; }
-/* Header rule heavier than body hairlines (RUBRIC 8; Ruder, Typographie: weight contrast). */
-.truth th { border-bottom: 3px solid var(--ink); }
-/* Wordmark scaled 0.92 so the "g" descender crosses the row rule by ~48px (ref1) while the i-dot keeps >=20px (RUBRIC 2 trade-off, logged). */
-.wordmark { font-size: min(24vw, 345px); top: calc(var(--r1) - 0.97em + 9px); }
+/* Truth table: block (title + table) centred in row 02 (Tony delta 3). */
+.truth { display: flex; flex-direction: column; justify-content: center; padding: 0 22px 0 20px; }
+.truth-block { margin-top: 1px; }
+.truth .label { margin: 0 0 0 7px; font: 900 40px/29px var(--font); text-transform: uppercase; letter-spacing: -0.015em; }
+.truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 32px; font-variant-numeric: tabular-nums; }
+.truth th, .truth td { width: 25%; text-align: center; padding: 0; }
+.truth th:first-child, .truth td:first-child { text-align: left; padding-left: 8px; }
+.truth th { font: 900 32px/23px var(--font); padding-bottom: 16px; border-bottom: 2px solid var(--ink); }
+.truth td { font: 900 34px/1 var(--font); height: 67px; border-bottom: 1px solid var(--ink); }
+.truth tr.live td { background: var(--sig); color: var(--paper); }
+
+/* Help bar: caps, Medium 500, cap 12px, +0.08em (Tony delta 6). Icon + chip height = cap height. */
+.help { display: flex; align-items: center; justify-content: flex-end; padding-right: 18px; }
+.helpline { margin: 0; white-space: nowrap; color: var(--ink); font: 500 16.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
+.helpline .sep { margin: 0 0.55em; }
+/* Mouse: rounded body (border), top-left button filled (pseudo border-left), 45% split line (pseudo border-bottom). */
+.mouse { display: inline-block; vertical-align: baseline; position: relative; overflow: hidden;
+  width: 9px; height: 12px; height: 1cap; margin-right: 0.5em;
+  border: 1.5px solid var(--ink); border-radius: 4.5px; }
+.mouse::before { content: ''; position: absolute; left: 0; top: 0; box-sizing: content-box;
+  width: 3px; height: 45%; border-left: 3px solid var(--ink); border-bottom: 1.5px solid var(--ink); }
+.chip { display: inline-block; vertical-align: baseline; overflow: hidden; position: relative; box-sizing: border-box;
+  width: 40px; height: 12px; height: 1cap; margin-right: 0.35em; border: 1.5px solid var(--ink); border-radius: 0; font: inherit; }
+/* Label centred inside the cap-high chip (weight 500, Tony delta 6). */
+.chip > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-weight: 500; line-height: 1; letter-spacing: 0.08em; padding-left: 0.08em; }
+
+/* Status line (row 03, main column): live messages only. */
+.status { display: flex; align-items: center; padding: 0 22px; }
+.status .msg { font: 500 16.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+.status .msg.bad { font-weight: 800; border-left: 6px solid var(--ink); padding-left: 10px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+* { transition: none !important; animation: none !important; }

@@ -15,10 +15,11 @@ const START = {
 };
 
 const VIEW = [
-  { id: 's1', type: 'S', position: { x: 40, y: 80 }, data: {} },
-  { id: 's2', type: 'S', position: { x: 40, y: 200 }, data: {} },
-  { id: 'g1', type: 'G', position: { x: 260, y: 130 }, data: {} },
-  { id: 'l1', type: 'L', position: { x: 460, y: 127 }, data: {} },
+  // Canvas px at zoom 1 (one 6px stroke system must not be rescaled by fitView).
+  { id: 's1', type: 'S', position: { x: 90, y: 86 }, data: {} },
+  { id: 's2', type: 'S', position: { x: 90, y: 332 }, data: {} },
+  { id: 'g1', type: 'G', position: { x: 400, y: 198 }, data: {} },
+  { id: 'l1', type: 'L', position: { x: 720, y: 195 }, data: {} },
 ];
 
 let nextWire = 1;
@@ -28,8 +29,9 @@ export default function App() {
   const [view, setView, onViewChange] = useNodesState(VIEW);
   const [showGrid, setShowGrid] = useState(false);
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
+  const [edgeSel, setEdgeSel] = useState(() => new Set()); // selected wires (controlled, so Backspace can delete them)
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
-  const [status, setStatus] = useState({ text: 'Drag from a dot to a dot to wire. Click a switch to flip it. Double-click a node to delete.', bad: false });
+  const [status, setStatus] = useState({ text: '', bad: false });
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
@@ -52,6 +54,7 @@ export default function App() {
     targetHandle: `in${w.pin}`,
     type: 'step',
     className: values[w.source] ? 'on' : '',
+    selected: edgeSel.has(w.id),
   }));
 
   const onConnect = ({ source, target, targetHandle }) => {
@@ -92,8 +95,11 @@ export default function App() {
   };
 
   const onEdgesChange = (changes) => {
+    const sel = changes.filter((ch) => ch.type === 'select');
+    if (sel.length) setEdgeSel((prev) => { const next = new Set(prev); sel.forEach((ch) => (ch.selected ? next.add(ch.id) : next.delete(ch.id))); return next; });
     const gone = changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id);
     if (!gone.length) return;
+    setStatus({ text: 'Wire deleted', bad: false });
     setCircuit((c) => ({ ...c, wires: Object.fromEntries(Object.entries(c.wires).filter(([id]) => !gone.includes(id))) }));
   };
 
@@ -108,9 +114,10 @@ export default function App() {
       <div className="cell c-side r1">
         <button className="primary" aria-pressed={showGrid} onClick={() => setShowGrid((g) => !g)}>
           <span className="disk" aria-hidden="true">
-            <svg viewBox="0 0 56 56"><path d="M8 28 H44 M30 13 L45 28 L30 43" fill="none" stroke="#fff" strokeWidth="7" strokeLinecap="square" /></svg>
+            <svg viewBox="0 0 64 64"><path d="M10 32 H50 M34 16 L50 32 L34 48" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="square" /></svg>
           </span>
-          <span className="txt">{showGrid ? 'Hide grid' : 'Show grid'}<span className="sub">Snap 20 px</span></span>
+          <span className="txt">Circuit<br />editor</span>
+          <span className="sr">{showGrid ? ': hide grid' : ': show grid'}</span>
         </button>
       </div>
       <h1 className="wordmark" aria-label="Logic">Logic</h1>
@@ -128,15 +135,16 @@ export default function App() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           snapToGrid
-          snapGrid={[20, 20]}
-          fitView
-          fitViewOptions={{ padding: 0.35 }}
+          snapGrid={[2, 2]}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          defaultEdgeOptions={{ type: 'step' }}
           proOptions={{ hideAttribution: true }}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
         </ReactFlow>
       </main>
       <aside className="cell c-side r2 truth" aria-label="Truth table">
+        <div className="truth-block">
         <h2 className="label">Truth table</h2>
         <table>
           <thead><tr><th>#</th><th>A</th><th>B</th><th>OUT</th></tr></thead>
@@ -148,14 +156,22 @@ export default function App() {
             ))}
           </tbody>
         </table>
-        <p className="hint">Select wire or node + Delete; double-click node</p>
+        </div>
       </aside>
 
       <div className="cell c-margin r3"><span className="rownum">03</span></div>
       <footer className="cell c-main r3 status">
         <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
-      <div className="cell c-side r3" />
+      <div className="cell c-side r3 help">
+        <p className="helpline">
+          <span className="mouse" aria-hidden="true" /><span className="sr">Click</span> <span>to flip</span>
+          <span className="sep" aria-hidden="true">·</span>
+          <span>Drag to wire</span>
+          <span className="sep" aria-hidden="true">·</span>
+          <kbd className="chip"><span>Bksp</span></kbd> <span>to delete</span>
+        </p>
+      </div>
     </div>
   );
 }
