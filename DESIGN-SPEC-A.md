@@ -35,3 +35,11 @@ Method: I turned the refs into a structured UI spec (grid, then type, then color
 - Apple HIG typography: https://developer.apple.com/design/human-interface-guidelines/typography
 - WCAG 2.2 contrast (1.4.3 and 1.4.11): https://www.w3.org/TR/WCAG22/#contrast-minimum
 - Screenshot-to-spec through visual prompting (Draw-and-Understand, ICLR 2025): https://proceedings.iclr.cc/paper_files/paper/2025/hash/727658ad24ba28e02dffd379bdc69448-Abstract-Conference.html
+
+## Fix pass 1 (arbitrator defects), each change with its basis
+1. **Truth-table type.** Digits are Inter Tight 800 at 24px, headers 800 at 16px, and the title "Truth Table" is 800 at 29px. Basis: the ref2 truth-table region (bold grotesk digits and title) and the NYCTA manual's single heavy-sans voice (https://archive.org/details/nycta-gs-manual).
+2. **Live row.** The full orange fill is gone. The live row now has a 6px orange left bar and orange digits on black. Basis: the rubric's single accent. Müller-Brockmann (Grid Systems, Niggli) calls for one dominant figure per field, so the wordmark stays the only large mass. #ff5a1f on #000 is about 7.0:1, which passes WCAG 1.4.3 (https://www.w3.org/TR/WCAG22/#contrast-minimum).
+3. **Wordmark baseline.** Raised 12px (top = r1 - 0.92em - 12px), so the g descender now crosses the rule by about 50px. Basis: ref1 row 01/02 boundary, where it crosses by about 48px.
+4. **OUT wire.** The lamp node moved to y=127, so its input handle is level with the AND output and the wire runs straight. Basis: ref1, where the XOR to OUT wire is a single straight run. Also Vignelli's rule of straight lines only (NYCTA manual).
+5. **Primary focus.** The "Logic" wordmark is the one dominant element on purpose. This mode has no single primary action, since the user wires and flips switches directly on the canvas. Basis: the ref1 hierarchy (wordmark about 400px against 12-13px labels) and Müller-Brockmann's contrast of scale as the organising principle. Carbon's type scale uses the same one-display-size rule (https://carbondesignsystem.com/elements/typography/overview/).
+6. **Status text.** Now #111 on #fff (about 18.9:1), uppercase, tracked 0.12em, mono 12px. Basis: WCAG 1.4.3, and it matches the ref1 row-03 label style ("LOGIC CIRCUIT EDITOR").

@@ -18,7 +18,7 @@ const VIEW = [
   { id: 's1', type: 'S', position: { x: 40, y: 80 }, data: {} },
   { id: 's2', type: 'S', position: { x: 40, y: 200 }, data: {} },
   { id: 'g1', type: 'G', position: { x: 260, y: 130 }, data: {} },
-  { id: 'l1', type: 'L', position: { x: 460, y: 140 }, data: {} },
+  { id: 'l1', type: 'L', position: { x: 460, y: 127 }, data: {} },
 ];
 
 let nextWire = 1;
@@ -99,7 +99,7 @@ export default function App() {
         </ReactFlow>
       </main>
       <aside className="cell c-side r2 truth" aria-label="Truth table">
-        <h2 className="label">Truth table</h2>
+        <h2 className="label">Truth Table</h2>
         <table>
           <thead><tr><th>#</th><th>A</th><th>B</th><th>OUT</th></tr></thead>
           <tbody>
