@@ -75,7 +75,7 @@ export default function App() {
       <div className="cell c-main r1" />
       <div className="cell c-side r1">
         <button className="gridtoggle" aria-pressed={showGrid} onClick={() => setShowGrid((g) => !g)}>
-          {showGrid ? 'HIDE GRID' : 'SHOW GRID'}
+          <small>View</small><span>{showGrid ? 'HIDE GRID' : 'SHOW GRID'}</span><span className="arrow" aria-hidden="true">&rarr;</span>
         </button>
       </div>
       <h1 className="wordmark" aria-label="Logic">Logic</h1>
@@ -111,8 +111,8 @@ export default function App() {
             ))}
           </tbody>
         </table>
-        </div>
         <p className="hint">Select a wire + Backspace to delete</p>
+        </div>
       </aside>
 
       <div className="cell c-margin r3"><span className="rownum">03</span></div>

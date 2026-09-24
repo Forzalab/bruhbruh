@@ -6,22 +6,23 @@
 
 /* Mode = token swap. Components read tokens, never the mode. */
 :root[data-mode='logic'] {
-  --bg: #ffffff;
+  --bg: #f1ece1; /* warm paper (hand D) */
   --ink: #000000;
   --rule: #1a1a1a;
   --mute: #6b6b6b;
   --grid: #d9d9d9;
-  --wire-0: #000000;
+  --wire-0: #8a857b; /* logic-0: grey 2px */
+  --wire-hi: #000000; /* logic-1: black 3.5px */
   --wire-1: #ff5a1f; /* signal orange: the only accent */
   --on-ink: #ffffff;
   --font: 'Inter Tight', 'Helvetica Neue', 'Liberation Sans', Arial, sans-serif;
   --mono: 'JetBrains Mono', 'DejaVu Sans Mono', ui-monospace, monospace;
   --margin: 46px;          /* row-numeral margin column */
-  --side: 30%;             /* right column = 0.30 of width */
-  --r1: 40.5%;             /* header row = 0.405 of height */
+  --side: 29.8%;           /* ref1 x=1022/1456 */
+  --r1: 38.9%;             /* ref1 rule y=327/840 */
   --r3: 68px;
   --hair: 1px;
-  --stroke: 2.5px;
+  --stroke: 3px;
 }
 
 * { box-sizing: border-box; }
@@ -45,37 +46,39 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .r2 .rownum { top: 16px; }
 .r3 .rownum { top: 50%; transform: translateY(-50%); }
 
-.label, .gridtoggle {
-  font: 500 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; margin: 0;
+.label { font: 500 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; margin: 0; }
+.gridtoggle { /* one dominant primary action: GOV.UK button; NYCTA white-on-black sign panel */
+  position: absolute; top: 22px; right: 22px; width: 232px; height: 132px; background: var(--ink); color: var(--on-ink); border: 0;
+  font: 800 30px/1 var(--font); letter-spacing: -0.01em; text-align: left; padding: 16px 18px; cursor: pointer;
+  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start;
 }
-.gridtoggle {
-  position: absolute; top: 22px; right: 18px; background: none; border: 0; padding: 4px 0;
-  color: var(--ink); cursor: pointer;
-}
+.gridtoggle small { font: 500 12px var(--mono); letter-spacing: .12em; }
+.gridtoggle .arrow { font-size: 44px; line-height: .8; }
+.gridtoggle[aria-pressed='true'] { background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 4px var(--ink); }
+.gridtoggle:focus-visible { outline: 4px solid var(--wire-1); outline-offset: -8px; }
 .gridtoggle:focus-visible, .switch:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
 /* Giant wordmark: sits in row 01 and its descender breaks into row 02. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.92em - 2px);
+  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.86em - 18px);
   font: 800 25.8vw/1 var(--font); letter-spacing: -0.05em; color: var(--ink);
-  font-size: min(27vw, 400px);
+  font-size: min(24.5vw, 356px);
 }
 
 .canvas { background: var(--bg); }
 .react-flow { background: transparent; }
 
-/* Truth table: black block, white mono digits. */
-.truth { background: var(--bg); padding: 18px; display: flex; flex-direction: column; }
-.truth .label { font: 800 29px/1 var(--font); letter-spacing: -0.01em; text-transform: uppercase; letter-spacing: .01em; color: var(--on-ink); }
-.truth .block { background: var(--ink); color: var(--on-ink); padding: 20px 16px 8px; }
-.truth table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: var(--mono); }
-.truth th { font: 800 16px var(--font); letter-spacing: .04em; text-align: left; padding: 0 12px 16px; border-bottom: var(--hair) solid #fff; }
-.truth td { font: 800 24px var(--font); padding: 11px 12px; border-bottom: var(--hair) solid #2e2e2e; font-variant-numeric: tabular-nums; }
+/* Truth table: black block bleeding to the cell's module lines (Müller-Brockmann). */
+.truth { background: var(--ink); color: var(--on-ink); padding: 22px 24px 18px; display: flex; flex-direction: column; }
+.truth .block { display: contents; }
+.truth .label { font: 500 12px var(--mono); letter-spacing: .12em; color: var(--on-ink); }
+.truth table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+.truth th { font: 700 13px var(--mono); letter-spacing: .08em; text-align: left; padding: 0 0 14px; border-bottom: 2px solid #fff; }
+.truth td { font: 800 30px var(--font); padding: 14px 0; border-bottom: var(--hair) solid #444; font-variant-numeric: tabular-nums; }
 .truth th:last-child, .truth td:last-child { text-align: right; }
 .truth tr.live td { color: var(--wire-1); }
-.truth tr.live td:first-child { box-shadow: inset 6px 0 0 var(--wire-1); padding-left: 18px; }
-.truth .hint { margin-top: auto; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #111; }
+.truth .hint { margin: auto 0 0; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #bbb; }
 
 .status { display: flex; align-items: center; gap: 32px; padding: 0 14px; }
 .status .msg { font: 500 12px var(--mono); color: #111; text-transform: uppercase; letter-spacing: .12em; }
@@ -83,8 +86,8 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .status.bad .msg::before { content: '\25A0  '; color: var(--wire-1); }
 
 /* Wires + handles */
-.react-flow__edge-path { stroke: var(--wire-0); stroke-width: var(--stroke); }
-.react-flow__edge.on .react-flow__edge-path { stroke: var(--wire-1); stroke-width: 3; }
+.react-flow__edge-path { stroke: var(--wire-0); stroke-width: 2; }
+.react-flow__edge.on .react-flow__edge-path { stroke: var(--wire-hi); stroke-width: 3.5; }
 .react-flow__handle { width: 8px; height: 8px; min-width: 0; min-height: 0; background: var(--ink); border: 0; border-radius: 50%; }
 
 .node-tag { display: block; text-align: center; font: 800 15px var(--font); letter-spacing: .04em; margin-bottom: 6px; }
@@ -95,12 +98,12 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
   display: grid; cursor: pointer;
 }
 .switch-core { border: var(--stroke) solid var(--ink); background: var(--bg); }
-.switch.on .switch-core { background: var(--wire-1); border-color: var(--wire-1); }
+.switch.on .switch-core { background: var(--ink); } /* accent reserved for lamp + live row */
 .sw-wrap .react-flow__handle { top: auto; bottom: 18px; }
 
 .gate { position: relative; width: 104px; height: 80px; }
 .gate svg { display: block; overflow: visible; }
-.gate svg path { fill: var(--bg); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
+.gate svg path { fill: none; stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
 .gate-label { position: absolute; left: 0; width: 76px; top: 50%; transform: translateY(-50%); text-align: center; font: 800 17px var(--font); letter-spacing: .02em; }
 
 .lamp-wrap { position: relative; }
@@ -111,3 +114,16 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* Interaction states — instant, no transitions (Carbon interaction states; WCAG 2.4.7 focus visible). */
+.gridtoggle:hover { background: #262626; }
+.gridtoggle:active { background: var(--ink); box-shadow: inset 0 0 0 4px var(--wire-1); }
+.switch:hover { box-shadow: 0 0 0 3px var(--ink); }
+.switch:active { background: var(--ink); }
+.switch:active .switch-core { background: var(--bg); }
+.react-flow__handle:hover, .react-flow__handle.connectingfrom { box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--ink); }
+.react-flow__handle.connectingto.valid { background: var(--wire-1); box-shadow: 0 0 0 4px var(--bg), 0 0 0 7px var(--wire-1); }
+.react-flow__connection-path { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 4; }
+.react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: 8 4; }
+.status.bad { background: var(--ink); }
+.status.bad .label, .status.bad .msg { color: var(--on-ink); }
