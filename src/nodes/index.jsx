@@ -2,7 +2,7 @@ import { Handle as RFHandle, Position } from '@xyflow/react';
 import { switchGeom, andGeom, lampGeom } from './geom.js';
 
 const SWG = switchGeom(), ANDG = andGeom(), LAMPG = lampGeom();
-const HB = 18; // handle box centred on the knob chord: wire end lands 9px out = 1px inside the knob tip (tip = 10)
+const HB = 20; // handle box centred on the knob chord: the wire end lands 10px out, inside the knob ink ring (6..12)
 
 // Every port is a real tab stop (WCAG 2.1.1 / 2.4.7); Enter or Space wires it.
 // The box is centred on the knob, so the edge endpoint sits on the knob's centreline (y exact).
@@ -30,7 +30,7 @@ export function SwitchNode({ id, data }) {
   return (
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
       <Shape g={SWG} on={data.on} />
-      <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={() => data.onToggle()} aria-pressed={!!data.on}
+      <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} type="source" position={Position.Right} id="out" />
     </div>

@@ -113,7 +113,7 @@ export default function App() {
       <div className="cell c-side r1">
         <button className="disk" aria-pressed={showGrid} aria-label={showGrid ? 'Hide grid' : 'Show grid'} title={showGrid ? 'Hide grid' : 'Show grid'}
           onClick={() => setShowGrid((g) => !g)}>
-          <svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="M-37 0H30M8 -24L32 0L8 24" /></svg>
+          <svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="M-36.5 0H26M-0.6 -27.9L27.3 0L-0.6 27.9" /></svg>
         </button>
         <p className="lockup">Circuit<br />editor</p>
       </div>
@@ -159,10 +159,10 @@ export default function App() {
       </footer>
       <div className="cell c-side r3 help">
         <p>
-          <svg className="mouse" viewBox="0 0 8 12" aria-hidden="true">
-            <rect x=".7" y=".7" width="6.6" height="10.6" rx="3.3" />
-            <path className="q" d="M4 .7A3.3 3.3 0 0 0 .7 4v1.4H4Z" />
-            <path d="M4 .7V5.4M.7 5.4H7.3" />
+          <svg className="mouse" width="14" height="20" viewBox="0 0 14 20" aria-hidden="true">
+            <path className="q" d="M7 1A6 6 0 0 0 1 7V9H7Z" />
+            <rect x="1" y="1" width="12" height="18" rx="6" />
+            <path d="M7 1V9M1 9H13" />
           </svg>
           <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag to wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
         </p>

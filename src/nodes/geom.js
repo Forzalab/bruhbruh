@@ -5,7 +5,7 @@
 export const STROKE = 6;         // outline + wire weight
 export const GAP = 6;            // paper gap between outline and orange inset
 export const INSET = STROKE / 2 + GAP; // centreline -> inset contour distance (9)
-export const KNOB = 7;           // knob centreline radius (outer Ø = 20, bump = 10 past the centreline)
+export const KNOB = 9;           // knob centreline radius: ink reaches 12 from the outline centreline = a 9px bump past the 3px outer ink
 export const PAD = 12;           // svg padding around the outline centreline
 
 const f = (n) => +n.toFixed(3);
