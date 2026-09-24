@@ -47,6 +47,19 @@ export default function App() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  // Pan/zoom are the user's (React Flow docs: Viewport). A resize rescales the current viewport by zoom/zoom_prev
+  // instead of resetting it, so the user's own pan and zoom survive (React Flow docs: getViewport / setViewport).
+  const [rf, setRf] = useState(null);
+  const prevZoom = useRef(null);
+  useLayoutEffect(() => {
+    if (!rf) return;
+    if (prevZoom.current == null) rf.setViewport({ x: 0, y: 0, zoom });
+    else if (prevZoom.current !== zoom) {
+      const v = rf.getViewport(), k = zoom / prevZoom.current;
+      rf.setViewport({ x: v.x * k, y: v.y * k, zoom: v.zoom * k });
+    }
+    prevZoom.current = zoom;
+  }, [rf, zoom]);
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
@@ -131,7 +144,7 @@ export default function App() {
           onClick={() => setShowGrid((g) => !g)}>
           <svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="M-36.5 0H26M-0.6 -27.9L27.3 0L-0.6 27.9" /></svg>
         </button>
-        <p className="lockup">Circuit<br />editor</p>
+        <p className="lockup">Circuit<br /> editor</p>
       </div>
       <h1 className="wordmark" aria-label="Logic"><span className="sr">Logic</span><span aria-hidden="true"><span className="wL">L</span><span className="wo">o</span><span className="wg">g</span><span className="wi">i</span><span className="wc">c</span></span></h1>
 
@@ -149,12 +162,10 @@ export default function App() {
           onConnect={onConnect}
           snapToGrid
           snapGrid={[20, 20]}
-          viewport={{ x: 0, y: 0, zoom }}
+          onInit={setRf}
+          defaultViewport={{ x: 0, y: 0, zoom }}
           minZoom={0.25}
           maxZoom={4}
-          panOnDrag={false}
-          zoomOnScroll={false}
-          zoomOnPinch={false}
           proOptions={{ hideAttribution: true }}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
@@ -163,7 +174,7 @@ export default function App() {
       <aside className="cell c-side r2 truth" aria-label="Truth table">
         <h2 className="label">Truth table</h2>
         <table>
-          <thead><tr><th><span className="hN">#</span></th><th><span className="hA">A</span></th><th><span className="hB">B</span></th><th aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
+          <thead><tr><th scope="col"><span className="hN">#</span></th><th scope="col"><span className="hA">A</span></th><th scope="col"><span className="hB">B</span></th><th scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
           <tbody>
             {rows.map(([x, y], i) => (
               <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
