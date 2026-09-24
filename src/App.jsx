@@ -15,10 +15,11 @@ const START = {
 };
 
 const VIEW = [
-  { id: 's1', type: 'S', position: { x: 40, y: 80 }, data: {} },
-  { id: 's2', type: 'S', position: { x: 40, y: 200 }, data: {} },
-  { id: 'g1', type: 'G', position: { x: 260, y: 130 }, data: {} },
-  { id: 'l1', type: 'L', position: { x: 460, y: 127 }, data: {} },
+  // Canvas origin = (55, 254) at 1440x810. Switch knobs at y 392/592, gate + lamp centred on 492.
+  { id: 's1', type: 'S', position: { x: 26, y: 95 }, data: {} },
+  { id: 's2', type: 'S', position: { x: 26, y: 295 }, data: {} },
+  { id: 'g1', type: 'G', position: { x: 403, y: 184 }, data: {} },
+  { id: 'l1', type: 'L', position: { x: 736, y: 181 }, data: {} },
 ];
 
 let nextWire = 1;
@@ -29,7 +30,7 @@ export default function App() {
   const [showGrid, setShowGrid] = useState(false);
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
-  const [status, setStatus] = useState({ text: 'Drag from a dot to a dot to wire. Click a switch to flip it. Double-click a node to delete.', bad: false });
+  const [status, setStatus] = useState({ text: '', bad: false });
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
@@ -106,12 +107,11 @@ export default function App() {
       <div className="cell c-margin r1"><span className="rownum">01</span></div>
       <div className="cell c-main r1" />
       <div className="cell c-side r1">
-        <button className="primary" aria-pressed={showGrid} onClick={() => setShowGrid((g) => !g)}>
-          <span className="disk" aria-hidden="true">
-            <svg viewBox="0 0 56 56"><path d="M8 28 H44 M30 13 L45 28 L30 43" fill="none" stroke="#fff" strokeWidth="7" strokeLinecap="square" /></svg>
-          </span>
-          <span className="txt">{showGrid ? 'Hide grid' : 'Show grid'}<span className="sub">Snap 20 px</span></span>
+        <button className="disk" aria-pressed={showGrid} aria-label={showGrid ? 'Hide grid' : 'Show grid'} title={showGrid ? 'Hide grid' : 'Show grid'}
+          onClick={() => setShowGrid((g) => !g)}>
+          <svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="M-37 0H30M8 -24L32 0L8 24" /></svg>
         </button>
+        <p className="lockup">Circuit<br />editor</p>
       </div>
       <h1 className="wordmark" aria-label="Logic">Logic</h1>
 
@@ -129,8 +129,7 @@ export default function App() {
           onConnect={onConnect}
           snapToGrid
           snapGrid={[20, 20]}
-          fitView
-          fitViewOptions={{ padding: 0.35 }}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
           proOptions={{ hideAttribution: true }}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
@@ -148,14 +147,22 @@ export default function App() {
             ))}
           </tbody>
         </table>
-        <p className="hint">Select wire or node + Delete; double-click node</p>
       </aside>
 
       <div className="cell c-margin r3"><span className="rownum">03</span></div>
       <footer className="cell c-main r3 status">
         <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
-      <div className="cell c-side r3" />
+      <div className="cell c-side r3 help">
+        <p>
+          <svg className="mouse" viewBox="0 0 8 12" aria-hidden="true">
+            <rect x=".7" y=".7" width="6.6" height="10.6" rx="3.3" />
+            <path className="q" d="M4 .7A3.3 3.3 0 0 0 .7 4v1.4H4Z" />
+            <path d="M4 .7V5.4M.7 5.4H7.3" />
+          </svg>
+          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag to wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
+        </p>
+      </div>
     </div>
   );
 }

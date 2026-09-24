@@ -1,164 +1,124 @@
 @import '@fontsource/inter-tight/500.css';
 @import '@fontsource/inter-tight/700.css';
 @import '@fontsource/inter-tight/800.css';
-@import '@fontsource/jetbrains-mono/500.css';
-@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/inter-tight/900.css';
 
-/* Mode = token swap. Components read tokens, never the mode. */
-:root[data-mode='logic'] {
-  --bg: #ffffff;
-  --ink: #000000;
-  --rule: #1a1a1a;
-  --mute: #6b6b6b;
-  --grid: #d9d9d9;
-  --wire-0: #000000;
-  --wire-1: #ff5a1f; /* signal orange: the only accent */
-  --on-ink: #ffffff;
-  --font: 'Inter Tight', 'Helvetica Neue', 'Liberation Sans', Arial, sans-serif;
-  --mono: 'JetBrains Mono', 'DejaVu Sans Mono', ui-monospace, monospace;
-  --margin: 46px;          /* row-numeral margin column */
-  --side: 30%;             /* right column = 0.30 of width */
-  --r1: 38.9%;             /* RUBRIC measured: ref1 rule y327/840 */             /* header row = 0.405 of height */
-  --r3: 68px;
-  --hair: 1px;
-  --stroke: 3px;
+/* Swiss grid, light only. Tokens first; components read tokens.
+   Grid: Müller-Brockmann, Grid Systems in Graphic Design (1981): fixed field proportions,
+   one rule weight, numbered fields. Measured targets in scratchpad/r5/I-SPEC.md. */
+:root {
+  color-scheme: light;
+  --paper: #ffffff;
+  --ink: #111111;
+  --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
+  --grid: #e2e2e2;
+  --font: 'Inter Tight', 'Helvetica Neue', Arial, sans-serif;
+  --capr: 0.7273;          /* Inter Tight cap height / em */
+  --rule: 2px;
+  --stroke: 6px;
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+/* Composited, non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
+.app { will-change: transform; }
 
+/* 1440x810 target: rules at x 53/959, y 252/741, 2px, outer frame 2px. fr = px at 1440 x 810. */
 .app {
   position: relative; height: 100%; overflow: hidden;
   display: grid;
-  grid-template-columns: var(--margin) 1fr var(--side);
-  grid-template-rows: var(--r1) 1fr var(--r3);
-  border: var(--hair) solid var(--rule);
+  grid-template-columns: 53fr 906fr 477fr;
+  grid-template-rows: 252fr 489fr 65fr;
+  border: var(--rule) solid var(--ink);
 }
-.cell { border-right: var(--hair) solid var(--rule); border-bottom: var(--hair) solid var(--rule); min-width: 0; min-height: 0; position: relative; }
+.cell { position: relative; min-width: 0; min-height: 0; border-right: var(--rule) solid var(--ink); border-bottom: var(--rule) solid var(--ink); }
 .c-side { border-right: 0; }
 .r3 { border-bottom: 0; }
-.c-margin.r1 { }
 
-.rownum { position: absolute; left: 14px; font: 500 13px var(--mono); letter-spacing: .04em; }
-.r1 .rownum { bottom: 14px; }
-.r2 .rownum { top: 20px; }
+/* Field numerals: bold, cap 12px, set in the gutter (Müller-Brockmann: numbered fields). */
+.rownum { position: absolute; left: 17px; font: 700 16.5px/1 var(--font); letter-spacing: 0; }
+.r1 .rownum { bottom: 20px; }
+.r2 .rownum { top: 26px; }
 .r3 .rownum { top: 50%; transform: translateY(-50%); }
 
-.label {
-  font: 500 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; margin: 0;
-}
-
-/* Giant wordmark: sits in row 01 and its descender breaks into row 02. */
+/* Wordmark: black grotesk, L cap = 24vh, tracking -0.045em; the g breaks the row rule, drawn above the canvas. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.97em + 38px);
-  font: 800 25.8vw/1 var(--font); letter-spacing: -0.05em; color: var(--ink);
-  font-size: min(26.1vw, 375px); /* L cap 271px = 33.5% of 810 (RUBRIC measured) */
+  font: 900 calc(24vh / var(--capr))/1 var(--font); letter-spacing: -0.045em; color: var(--ink);
+  left: 59px; top: -10px;
 }
 
-.canvas { background: var(--bg); }
+/* Top-right: ink disk + two-line caps lockup. */
+.disk { position: absolute; left: 25px; top: 74px; width: 153px; height: 153px; border-radius: 50%; border: 0; padding: 0;
+  background: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.disk svg { width: 100px; height: 100px; overflow: visible; }
+.disk path { fill: none; stroke: var(--paper); stroke-width: 9; stroke-linecap: butt; stroke-linejoin: miter; }
+.disk:hover { background: #000; box-shadow: 0 0 0 4px var(--paper), 0 0 0 7px var(--ink); }
+.disk[aria-pressed='true'] svg { transform: rotate(90deg); }
+.lockup { position: absolute; left: 206px; top: 96px; margin: 0; font: 900 58px/52px var(--font); letter-spacing: -0.02em; text-transform: uppercase; }
+
+/* Canvas */
+.canvas { background: var(--paper); }
 .react-flow { background: transparent; }
+.react-flow__pane { cursor: default; }
 
-/* Truth table: hairline-ruled rows on paper, flush to the cell (ref1 x1040-1436). */
-.truth { display: flex; flex-direction: column; padding: 0; }
-.truth .label { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; color: var(--ink); padding: 20px 24px 0; }
-.truth table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-.truth th { font: 800 20px var(--font); text-align: left; padding: 0 24px 12px; border-bottom: var(--hair) solid var(--rule); }
-.truth td { font: 800 24px/1 var(--font); height: 57px; padding: 0 24px; border-bottom: var(--hair) solid var(--rule); font-variant-numeric: tabular-nums; }
-.truth th:last-child, .truth td:last-child { text-align: right; }
-.truth tr.live td { color: var(--wire-1); }
-.truth tr.live td:first-child { box-shadow: inset 4px 0 0 var(--wire-1); }
-.truth .hint { margin: auto 24px 16px; font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #111; }
+/* Components: one 6px ink outline, paper fill, lit = orange true-inset path. Outline never orange. */
+.shape { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.shape .body { fill: var(--paper); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-miterlimit: 10; }
+.shape .lit { fill: var(--one); stroke: none; }
+.node { position: relative; }
+.switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.sw:has(.switch:hover) .body { fill: #ececec; }
+.sw:has(.switch:active) .body { fill: #d6d6d6; }
 
-/* The one primary action (ref2 arrow-in-circle). */
-.primary { position: absolute; left: 24px; bottom: 24px; display: flex; align-items: center; gap: 20px;
-  background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink); text-align: left; }
-.primary .disk { width: 110px; height: 110px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; flex: none; }
-.primary .disk svg { width: 56px; height: 56px; }
-.primary .txt { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; }
-.primary .sub { display: block; margin-top: 8px; font: 500 12px var(--mono); letter-spacing: .1em; }
-.primary:focus-visible .disk, .switch:focus-visible, .react-flow__handle:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 2px; }
-.primary:focus-visible { outline: 0; }
-.primary[aria-pressed="true"] .disk svg { transform: rotate(90deg); }
+/* Ports: invisible 16px boxes centred on the knob; the knob itself is part of the outline path. */
+.react-flow__handle.port { position: absolute; z-index: 1; transform: none; right: auto; bottom: auto; min-width: 0; min-height: 0;
+  background: transparent; border: 0; border-radius: 0; cursor: crosshair; }
+.react-flow__handle.port:hover, .react-flow__handle.port.connectingto { outline: 2px solid var(--ink); outline-offset: 1px; }
+.react-flow__handle.port.picked { outline: 3px solid var(--ink); outline-offset: 1px; }
 
-.status { display: flex; align-items: center; gap: 32px; padding: 0 14px; }
-.status .msg { font: 500 12px var(--mono); color: #111; text-transform: uppercase; letter-spacing: .12em; }
+/* Wires: 6px, orthogonal, ink = 0, orange = 1. */
+.react-flow__edge-path { stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-linecap: butt; }
+.react-flow__edge.on .react-flow__edge-path { stroke: var(--one); }
+.react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: 12 6; }
+.react-flow__connection-path { stroke: var(--ink); stroke-width: 2px; stroke-dasharray: 6 4; }
 
-/* Wires + handles */
-.react-flow__edge-path { stroke: var(--wire-0); stroke-width: var(--stroke); }
-.react-flow__edge.on .react-flow__edge-path { stroke: var(--wire-1); stroke-width: 3; }
-.react-flow__handle { width: 8px; height: 8px; min-width: 0; min-height: 0; background: var(--ink); border: 0; border-radius: 50%; }
-
-.node-tag { display: block; text-align: center; font: 800 15px var(--font); letter-spacing: .04em; margin-bottom: 6px; }
-
-.sw-wrap { position: relative; }
-.switch {
-  width: 44px; height: 44px; padding: 7px; border: var(--stroke) solid var(--ink); background: var(--bg);
-  display: grid; cursor: pointer;
-}
-.switch-core { border: var(--stroke) solid var(--ink); background: var(--bg); }
-.switch.on .switch-core { background: var(--wire-1); border-color: var(--wire-1); }
-.sw-wrap .react-flow__handle { top: auto; bottom: 18px; }
-
-.gate { position: relative; width: 104px; height: 80px; }
-.gate svg { display: block; overflow: visible; }
-.gate svg path { fill: var(--ink); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
-.gate-label { position: absolute; left: 0; width: 76px; top: 50%; transform: translateY(-50%); text-align: center; font: 800 16px var(--font); letter-spacing: .06em; color: var(--on-ink); }
-
-.lamp-wrap { position: relative; }
-.lamp { width: 44px; height: 44px; border-radius: 50%; border: var(--stroke) solid var(--ink); background: var(--bg); }
-.lamp.on { background: var(--wire-1); }
-.lamp-wrap .react-flow__handle { top: auto; bottom: 18px; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
-}
-
-/* Interaction states: instant, no transitions (WCAG 2.4.7 focus visible; Carbon interaction states). */
-.switch:hover { background: #ececec; }
-.switch:active { background: var(--ink); }
-.switch:active .switch-core { border-color: var(--on-ink); }
-.primary:hover .disk { outline: 3px solid var(--ink); outline-offset: 4px; }
-.primary:hover .txt { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
-.primary:active .disk { background: #333; }
-.react-flow__handle { cursor: crosshair; }
-.react-flow__handle:hover { box-shadow: 0 0 0 4px var(--ink); }
-.react-flow__connection-path { stroke: var(--ink); stroke-width: 3px; stroke-dasharray: 6 4; }
-.react-flow__handle.connectingto { box-shadow: 0 0 0 4px var(--ink); }
-.react-flow__handle.connectingto.valid { background: var(--bg); box-shadow: 0 0 0 3px var(--ink); width: 14px; height: 14px; }
-.react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: 8 4; }
-
-
-/* Table rules inset 24px both sides (RUBRIC 7): rules drawn on an inset pseudo-free approach via margin. */
-.truth table { width: calc(100% - 48px); margin-left: 24px; margin-right: 24px; }
-.truth th:first-child, .truth td:first-child { padding-left: 0; }
-.truth th:last-child, .truth td:last-child { padding-right: 0; }
-.truth tr.live td:first-child { box-shadow: none; }
-
-/* Stronger hover (RUBRIC 12a): full inversion / ring, instant. */
-.switch:hover { background: var(--ink); }
-.switch:hover .switch-core { border-color: var(--on-ink); }
-.switch.on:hover .switch-core { border-color: var(--wire-1); }
-.react-flow__handle:hover { width: 14px; height: 14px; background: var(--bg); box-shadow: 0 0 0 3px var(--ink); }
-.react-flow__node-G:hover .gate svg path { stroke-width: 7px; }
-.react-flow__node-G:hover .gate svg { outline: 0; }
+/* Selection + focus: ink only (WCAG 2.2 SC 2.4.7, 2.4.11; 18.9:1 on paper). */
+.react-flow .react-flow__node.selected { outline: 2px dashed var(--ink); outline-offset: -2px; }
+.react-flow .react-flow__node:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+.react-flow__handle.port:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.disk:focus-visible { outline: 3px solid var(--ink); outline-offset: 5px; }
 .react-flow__node { cursor: grab; }
 
-/* Inline rejection beside the failed port (GOV.UK error message; WCAG 3.3.1). */
-.reject { position: absolute; right: calc(100% + 16px); transform: translateY(-50%); margin: 0; white-space: nowrap;
-  padding: 4px 0 4px 10px; border-left: 4px solid var(--wire-1); background: var(--bg);
-  font: 700 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); z-index: 10; }
+/* Inline rejection beside the failed port (GOV.UK Design System: error message next to the field). */
+.reject { position: absolute; right: calc(100% + 4px); transform: translateY(-50%); margin: 0; white-space: nowrap; z-index: 10;
+  padding: 3px 0 3px 10px; border-left: 4px solid var(--ink); background: var(--paper);
+  font: 700 14px/1.2 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
 
-/* R4-G ------------------------------------------------------------ */
-/* Focus: 3px accent ring on every tab stop (WCAG 2.2 SC 2.4.7, 2.4.11, 2.4.13). */
-.react-flow .react-flow__node:focus-visible { outline: 3px solid var(--wire-1) !important; outline-offset: 4px; }
-.react-flow__handle:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 3px; width: 14px; height: 14px; }
-.react-flow__handle.picked { background: var(--wire-1); width: 14px; height: 14px; }
-/* Rejection in ref2 grotesk caps voice (RUBRIC 3). */
-.reject { font: 800 14px/1.2 var(--font); letter-spacing: 0; text-transform: uppercase; }
-.status .msg.bad { font: 800 14px var(--font); letter-spacing: 0; color: var(--ink); border-left: 4px solid var(--wire-1); padding-left: 10px; }
-/* Header rule heavier than body hairlines (RUBRIC 8; Ruder, Typographie: weight contrast). */
-.truth th { border-bottom: 3px solid var(--ink); }
-/* Wordmark scaled 0.92 so the "g" descender crosses the row rule by ~48px (ref1) while the i-dot keeps >=20px (RUBRIC 2 trade-off, logged). */
-.wordmark { font-size: min(24vw, 345px); top: calc(var(--r1) - 0.97em + 9px); }
+/* Truth table: block centred in row 02 (Tony delta 3). */
+.truth { display: flex; flex-direction: column; justify-content: center; padding: 0 20px; }
+.truth .label { margin: 0 0 0 4px; font: 800 38px/28px var(--font); text-transform: uppercase; letter-spacing: -0.01em; }
+.truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 32px; }
+.truth th { font: 800 30px/22px var(--font); padding: 0 0 17px; text-align: center; border-bottom: var(--rule) solid var(--ink); }
+.truth td { font: 800 34px/1 var(--font); height: 68px; padding: 0; text-align: center; border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums; }
+.truth th:first-child, .truth td:first-child { text-align: left; padding-left: 8px; }
+.truth tr.live td { background: var(--one); color: var(--paper); }
+
+/* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
+.status { display: flex; align-items: center; padding: 0 16px; }
+.status .msg { font: 500 16.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.status .msg.bad { font-weight: 700; border-left: 4px solid var(--ink); padding-left: 10px; }
+
+.help { display: flex; align-items: center; justify-content: flex-end; padding: 0 16px 0 8px; }
+.help p { margin: 0; white-space: nowrap; font: 500 16.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.help i { font-style: normal; margin: 0 .45em; }
+/* Mouse icon: inline SVG in em units; height = cap height exactly; stroke = Medium stem (~0.085em). */
+.help .mouse { display: inline-block; height: calc(var(--capr) * 1em); width: calc(var(--capr) * 1em * 8 / 12); vertical-align: baseline; margin-right: .45em; overflow: visible; }
+.help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.help .mouse .q { fill: var(--ink); stroke: none; }
+/* BKSP chip: square corners, 1.5px ink border, outer height = cap height (delta 6), label Medium. */
+.help kbd { display: inline-block; height: 12px; padding: 0 3px; vertical-align: baseline; border: 1.5px solid var(--ink); border-radius: 0; overflow: hidden;
+  font: 500 8.5px/9px var(--font); letter-spacing: .06em; margin-right: .4em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
