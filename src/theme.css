@@ -21,7 +21,7 @@
   --r1: 40.5%;             /* header row = 0.405 of height */
   --r3: 68px;
   --hair: 1px;
-  --stroke: 2.5px;
+  --stroke: 3px;
 }
 
 * { box-sizing: border-box; }
@@ -38,44 +38,48 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .cell { border-right: var(--hair) solid var(--rule); border-bottom: var(--hair) solid var(--rule); min-width: 0; min-height: 0; position: relative; }
 .c-side { border-right: 0; }
 .r3 { border-bottom: 0; }
-.c-margin.r1 { border-right: 3px double var(--rule); }
+.c-margin.r1 { }
 
-.rownum { position: absolute; left: 14px; font: 500 12px var(--mono); letter-spacing: .04em; }
+.rownum { position: absolute; left: 14px; font: 500 13px var(--mono); letter-spacing: .04em; }
 .r1 .rownum { bottom: 14px; }
-.r2 .rownum { top: 16px; }
+.r2 .rownum { top: 20px; }
 .r3 .rownum { top: 50%; transform: translateY(-50%); }
 
-.label, .gridtoggle {
+.label {
   font: 500 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; margin: 0;
 }
-.gridtoggle {
-  position: absolute; top: 22px; right: 18px; background: none; border: 0; padding: 4px 0;
-  color: var(--ink); cursor: pointer;
-}
-.gridtoggle:focus-visible, .switch:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
 /* Giant wordmark: sits in row 01 and its descender breaks into row 02. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.92em - 2px);
+  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.97em + 17px);
   font: 800 25.8vw/1 var(--font); letter-spacing: -0.05em; color: var(--ink);
-  font-size: min(27vw, 400px);
+  font-size: min(25.4vw, 366px);
 }
 
 .canvas { background: var(--bg); }
 .react-flow { background: transparent; }
 
-/* Truth table: black block, white mono digits. */
-.truth { background: var(--bg); padding: 18px; display: flex; flex-direction: column; }
-.truth .label { font: 800 29px/1 var(--font); letter-spacing: -0.01em; text-transform: uppercase; letter-spacing: .01em; color: var(--on-ink); }
-.truth .block { background: var(--ink); color: var(--on-ink); padding: 20px 16px 8px; }
-.truth table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: var(--mono); }
-.truth th { font: 800 16px var(--font); letter-spacing: .04em; text-align: left; padding: 0 12px 16px; border-bottom: var(--hair) solid #fff; }
-.truth td { font: 800 24px var(--font); padding: 11px 12px; border-bottom: var(--hair) solid #2e2e2e; font-variant-numeric: tabular-nums; }
+/* Truth table: hairline-ruled rows on paper, flush to the cell (ref1 x1040-1436). */
+.truth { display: flex; flex-direction: column; padding: 0; }
+.truth .label { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; color: var(--ink); padding: 20px 24px 0; }
+.truth table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+.truth th { font: 800 20px var(--font); text-align: left; padding: 0 24px 12px; border-bottom: var(--hair) solid var(--rule); }
+.truth td { font: 800 24px/1 var(--font); height: 57px; padding: 0 24px; border-bottom: var(--hair) solid var(--rule); font-variant-numeric: tabular-nums; }
 .truth th:last-child, .truth td:last-child { text-align: right; }
 .truth tr.live td { color: var(--wire-1); }
-.truth tr.live td:first-child { box-shadow: inset 6px 0 0 var(--wire-1); padding-left: 18px; }
-.truth .hint { margin-top: auto; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #111; }
+.truth tr.live td:first-child { box-shadow: inset 4px 0 0 var(--wire-1); }
+.truth .hint { margin: auto 24px 16px; font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #111; }
+
+/* The one primary action (ref2 arrow-in-circle). */
+.primary { position: absolute; left: 24px; bottom: 24px; display: flex; align-items: center; gap: 20px;
+  background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink); text-align: left; }
+.primary .disk { width: 110px; height: 110px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; flex: none; }
+.primary .disk svg { width: 56px; height: 56px; }
+.primary .txt { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; }
+.primary .sub { display: block; margin-top: 8px; font: 500 12px var(--mono); letter-spacing: .1em; }
+.primary:focus-visible, .switch:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+.primary[aria-pressed="true"] .disk svg { transform: rotate(90deg); }
 
 .status { display: flex; align-items: center; gap: 32px; padding: 0 14px; }
 .status .msg { font: 500 12px var(--mono); color: #111; text-transform: uppercase; letter-spacing: .12em; }
@@ -100,8 +104,8 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 
 .gate { position: relative; width: 104px; height: 80px; }
 .gate svg { display: block; overflow: visible; }
-.gate svg path { fill: var(--bg); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
-.gate-label { position: absolute; left: 0; width: 76px; top: 50%; transform: translateY(-50%); text-align: center; font: 800 17px var(--font); letter-spacing: .02em; }
+.gate svg path { fill: var(--ink); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
+.gate-label { position: absolute; left: 0; width: 76px; top: 50%; transform: translateY(-50%); text-align: center; font: 800 16px var(--font); letter-spacing: .06em; color: var(--on-ink); }
 
 .lamp-wrap { position: relative; }
 .lamp { width: 44px; height: 44px; border-radius: 50%; border: var(--stroke) solid var(--ink); background: var(--bg); }

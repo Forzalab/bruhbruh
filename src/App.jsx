@@ -74,8 +74,11 @@ export default function App() {
       <div className="cell c-margin r1"><span className="rownum">01</span></div>
       <div className="cell c-main r1" />
       <div className="cell c-side r1">
-        <button className="gridtoggle" aria-pressed={showGrid} onClick={() => setShowGrid((g) => !g)}>
-          {showGrid ? 'HIDE GRID' : 'SHOW GRID'}
+        <button className="primary" aria-pressed={showGrid} onClick={() => setShowGrid((g) => !g)}>
+          <span className="disk" aria-hidden="true">
+            <svg viewBox="0 0 56 56"><path d="M8 28 H44 M30 13 L45 28 L30 43" fill="none" stroke="#fff" strokeWidth="7" strokeLinecap="square" /></svg>
+          </span>
+          <span className="txt">{showGrid ? 'Hide grid' : 'Show grid'}<span className="sub">Snap 20 px</span></span>
         </button>
       </div>
       <h1 className="wordmark" aria-label="Logic">Logic</h1>
@@ -99,7 +102,6 @@ export default function App() {
         </ReactFlow>
       </main>
       <aside className="cell c-side r2 truth" aria-label="Truth table">
-        <div className="block">
         <h2 className="label">Truth table</h2>
         <table>
           <thead><tr><th>#</th><th>A</th><th>B</th><th>OUT</th></tr></thead>
@@ -111,7 +113,6 @@ export default function App() {
             ))}
           </tbody>
         </table>
-        </div>
         <p className="hint">Select a wire + Backspace to delete</p>
       </aside>
 
