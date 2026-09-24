@@ -25,10 +25,11 @@ let nextWire = 1;
 
 export default function App() {
   const [circuit, setCircuit] = useState(START);
-  const [view, , onViewChange] = useNodesState(VIEW);
+  const [view, setView, onViewChange] = useNodesState(VIEW);
   const [showGrid, setShowGrid] = useState(false);
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
-  const [status, setStatus] = useState({ text: 'Drag from a dot to a dot to wire. Click a switch to flip it.', bad: false });
+  const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
+  const [status, setStatus] = useState({ text: 'Drag from a dot to a dot to wire. Click a switch to flip it. Double-click a node to delete.', bad: false });
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
@@ -39,7 +40,8 @@ export default function App() {
   const nodes = view.map((n) => ({
     ...n,
     data: { ...circuit.nodes[n.id], on: values[n.id], onToggle: () => { setReject(null); toggle(n.id); },
-      reject: reject && reject.node === n.id ? reject : null },
+      reject: reject && reject.node === n.id ? reject : null,
+      pending, onPort: (handle) => onPort(n.id, handle) },
   }));
 
   const edges = Object.values(circuit.wires).map((w) => ({
@@ -55,11 +57,38 @@ export default function App() {
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
-    if (!check.ok) return setReject({ node: target, handle: targetHandle, text: `Can't connect: ${check.reason}` });
+    if (!check.ok) {
+      setReject({ node: target, handle: targetHandle, text: `Can't connect: ${check.reason}` });
+      return setStatus({ text: `Rejected: ${check.reason}`, bad: true });
+    }
     setReject(null);
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
     setStatus({ text: 'Connected.', bad: false });
+  };
+
+  // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
+  const onPort = (node, handle) => {
+    if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: pick an input`, bad: false }); }
+    if (!pending) return setStatus({ text: 'Pick an output first', bad: true });
+    setPending(null);
+    onConnect({ source: pending, target: node, targetHandle: handle });
+  };
+
+  // Node delete (double-click, or select + Backspace/Delete): drop the node and every wire touching it.
+  const removeNodes = (ids) => {
+    if (!ids.length) return;
+    setView((v) => v.filter((n) => !ids.includes(n.id)));
+    setCircuit((c) => ({
+      nodes: Object.fromEntries(Object.entries(c.nodes).filter(([id]) => !ids.includes(id))),
+      wires: Object.fromEntries(Object.entries(c.wires).filter(([, w]) => !ids.includes(w.source) && !ids.includes(w.target))),
+    }));
+    setReject(null); setPending(null);
+    setStatus({ text: `Deleted ${ids.map((i) => i.toUpperCase()).join(', ')}`, bad: false });
+  };
+  const onNodesChange = (changes) => {
+    removeNodes(changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id));
+    onViewChange(changes.filter((ch) => ch.type !== 'remove'));
   };
 
   const onEdgesChange = (changes) => {
@@ -69,7 +98,7 @@ export default function App() {
   };
 
   // Truth table for the 2-switch AND demo; live row = current switch state.
-  const a = !!values.s1, b = !!values.s2;
+  const a = !!circuit.nodes.s1?.value, b = !!circuit.nodes.s2?.value; // switch state itself, never a derived value
   const rows = [[0, 0], [0, 1], [1, 0], [1, 1]];
 
   return (
@@ -92,7 +121,10 @@ export default function App() {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
-          onNodesChange={onViewChange}
+          onNodesChange={onNodesChange}
+          onNodeDoubleClick={(_, n) => removeNodes([n.id])}
+          deleteKeyCode={['Backspace', 'Delete']}
+          zoomOnDoubleClick={false}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           snapToGrid
@@ -116,13 +148,12 @@ export default function App() {
             ))}
           </tbody>
         </table>
-        <p className="hint">Select a wire + Backspace to delete</p>
+        <p className="hint">Select wire or node + Delete; double-click node</p>
       </aside>
 
       <div className="cell c-margin r3"><span className="rownum">03</span></div>
       <footer className="cell c-main r3 status">
-        <span className="label">Logic circuit editor</span>
-        <span className="msg" role="status">{status.text}</span>
+        <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
       <div className="cell c-side r3" />
     </div>

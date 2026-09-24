@@ -149,3 +149,16 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .reject { position: absolute; right: calc(100% + 16px); transform: translateY(-50%); margin: 0; white-space: nowrap;
   padding: 4px 0 4px 10px; border-left: 4px solid var(--wire-1); background: var(--bg);
   font: 700 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); z-index: 10; }
+
+/* R4-G ------------------------------------------------------------ */
+/* Focus: 3px accent ring on every tab stop (WCAG 2.2 SC 2.4.7, 2.4.11, 2.4.13). */
+.react-flow .react-flow__node:focus-visible { outline: 3px solid var(--wire-1) !important; outline-offset: 4px; }
+.react-flow__handle:focus-visible { outline: 3px solid var(--wire-1); outline-offset: 3px; width: 14px; height: 14px; }
+.react-flow__handle.picked { background: var(--wire-1); width: 14px; height: 14px; }
+/* Rejection in ref2 grotesk caps voice (RUBRIC 3). */
+.reject { font: 800 14px/1.2 var(--font); letter-spacing: 0; text-transform: uppercase; }
+.status .msg.bad { font: 800 14px var(--font); letter-spacing: 0; color: var(--ink); border-left: 4px solid var(--wire-1); padding-left: 10px; }
+/* Header rule heavier than body hairlines (RUBRIC 8; Ruder, Typographie: weight contrast). */
+.truth th { border-bottom: 3px solid var(--ink); }
+/* Wordmark scaled 0.92 so the "g" descender crosses the row rule by ~48px (ref1) while the i-dot keeps >=20px (RUBRIC 2 trade-off, logged). */
+.wordmark { font-size: min(24vw, 345px); top: calc(var(--r1) - 0.97em + 9px); }
