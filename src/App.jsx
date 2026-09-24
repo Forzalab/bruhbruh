@@ -24,6 +24,9 @@ const VIEW = [
 
 let nextWire = 1;
 
+// Each figure in its own fixed module (see .truth .f in theme.css).
+const fig = (v) => [...String(v)].map((d, k) => <span key={k} className={`f f${d}`}>{d}</span>);
+
 export default function App() {
   const [circuit, setCircuit] = useState(START);
   const [view, setView, onViewChange] = useNodesState(VIEW);
@@ -108,7 +111,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="cell c-margin r1"><span className="rownum">01</span></div>
+      <div className="cell c-margin r1"><span className="rownum">0<span className="n1">1</span></span></div>
       <div className="cell c-main r1" />
       <div className="cell c-side r1">
         <button className="disk" aria-pressed={showGrid} aria-label={showGrid ? 'Hide grid' : 'Show grid'} title={showGrid ? 'Hide grid' : 'Show grid'}
@@ -117,7 +120,7 @@ export default function App() {
         </button>
         <p className="lockup">Circuit<br />editor</p>
       </div>
-      <h1 className="wordmark" aria-label="Logic">Logic</h1>
+      <h1 className="wordmark" aria-label="Logic">Log<span className="kic">i</span>c</h1>
 
       <div className="cell c-margin r2"><span className="rownum">02</span></div>
       <main className="cell c-main r2 canvas">
@@ -146,7 +149,7 @@ export default function App() {
           <tbody>
             {rows.map(([x, y], i) => (
               <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
-                <td>{String(i + 1).padStart(2, '0')}</td><td>{x}</td><td>{y}</td><td>{x & y}</td>
+                {[String(i + 1).padStart(2, '0'), x, y, x & y].map((v, j) => <td key={j}>{fig(v)}</td>)}
               </tr>
             ))}
           </tbody>

@@ -45,7 +45,7 @@ export function GateNode({ id, data }) {
       <Handle nodeId={id} data={data} at={ANDG.in[1]} type="target" position={Position.Left} id="in1" />
       <Handle nodeId={id} data={data} at={ANDG.out} type="source" position={Position.Right} id="out" />
       {data.reject && (
-        <p className="reject" role="alert" style={{ top: ANDG.in[data.reject.handle === 'in1' ? 1 : 0][1] }}>{data.reject.text}</p>
+        <p className="reject" role="alert">{data.reject.text}</p>
       )}
     </div>
   );
@@ -56,7 +56,7 @@ export function LampNode({ id, data }) {
     <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={data.on ? 'Lamp on' : 'Lamp off'}>
       <Shape g={LAMPG} on={data.on} />
       <Handle nodeId={id} data={data} at={LAMPG.in} type="target" position={Position.Left} id="in0" />
-      {data.reject && <p className="reject" role="alert" style={{ top: LAMPG.in[1] }}>{data.reject.text}</p>}
+      {data.reject && <p className="reject" role="alert">{data.reject.text}</p>}
     </div>
   );
 }
