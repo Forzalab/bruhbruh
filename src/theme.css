@@ -129,6 +129,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    (XTRA = counter/white width, Google Fonts Roboto Flex axis docs). */
 .truth th .hN { font-stretch: 55%; } .truth th .hA { font-stretch: 115%; } .truth th .hB { font-stretch: 130%; }
 .truth th .hO { letter-spacing: -2px; } .truth th .hU { font-stretch: 115%; letter-spacing: -1px; }
+.truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
 .truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
 .truth tr.live td { background: var(--one); color: var(--paper); }
 
@@ -147,7 +148,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .help .mouse .q { fill: var(--ink); stroke: none; }
 /* BKSP chip: label = help cap (12px, Medium) on the text baseline; 20px square-cornered box, 2px border,
    4px padding above and below the cap band. */
-.help kbd { display: inline-block; vertical-align: baseline; height: 20px; padding: 0 5px; border: 2px solid var(--ink); border-radius: 0;
+.help kbd { display: inline-block; vertical-align: baseline; height: 20px; padding: 0 4px; border: 2px solid var(--ink); border-radius: 0;
   font: 500 16.9px/16px var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 /* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
