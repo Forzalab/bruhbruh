@@ -64,7 +64,10 @@ if command -v tmux >/dev/null; then
     "cd '$SITE' && echo \$\$ > '$PID_FILE' && exec python3 -m http.server '$PORT' --bind 0.0.0.0 >>'$LOG_FILE' 2>&1"
   for _ in 1 2 3 4 5 6 7 8 9 10; do [ -s "$PID_FILE" ] && break; sleep 0.3; done
 else
-  ( cd "$SITE" && nohup python3 -m http.server "$PORT" --bind 0.0.0.0 >>"$LOG_FILE" 2>&1 & echo $! > "$PID_FILE" )
+  # The child writes its own PID, then execs python, so the PID file is exact.
+  ( cd "$SITE" && nohup sh -c 'echo $$ > "$1"; shift; exec "$@"' sh "$PID_FILE" \
+      python3 -m http.server "$PORT" --bind 0.0.0.0 >>"$LOG_FILE" 2>&1 & )
+  for _ in 1 2 3 4 5 6 7 8 9 10; do [ -s "$PID_FILE" ] && break; sleep 0.3; done
 fi
 [ -s "$PID_FILE" ] || die "server did not start; see $LOG_FILE"
 
