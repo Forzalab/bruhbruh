@@ -6,6 +6,14 @@
    font-variation-settings. Values were fitted with Pillow against ref3 crops (scratchpad/r6/L-type). */
 @import '@fontsource-variable/roboto-flex/full.css';
 
+/* Metric-matched fallback (CSS Fonts 5 size-adjust / ascent-override; web.dev "CSS size-adjust for @font-face").
+   Values from fontTools on the self-hosted file: Roboto Flex upm 2048, hhea ascent 1900 (92.77%), descent 500
+   (24.41%), lineGap 0; advance sum of every UI string at wght 760 / wdth 108 = 1.0053x Liberation Sans Bold. */
+@font-face { font-family: 'Roboto Flex Fallback'; src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue');
+  font-weight: 100 599; size-adjust: 100.5%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Roboto Flex Fallback'; src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold'), local('HelveticaNeue-Bold');
+  font-weight: 600 1000; size-adjust: 100.5%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+
 /* Swiss grid, light only. Tokens first; components read tokens.
    Grid: Müller-Brockmann, Grid Systems in Graphic Design (1981): fixed field proportions,
    one rule weight, numbered fields. Measured targets in scratchpad/r5/I-SPEC.md. */
@@ -15,13 +23,27 @@
   --ink: #111111;
   --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
   --grid: #e2e2e2;
-  --font: 'Roboto Flex Variable', 'Helvetica Neue', Arial, sans-serif;
-  --rule: 2px;
+  --font: 'Roboto Flex Variable', 'Roboto Flex Fallback', 'Helvetica Neue', Arial, sans-serif;
+  /* One scale unit: 1/1440 of the frame width (CSS Containment 3, container query length units:
+     https://www.w3.org/TR/css-contain-3/#container-lengths ; MDN "CSS container queries"). Every length of the
+     composition is written as N * --u, N = its px value at 1440x810, so at 1440 --u = 1px exactly and the
+     approved render is unchanged. Unregistered custom properties substitute as tokens (CSS Variables 1), so
+     cqw resolves on each using element against the .frame container. Canvas internals stay in flow px:
+     React Flow scales them by viewport zoom = frame width / 1440 (App.jsx). */
+  --u: calc(100cqw / 1440);
+  /* Rules snap to whole CSS px (CSS Values 4 round()); Chromium floors fractional border widths otherwise (1.78 -> 1px). */
+  --rule: round(nearest, calc(2 * var(--u)), 1px);
   --stroke: 6px;
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+/* Letterbox: the composition is a fixed-proportion grid (Müller-Brockmann: field proportions are the system), so a
+   non-16:9 window centres one 16:9 frame on paper instead of re-flowing fields. aspect ratio held with explicit
+   min() sizes (CSS Values 4 min(); CSS Sizing 4 aspect-ratio). Paper bars = same colour as the page, no scroll. */
+html, body { overflow: hidden; }
+#root { display: grid; place-items: center; background: var(--paper); }
+.frame { container-type: size; width: min(100vw, 100vh * 16 / 9); height: min(100vh, 100vw * 9 / 16); }
 body { background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased;
   font-optical-sizing: auto; font-kerning: normal; font-feature-settings: 'kern' 1; }
 /* Composited, non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
@@ -40,19 +62,19 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .r3 { border-bottom: 0; }
 
 /* Field numerals: bold, cap 12px, set in the gutter (Müller-Brockmann: numbered fields). */
-.rownum { position: absolute; left: 16px; font: 800 18.3px/1 var(--font); font-stretch: 118%; letter-spacing: 0; }
+.rownum { position: absolute; left: calc(16 * var(--u)); font: 800 calc(18.3 * var(--u))/1 var(--font); font-stretch: 118%; letter-spacing: 0; }
 .rownum .f1 { font-variation-settings: 'XTRA' 603; } /* ref3's 1 is a wider figure than Roboto Flex's; XTRA opens it */
-.r1 .rownum { bottom: 20px; }
-.r2 .rownum { top: 26px; }
+.r1 .rownum { bottom: calc(20 * var(--u)); }
+.r2 .rownum { top: calc(26 * var(--u)); }
 .r3 .rownum { top: 50%; transform: translateY(-50%); }
 
 /* Wordmark: black grotesk, L cap = 24vh, tracking -0.045em; the g breaks the row rule, drawn above the canvas. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  font: 760 294.2px/1 var(--font); font-stretch: 108%;
+  font: 760 calc(294.2 * var(--u))/1 var(--font); font-stretch: 108%;
   font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
   letter-spacing: -0.03em; color: var(--ink);
-  left: 55px; top: -13px;
+  left: calc(55 * var(--u)); top: calc(-13 * var(--u));
 }
 
 /* Per-glyph fit to ref3 (Pillow, cap 194): a display cut draws caps heavier than lowercase and opens its round
@@ -67,13 +89,13 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .wordmark .wc { font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 494, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
 
 /* Top-right: ink disk + two-line caps lockup. */
-.disk { position: absolute; left: 25px; top: 74px; width: 153px; height: 153px; border-radius: 50%; border: 0; padding: 0;
+.disk { position: absolute; left: calc(25 * var(--u)); top: calc(74 * var(--u)); width: calc(153 * var(--u)); height: calc(153 * var(--u)); border-radius: 50%; border: 0; padding: 0;
   background: var(--ink); cursor: pointer; display: grid; place-items: center; }
-.disk svg { width: 100px; height: 100px; overflow: visible; }
+.disk svg { width: calc(100 * var(--u)); height: calc(100 * var(--u)); overflow: visible; }
 .disk path { fill: none; stroke: var(--paper); stroke-width: 13; stroke-linecap: butt; stroke-linejoin: miter; }
-.disk:hover { background: #000; box-shadow: 0 0 0 4px var(--paper), 0 0 0 7px var(--ink); }
+.disk:hover { background: #000; box-shadow: 0 0 0 calc(4 * var(--u)) var(--paper), 0 0 0 calc(7 * var(--u)) var(--ink); }
 .disk[aria-pressed='true'] svg { transform: rotate(90deg); }
-.lockup { position: absolute; left: 206px; top: 96px; margin: 0; font: 800 57.9px/53px var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; }
+.lockup { position: absolute; left: calc(206 * var(--u)); top: calc(96 * var(--u)); margin: 0; font: 800 calc(57.9 * var(--u))/calc(53 * var(--u)) var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; }
 
 /* Canvas */
 .canvas { background: var(--paper); }
@@ -105,7 +127,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .react-flow .react-flow__node:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
 .switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
 .react-flow__handle.port:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-.disk:focus-visible { outline: 3px solid var(--ink); outline-offset: 5px; }
+.disk:focus-visible { outline: calc(3 * var(--u)) solid var(--ink); outline-offset: calc(5 * var(--u)); }
 .react-flow__node { cursor: grab; }
 
 /* Inline rejection beside the failed port (GOV.UK Design System: error message next to the field).
@@ -115,12 +137,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   font: 700 14px/1.2 var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; color: var(--ink); }
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
-.truth { display: flex; flex-direction: column; justify-content: center; padding: 0 20px; }
-.truth .label { margin: 0 0 0 4px; font: 760 43.7px/30px var(--font); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: -1px; }
-.truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 32px; }
-.truth th { font: 700 32.4px/23px var(--font); font-stretch: 100%; padding: 0 0 17px; text-align: center; border-bottom: var(--rule) solid var(--ink); }
-.truth td { font: 760 35.8px/1 var(--font); font-stretch: 105%; height: 68px; padding: 0; text-align: center; border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums; }
-.truth th:first-child, .truth td:first-child { text-align: left; padding-left: 8px; }
+.truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }
+.truth .label { margin: 0 0 0 calc(4 * var(--u)); font: 760 calc(43.7 * var(--u))/calc(30 * var(--u)) var(--font); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--u)); }
+.truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: calc(32 * var(--u)); }
+.truth th { font: 700 calc(32.4 * var(--u))/calc(23 * var(--u)) var(--font); font-stretch: 100%; padding: 0 0 calc(17 * var(--u)); text-align: center; border-bottom: var(--rule) solid var(--ink); }
+.truth td { font: 760 calc(35.8 * var(--u))/1 var(--font); font-stretch: 105%; height: calc(68 * var(--u)); padding: 0; text-align: center; border-bottom: calc(1 * var(--u)) solid var(--ink); font-variant-numeric: tabular-nums; }
+.truth th:first-child, .truth td:first-child { text-align: left; padding-left: calc(8 * var(--u)); }
 /* Column widths set so column centres land on ref3's (A 1129, B 1248, OUT 1366 at 1440 wide). */
 .truth th:nth-child(1) { width: 22.25%; } .truth th:nth-child(2) { width: 23.62%; }
 .truth th:nth-child(3) { width: 30.73%; } .truth th:nth-child(4) { width: 23.40%; }
@@ -128,28 +150,28 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    already tabular (GSUB lists only liga/locl/pnum/rvrn), so ink width is fitted per figure with wdth and XTRA
    (XTRA = counter/white width, Google Fonts Roboto Flex axis docs). */
 .truth th .hN { font-stretch: 55%; } .truth th .hA { font-stretch: 115%; } .truth th .hB { font-stretch: 130%; }
-.truth th .hO { letter-spacing: -2px; } .truth th .hU { font-stretch: 115%; letter-spacing: -1px; }
+.truth th .hO { letter-spacing: calc(-2 * var(--u)); } .truth th .hU { font-stretch: 115%; letter-spacing: calc(-1 * var(--u)); }
 .truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
 .truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
 .truth tr.live td { background: var(--one); color: var(--paper); }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
-.status { display: flex; align-items: center; padding: 0 16px; }
-.status .msg { font: 500 16.9px/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
-.status .msg.bad { font-weight: 700; border-left: 4px solid var(--ink); padding-left: 10px; }
+.status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
+.status .msg { font: 500 calc(16.9 * var(--u))/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.status .msg.bad { font-weight: 700; border-left: calc(4 * var(--u)) solid var(--ink); padding-left: calc(10 * var(--u)); }
 
-.help { display: flex; align-items: center; justify-content: flex-end; padding: 0 16px 0 8px; }
-.help p { margin: 0; white-space: nowrap; font: 500 16.9px/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--u)) 0 calc(8 * var(--u)); }
+.help p { margin: 0; white-space: nowrap; font: 500 calc(16.9 * var(--u))/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
 .help i { font-style: normal; margin: 0 .45em; }
 /* Mouse icon (Delta 7): 14x20 SVG at 1:1, 2px stroke = chip border. Bottom at baseline + 4px, so the
    20px box is centred on the 12px cap band (baseline-12 .. baseline). */
-.help .mouse { display: inline-block; width: 14px; height: 20px; vertical-align: -4px; margin-right: .5em; overflow: visible; }
+.help .mouse { display: inline-block; width: max(12.6px, calc(14 * var(--u))); height: max(18px, calc(20 * var(--u))); vertical-align: calc(-4 * var(--u)); margin-right: .5em; overflow: visible; }
 .help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 2; }
 .help .mouse .q { fill: var(--ink); stroke: none; }
 /* BKSP chip: label = help cap (12px, Medium) on the text baseline; 20px square-cornered box, 2px border,
    4px padding above and below the cap band. */
-.help kbd { display: inline-block; vertical-align: baseline; height: 20px; padding: 0 4px; border: 2px solid var(--ink); border-radius: 0;
-  font: 500 16.9px/16px var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.help kbd { display: inline-block; vertical-align: baseline; height: calc(20 * var(--u)); padding: 0 calc(4 * var(--u)); border: calc(2 * var(--u)) solid var(--ink); border-radius: 0;
+  font: 500 calc(16.9 * var(--u))/calc(16 * var(--u)) var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
+.sr { position: absolute; width: calc(1 * var(--u)); height: calc(1 * var(--u)); overflow: hidden; clip: rect(0 0 0 0); }
 /* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
 .help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }

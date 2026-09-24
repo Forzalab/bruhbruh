@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState } from '@xyflow/react';
 import { canConnect, evaluate } from './sim.js';
 import { nodeTypes } from './nodes/index.jsx';
@@ -35,6 +35,16 @@ export default function App() {
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
   const [status, setStatus] = useState({ text: '', bad: false });
+  // Canvas scale = frame width / 1440, the same factor as the CSS --u (100cqw / 1440). React Flow's viewport zoom
+  // scales node geometry, strokes and knobs together, so wires stay on pin centres (React Flow docs: Viewport, zoom).
+  const frame = useRef(null);
+  const [zoom, setZoom] = useState(1);
+  useLayoutEffect(() => {
+    const el = frame.current;
+    const ro = new ResizeObserver(() => setZoom(el.clientWidth / 1440));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
@@ -110,6 +120,7 @@ export default function App() {
   const rows = [[0, 0], [0, 1], [1, 0], [1, 1]];
 
   return (
+    <div className="frame" ref={frame}>
     <div className="app">
       <div className="cell c-margin r1"><span className="rownum">{fig('01')}</span></div>
       <div className="cell c-main r1" />
@@ -136,7 +147,12 @@ export default function App() {
           onConnect={onConnect}
           snapToGrid
           snapGrid={[20, 20]}
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          viewport={{ x: 0, y: 0, zoom }}
+          minZoom={0.25}
+          maxZoom={4}
+          panOnDrag={false}
+          zoomOnScroll={false}
+          zoomOnPinch={false}
           proOptions={{ hideAttribution: true }}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
@@ -170,6 +186,7 @@ export default function App() {
           <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
         </p>
       </div>
+    </div>
     </div>
   );
 }
