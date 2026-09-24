@@ -26,6 +26,7 @@ let nextWire = 1;
 export default function App() {
   const [circuit, setCircuit] = useState(START);
   const [view, , onViewChange] = useNodesState(VIEW);
+  const [showGrid, setShowGrid] = useState(false);
   const [status, setStatus] = useState({ text: 'Drag from a dot to a dot to wire. Click a switch to flip it.', bad: false });
 
   // Compute everything, then React commits the frame once. Drags never reach here.
@@ -64,27 +65,60 @@ export default function App() {
     setCircuit((c) => ({ ...c, wires: Object.fromEntries(Object.entries(c.wires).filter(([id]) => !gone.includes(id))) }));
   };
 
+  // Truth table for the 2-switch AND demo; live row = current switch state.
+  const a = !!values.s1, b = !!values.s2;
+  const rows = [[0, 0], [0, 1], [1, 0], [1, 1]];
+
   return (
     <div className="app">
-      <header className="bar">
-        <span className="wordmark">Logic</span>
-        <span className="hint">select a wire + Backspace to delete it</span>
-      </header>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onViewChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        snapToGrid
-        snapGrid={[20, 20]}
-        fitView
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background gap={20} color="var(--grid)" />
-      </ReactFlow>
-      <footer className={`status ${status.bad ? 'bad' : ''}`} role="status">{status.text}</footer>
+      <div className="cell c-margin r1"><span className="rownum">01</span></div>
+      <div className="cell c-main r1" />
+      <div className="cell c-side r1">
+        <button className="gridtoggle" aria-pressed={showGrid} onClick={() => setShowGrid((g) => !g)}>
+          {showGrid ? 'HIDE GRID' : 'SHOW GRID'}
+        </button>
+      </div>
+      <h1 className="wordmark" aria-label="Logic">Logic</h1>
+
+      <div className="cell c-margin r2"><span className="rownum">02</span></div>
+      <main className="cell c-main r2 canvas">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onViewChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          snapToGrid
+          snapGrid={[20, 20]}
+          fitView
+          fitViewOptions={{ padding: 0.35 }}
+          proOptions={{ hideAttribution: true }}
+        >
+          {showGrid && <Background gap={20} color="var(--grid)" />}
+        </ReactFlow>
+      </main>
+      <aside className="cell c-side r2 truth" aria-label="Truth table">
+        <h2 className="label">Truth table</h2>
+        <table>
+          <thead><tr><th>#</th><th>A</th><th>B</th><th>OUT</th></tr></thead>
+          <tbody>
+            {rows.map(([x, y], i) => (
+              <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
+                <td>{String(i + 1).padStart(2, '0')}</td><td>{x}</td><td>{y}</td><td>{x & y}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="hint">Select a wire + Backspace to delete</p>
+      </aside>
+
+      <div className="cell c-margin r3"><span className="rownum">03</span></div>
+      <footer className={`cell c-main r3 status ${status.bad ? 'bad' : ''}`}>
+        <span className="label">Logic circuit editor</span>
+        <span className="msg" role="status">{status.text}</span>
+      </footer>
+      <div className="cell c-side r3" />
     </div>
   );
 }
