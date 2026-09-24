@@ -16,6 +16,14 @@
 
 /* Wordmark fallback: Roboto Flex runs the wordmark at YTUC 660 (cap .66em), so the generic fallback's cap is too
    tall there. Own face, size-adjust fitted with Pillow to the 194u L cap (CSS Fonts 5 §size-adjust). */
+/* R2: per-role fallback faces (from R9 R). Liberation/Arial ship no narrow cut, so width is matched with size-adjust
+   (CSS Fonts 5 §size-adjust; web.dev "Improved font fallbacks"), measured with Pillow on the font-blocked 1440 render. */
+@font-face { font-family: 'Help Fallback'; src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue');
+  font-weight: 100 599; size-adjust: 77.6%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Help Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('HelveticaNeue-Bold');
+  font-weight: 600 1000; size-adjust: 77.6%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Label Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('HelveticaNeue-Bold');
+  size-adjust: 86.4%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
 @font-face { font-family: 'Logic Wordmark Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('Helvetica Neue Bold'); size-adjust: 96.2%; }
 
 /* Swiss grid, light only. Tokens first; components read tokens.
@@ -39,15 +47,24 @@
      viewport and with it --u, still enlarges every label (MDN: max(); W3C Understanding 1.4.4). At 1440 x 810, 100%,
      --t = --u = 1px, so the approved render is unchanged. Text-bearing tracks (header and footer rows, margin and
      side columns) are sized in --t; the canvas row and column absorb the difference. */
-  --t: max(var(--u), 1rem / 16);
+  --t: var(--u);
   /* Wordmark unit: --u, capped so the logotype always fits the canvas column left between the --t tracks
      (756u = its box width at 1440 plus the 2u left gap, with 34u of air before the column rule). */
+  --font-help: 'Roboto Flex Variable', 'Help Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-label: 'Roboto Flex Variable', 'Label Fallback', 'Helvetica Neue', Arial, sans-serif;
   --w: min(var(--u), (100cqw - 530 * var(--t)) / 790);
   /* Rules snap to whole CSS px (CSS Values 4 round()); Chromium floors fractional border widths otherwise (1.78 -> 1px). */
   --rule: max(1px, round(nearest, calc(2 * var(--u)), 1px));
   --hair: max(1px, round(nearest, var(--u), 1px));
   --stroke: 6px;
 }
+
+/* R2: the rem floor applies only under browser zoom. Browser zoom raises the device-pixel ratio, which the
+   'resolution' media feature reports (MDN: resolution; Media Queries 4 §resolution), so at 100% (1dppx) the text
+   stays strictly proportional at 1280/1366/1024, and at any zoom > 100% text keeps at least its 1440 CSS size, i.e.
+   grows with zoom (WCAG 2.2 SC 1.4.4). Caveat: a HiDPI screen at 100% also reports > 1dppx; there the floor only
+   bites if its CSS viewport is < 1440 wide. */
+@media (resolution > 1dppx) { :root { --t: max(var(--u), 1rem / 16); } }
 
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; }
@@ -157,7 +174,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--t)); }
-.truth .label { margin: 0 0 0 calc(4 * var(--t)); font: 760 calc(43.7 * var(--t))/calc(30 * var(--t)) var(--font); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--t)); }
+.truth .label { margin: 0 0 0 calc(4 * var(--t)); font: 760 calc(43.7 * var(--t))/calc(30 * var(--t)) var(--font-label); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--t)); }
 .truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: calc(32 * var(--t)); }
 .truth th { font: 700 calc(32.4 * var(--t))/calc(23 * var(--t)) var(--font); font-stretch: 100%; padding: 0 0 calc(17 * var(--t)); text-align: center; border-bottom: var(--rule) solid var(--ink); }
 .truth td { font: 760 calc(35.8 * var(--t))/1 var(--font); font-stretch: 105%; height: calc(68 * var(--t)); padding: 0; text-align: center; border-bottom: var(--hair) solid var(--ink); font-variant-numeric: tabular-nums; }
@@ -176,11 +193,11 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--t)); }
-.status .msg { font: 500 calc(16.9 * var(--t))/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.status .msg { font: 500 calc(16.9 * var(--t))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
 .status .msg.bad { font-weight: 700; border-left: calc(4 * var(--t)) solid var(--ink); padding-left: calc(10 * var(--t)); }
 
 .help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--t)) 0 calc(8 * var(--t)); }
-.help p { margin: 0; white-space: nowrap; font: 500 calc(16.9 * var(--t))/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.help p { margin: 0; white-space: nowrap; font: 500 calc(16.9 * var(--t))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
 .help i { font-style: normal; margin: 0 .45em; }
 /* Mouse icon (Delta 7): 14x20 SVG at 1:1, 2px stroke = chip border. Bottom at baseline + 4px, so the
    20px box is centred on the 12px cap band (baseline-12 .. baseline). */
@@ -190,7 +207,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* BKSP chip: label = help cap (12px, Medium) on the text baseline; 20px square-cornered box, 2px border,
    4px padding above and below the cap band. */
 .help kbd { display: inline-block; vertical-align: baseline; height: calc(20 * var(--t)); padding: 0 calc(4 * var(--t)); border: calc(2 * var(--t)) solid var(--ink); border-radius: 0;
-  font: 500 calc(16.9 * var(--t))/calc(16 * var(--t)) var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
+  font: 500 calc(16.9 * var(--t))/calc(16 * var(--t)) var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
 .help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }
@@ -213,7 +230,13 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    (frame < 58rem, i.e. 200% zoom on a 1440 window), row 02 splits: canvas across both columns, the truth table
    in its own row below it. Header and footer keep their fields. */
 @container (width < 58rem) {
-  .app { grid-template-rows: calc(252 * var(--t)) minmax(calc(489 * var(--u)), 1fr) auto calc(65 * var(--t)); }
+  /* R2: header row shortened to the lockup (106t) plus air, and the disk (a control, not text) back on --u, so the
+     whole circuit stays in the first screen at 200% (switch B was below the fold). */
+  .app { grid-template-rows: calc(160 * var(--t)) minmax(calc(489 * var(--u)), 1fr) auto calc(65 * var(--t)); }
+  .wordmark { top: calc(160 * var(--t) - 265 * var(--w)); }
+  .disk { width: calc(153 * var(--u)); height: calc(153 * var(--u)); top: calc(80 * var(--t) - 76.5 * var(--u)); }
+  .disk svg { width: calc(100 * var(--u)); height: calc(100 * var(--u)); }
+  .lockup { top: calc(27 * var(--t)); left: calc(178 * var(--u) + 24 * var(--t)); }
   .c-margin.r2 { grid-row: 2 / 4; grid-column: 1; }
   .canvas { grid-row: 2; grid-column: 2 / 4; border-right: 0; }
   .truth { grid-row: 3; grid-column: 2 / 4; padding-block: calc(24 * var(--t)); }
