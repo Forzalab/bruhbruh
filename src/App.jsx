@@ -55,7 +55,18 @@ export default function App() {
   const [status, setStatus] = useState({ text: '', bad: false });
   const [u, probe] = useUnit();
   const [rf, setRf] = useState(null);
-  useEffect(() => { rf?.setViewport({ x: 0, y: 0, zoom: u }); }, [rf, u]);
+  // Resize rescales the current viewport by u/u_prev instead of resetting it, so a user's own pan/zoom survives
+  // a window resize (React Flow docs: getViewport / setViewport).
+  const prevU = useRef(null);
+  useEffect(() => {
+    if (!rf) return;
+    if (prevU.current == null) rf.setViewport({ x: 0, y: 0, zoom: u });
+    else if (prevU.current !== u) {
+      const v = rf.getViewport(), k = u / prevU.current;
+      rf.setViewport({ x: v.x * k, y: v.y * k, zoom: v.zoom * k });
+    }
+    prevU.current = u;
+  }, [rf, u]);
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
@@ -170,7 +181,7 @@ export default function App() {
       <aside className="cell c-side r2 truth" aria-label="Truth table">
         <h2 className="label">Truth table</h2>
         <table>
-          <thead><tr><th><span className="hN">#</span></th><th><span className="hA">A</span></th><th><span className="hB">B</span></th><th aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
+          <thead><tr><th scope="col"><span className="hN">#</span></th><th scope="col"><span className="hA">A</span></th><th scope="col"><span className="hB">B</span></th><th scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
           <tbody>
             {rows.map(([x, y], i) => (
               <tr key={i} className={x === +a && y === +b ? 'live' : ''}>

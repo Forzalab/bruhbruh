@@ -11,9 +11,11 @@
    so its cap height equals Roboto Flex's, which leaves Roboto Flex itself untouched. The wordmark runs Roboto
    Flex at YTUC 660 (cap .66em), below the font's OS/2 cap height, so it gets its own size-adjusted face
    (CSS Fonts 4 §size-adjust, 96.2% fitted with Pillow to the 194px L cap) and opts out of font-size-adjust. */
-@font-face { font-family: 'Logic Fallback'; src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue'), local('Helvetica'); }
-@font-face { font-family: 'Logic Fallback'; font-weight: 600 1000; src: local('Arial Bold'), local('Liberation Sans Bold'), local('Helvetica Neue Bold'), local('Helvetica Bold'); }
-@font-face { font-family: 'Logic Wordmark Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('Helvetica Neue Bold'), local('Helvetica Bold'); size-adjust: 96.2%; }
+/* O2: vertical metrics pinned to Roboto Flex's hhea (fontTools on the self-hosted woff2: upm 2048, ascent 1900,
+   descent 500, lineGap 0), so fallback line boxes and baselines sit where Roboto Flex's do (web.dev, size-adjust). */
+@font-face { font-family: 'Logic Fallback'; src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue'), local('Helvetica'); ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Logic Fallback'; font-weight: 600 1000; src: local('Arial Bold'), local('Liberation Sans Bold'), local('Helvetica Neue Bold'), local('Helvetica Bold'); ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Logic Wordmark Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('Helvetica Neue Bold'), local('Helvetica Bold'); size-adjust: 96.2%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
 
 /* Swiss grid, light only. Tokens first; components read tokens.
    Grid: Müller-Brockmann, Grid Systems in Graphic Design (1981): fixed field proportions,
