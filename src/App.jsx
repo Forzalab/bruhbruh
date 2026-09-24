@@ -120,7 +120,7 @@ export default function App() {
         </button>
         <p className="lockup">Circuit<br />editor</p>
       </div>
-      <h1 className="wordmark" aria-label="Logic">Log<span className="kic">i</span>c</h1>
+      <h1 className="wordmark" aria-label="Logic"><span className="wL">L</span><span className="wo">o</span><span className="wg">g</span><span className="wi">i</span><span className="wc">c</span></h1>
 
       <div className="cell c-margin r2"><span className="rownum">02</span></div>
       <main className="cell c-main r2 canvas">
@@ -145,7 +145,7 @@ export default function App() {
       <aside className="cell c-side r2 truth" aria-label="Truth table">
         <h2 className="label">Truth table</h2>
         <table>
-          <thead><tr><th>#</th><th>A</th><th>B</th><th>OUT</th></tr></thead>
+          <thead><tr><th>#</th><th>A</th><th>B</th><th aria-label="OUT"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></th></tr></thead>
           <tbody>
             {rows.map(([x, y], i) => (
               <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
@@ -167,7 +167,7 @@ export default function App() {
             <rect x="1" y="1" width="12" height="18" rx="6" />
             <path d="M7 1V9M1 9H13" />
           </svg>
-          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag to wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
+          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><kbd>Bksp</kbd> to delete
         </p>
       </div>
     </div>

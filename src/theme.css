@@ -50,13 +50,20 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Wordmark: black grotesk, L cap = 24vh, tracking -0.045em; the g breaks the row rule, drawn above the canvas. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  font: 760 294.2px/1 var(--font); font-stretch: 96%;
-  font-variation-settings: 'XOPQ' 122, 'YOPQ' 88, 'XTRA' 495, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
+  font: 760 294.2px/1 var(--font); font-stretch: 108%;
+  font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
   letter-spacing: -0.03em; color: var(--ink);
   left: 55px; top: -13px;
 }
-/* Pair kern i->c (the only loose pair by measurement): tracking on the i alone, not on the word. */
-.wordmark .kic { letter-spacing: -0.042em; }
+/* Per-glyph fit to ref3 (Pillow, cap 194). Caps heavier than lowercase (XOPQ on L = stem weight) and open round
+   counters (XTRA = counter width; Google Fonts Roboto Flex axis registry), so no faux-bold and no scaleX.
+   Global XTRA would thicken the i to 64 (ref 60), so the axes are set per glyph. Pair kerns g-i and i-c by hand.
+   font-variation-settings does not merge per axis (MDN), so each span restates the list. */
+.wordmark .wL { font-stretch: 106%; font-variation-settings: 'XOPQ' 126, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wo { font-variation-settings: 'XOPQ' 112, 'YOPQ' 88, 'XTRA' 476, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wg { letter-spacing: -0.04em; font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 488, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wi { letter-spacing: -0.057em; }
+.wordmark .wc { font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 494, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
 
 /* Top-right: ink disk + two-line caps lockup. */
 .disk { position: absolute; left: 25px; top: 74px; width: 153px; height: 153px; border-radius: 50%; border: 0; padding: 0;
@@ -108,7 +115,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 20px; }
-.truth .label { margin: 0 0 0 4px; font: 800 43.8px/30px var(--font); font-stretch: 90%; text-transform: uppercase; letter-spacing: 0; }
+.truth .label { margin: 0 0 0 4px; font: 760 43.7px/30px var(--font); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: -1px; }
 .truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 32px; }
 .truth th { font: 700 32.4px/23px var(--font); font-stretch: 100%; padding: 0 0 17px; text-align: center; border-bottom: var(--rule) solid var(--ink); }
 .truth td { font: 760 36px/1 var(--font); font-stretch: 100%; height: 68px; padding: 0; text-align: center; border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums; }
@@ -143,3 +150,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .help kbd { display: inline-block; vertical-align: baseline; height: 20px; padding: 0 5px; border: 2px solid var(--ink); border-radius: 0;
   font: 500 16.9px/16px var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
+.help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }
+/* OUT: ref3's U is wider than Roboto Flex's at the O/T width (19 vs 17 at cap 23), so the U gets its own wdth. */
+.truth th .hO { letter-spacing: -2px; } .truth th .hU { font-stretch: 115%; letter-spacing: -1px; }
