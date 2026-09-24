@@ -35,3 +35,10 @@ scaled to the 1440x810 target.
 - Material 3 layout: https://m3.material.io/foundations/layout/understanding-layout/overview
 - Apple HIG layout: https://developer.apple.com/design/human-interface-guidelines/layout
 - WCAG 2.2 1.4.3 / 1.4.11: https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html , https://www.w3.org/WAI/WCAG21/Understanding/non-text-contrast.html
+
+## Fix pass 2, each change cited
+1. Wordmark baseline raised 45px (top = head - 330px); g descender crosses the row line by ~48px. Backing: Ref 1 region y≈327–375.
+2. Wordmark left edge at x≈48, flush with the numeral-strip rule. Backing: Ref 1 L stem at x≈46.
+3. "TRUTH TABLE" is 28px/800 and the header row 22px/800. Backing: Ref 2 region x≈1120–1440.
+4. CTA cell quieted to paper with an ink-ringed white arrow disk and ink label; the black rail stays as the single heavy mass. Backing: rubric 9 and GOV.UK's one primary action (https://design-system.service.gov.uk/components/button/); Ref 2 disk and label kept.
+5. 1-wires 3.5px vs 0-wires 2px. Backing: rubric; assigned weight-not-hue signalling.
