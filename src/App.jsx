@@ -99,7 +99,8 @@ export default function App() {
         </ReactFlow>
       </main>
       <aside className="cell c-side r2 truth" aria-label="Truth table">
-        <h2 className="label">Truth Table</h2>
+        <div className="block">
+        <h2 className="label">Truth table</h2>
         <table>
           <thead><tr><th>#</th><th>A</th><th>B</th><th>OUT</th></tr></thead>
           <tbody>
@@ -110,6 +111,7 @@ export default function App() {
             ))}
           </tbody>
         </table>
+        </div>
         <p className="hint">Select a wire + Backspace to delete</p>
       </aside>
 

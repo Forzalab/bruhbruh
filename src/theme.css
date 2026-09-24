@@ -57,7 +57,7 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 /* Giant wordmark: sits in row 01 and its descender breaks into row 02. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.92em - 12px);
+  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.92em - 2px);
   font: 800 25.8vw/1 var(--font); letter-spacing: -0.05em; color: var(--ink);
   font-size: min(27vw, 400px);
 }
@@ -66,15 +66,16 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .react-flow { background: transparent; }
 
 /* Truth table: black block, white mono digits. */
-.truth { background: var(--ink); color: var(--on-ink); padding: 22px 18px 18px; display: flex; flex-direction: column; }
-.truth .label { font: 800 29px/1 var(--font); letter-spacing: -0.01em; text-transform: none; color: var(--on-ink); }
-.truth table { width: 100%; border-collapse: collapse; margin-top: 32px; font-family: var(--mono); }
+.truth { background: var(--bg); padding: 18px; display: flex; flex-direction: column; }
+.truth .label { font: 800 29px/1 var(--font); letter-spacing: -0.01em; text-transform: uppercase; letter-spacing: .01em; color: var(--on-ink); }
+.truth .block { background: var(--ink); color: var(--on-ink); padding: 20px 16px 8px; }
+.truth table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: var(--mono); }
 .truth th { font: 800 16px var(--font); letter-spacing: .04em; text-align: left; padding: 0 12px 16px; border-bottom: var(--hair) solid #fff; }
-.truth td { font: 800 24px var(--font); padding: 14px 12px; border-bottom: var(--hair) solid #5a5a5a; font-variant-numeric: tabular-nums; }
+.truth td { font: 800 24px var(--font); padding: 11px 12px; border-bottom: var(--hair) solid #2e2e2e; font-variant-numeric: tabular-nums; }
 .truth th:last-child, .truth td:last-child { text-align: right; }
 .truth tr.live td { color: var(--wire-1); }
 .truth tr.live td:first-child { box-shadow: inset 6px 0 0 var(--wire-1); padding-left: 18px; }
-.truth .hint { margin-top: auto; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #9a9a9a; }
+.truth .hint { margin-top: auto; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #111; }
 
 .status { display: flex; align-items: center; gap: 32px; padding: 0 14px; }
 .status .msg { font: 500 12px var(--mono); color: #111; text-transform: uppercase; letter-spacing: .12em; }
