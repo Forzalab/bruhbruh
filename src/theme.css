@@ -1,52 +1,244 @@
-/* Mode = token swap. Components read tokens, never the mode. */
-:root[data-mode='logic'] {
-  --bg: #f4f4f1;
+/* One family on every label: Roboto Flex, a variable grotesk with wdth 25-151, wght 100-1000, opsz 8-144
+   and parametric axes (XOPQ/YOPQ stem thickness, XTRA counter width, YTUC/YTLC cap and x-height).
+   Self-hosted (the "full" axis file) via @fontsource-variable. Each element sets its own
+   font-weight + font-stretch (MDN: prefer the high-level properties over raw 'wght'/'wdth'),
+   opsz follows font-size (font-optical-sizing: auto), and only the parametric axes go in
+   font-variation-settings. Values were fitted with Pillow against ref3 crops (scratchpad/r6/L-type). */
+@import '@fontsource-variable/roboto-flex/full.css';
+
+/* Metric-matched fallback (CSS Fonts 5 size-adjust / ascent-override; web.dev "CSS size-adjust for @font-face").
+   Values from fontTools on the self-hosted file: Roboto Flex upm 2048, hhea ascent 1900 (92.77%), descent 500
+   (24.41%), lineGap 0; advance sum of every UI string at wght 760 / wdth 108 = 1.0053x Liberation Sans Bold. */
+@font-face { font-family: 'Roboto Flex Fallback'; src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue');
+  font-weight: 100 599; size-adjust: 100.5%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Roboto Flex Fallback'; src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold'), local('HelveticaNeue-Bold');
+  font-weight: 600 1000; size-adjust: 100.5%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+
+/* Wordmark fallback: Roboto Flex runs the wordmark at YTUC 660 (cap .66em), so the generic fallback's cap is too
+   tall there. Own face, size-adjust fitted with Pillow to the 194u L cap (CSS Fonts 5 §size-adjust). */
+/* R9: per-role fallback faces. Liberation/Arial ship no narrow cut, so font-stretch cannot select one; the width is
+   matched with size-adjust instead (CSS Fonts 5 §size-adjust; web.dev "Improved font fallbacks"). Factors = Roboto Flex
+   ink width / fallback ink width, measured with Playwright + Pillow on the font-blocked 1440 render (R8: help +23.8%,
+   TRUTH TABLE +17.3%). Vertical metrics stay pinned to Roboto Flex's hhea so baselines do not move. */
+@font-face { font-family: 'Help Fallback'; src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue');
+  font-weight: 100 599; size-adjust: 77.6%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Help Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('HelveticaNeue-Bold');
+  font-weight: 600 1000; size-adjust: 77.6%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Label Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('HelveticaNeue-Bold');
+  size-adjust: 86.4%; ascent-override: 92.77%; descent-override: 24.41%; line-gap-override: 0%; }
+@font-face { font-family: 'Logic Wordmark Fallback'; src: local('Arial Bold'), local('Liberation Sans Bold'), local('Helvetica Neue Bold'); size-adjust: 96.2%; }
+
+/* Swiss grid, light only. Tokens first; components read tokens.
+   Grid: Müller-Brockmann, Grid Systems in Graphic Design (1981): fixed field proportions,
+   one rule weight, numbered fields. Measured targets in scratchpad/r5/I-SPEC.md. */
+:root {
+  color-scheme: light;
+  --paper: #ffffff;
   --ink: #111111;
-  --mute: #8a8a84;
-  --grid: #e2e2dc;
-  --wire-0: #111111;
-  --wire-1: #ff5a1f; /* signal orange = logic 1 */
-  --font: 'Geist', system-ui, sans-serif;
-  --mono: 'Geist Mono', ui-monospace, monospace;
+  --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
+  --grid: #e2e2e2;
+  --font: 'Roboto Flex Variable', 'Roboto Flex Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-help: 'Roboto Flex Variable', 'Help Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-label: 'Roboto Flex Variable', 'Label Fallback', 'Helvetica Neue', Arial, sans-serif;
+  /* One scale unit: 1/1440 of the frame width (CSS Containment 3, container query length units:
+     https://www.w3.org/TR/css-contain-3/#container-lengths ; MDN "CSS container queries"). Every length of the
+     composition is written as N * --u, N = its px value at 1440x810, so at 1440 --u = 1px exactly and the
+     approved render is unchanged. Unregistered custom properties substitute as tokens (CSS Variables 1), so
+     cqw resolves on each using element against the .frame container. Canvas internals stay in flow px:
+     React Flow scales them by viewport zoom = frame width / 1440 (App.jsx). */
+  --u: calc(100cqw / 1440);
+  /* Zoom-gated text floor. --dpr is window.devicePixelRatio (set in main.jsx; MDN: devicePixelRatio includes browser
+     zoom). --u * --dpr is the unit this frame would have at 100% zoom on a 1x screen, capped at 1rem/16 (1px at 1440).
+     At 100% zoom on a 1x screen --f = --u, so every max() below is inert and type stays proportional at 1280/1366;
+     under zoom --f holds text at its unzoomed CSS size, so device px grow with zoom (WCAG 2.2 SC 1.4.4). */
+  --dpr: 1;
+  --f: min(1rem / 16, var(--u) * var(--dpr));
+  /* Rules snap to whole CSS px (CSS Values 4 round()); Chromium floors fractional border widths otherwise (1.78 -> 1px). */
+  /* max(1px, ...) keeps a rule from rounding to 0 on a tiny frame; within 1 CSS px of 2u everywhere. */
+  --rule: max(1px, round(nearest, calc(2 * var(--u)), 1px));
+  --hair: max(1px, round(nearest, var(--u), 1px));
+  /* Gutter: 53u, but in the zoom reflow it must still hold the rem-floored field numerals. */
+  --gut: calc(53 * var(--u));
+  --stroke: 6px;
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+/* Letterbox: the composition is a fixed-proportion grid (Müller-Brockmann: field proportions are the system), so a
+   non-16:9 window centres one 16:9 frame on paper instead of re-flowing fields. aspect ratio held with explicit
+   min() sizes (CSS Values 4 min(); CSS Sizing 4 aspect-ratio). Paper bars = same colour as the page, no scroll. */
+html, body { overflow: hidden; }
+/* #root is the page container (queried below for the zoom reflow) and the only scroller. */
+#root { display: grid; place-items: center; background: var(--paper); container: page / size; overflow: hidden auto; }
+.frame { container-type: inline-size; width: min(100vw, 100vh * 16 / 9); height: min(100vh, 100vw * 9 / 16); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased;
+  font-optical-sizing: auto; font-kerning: normal; font-feature-settings: 'kern' 1; }
+/* Composited, non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
+.app { will-change: transform; }
 
-.app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
-
-.bar {
-  display: flex; align-items: baseline; gap: 16px;
-  padding: 16px 24px; border-bottom: 3px solid var(--ink);
+/* 1440x810 target: rules at x 53/959, y 252/741, 2px, outer frame 2px. fr = px at 1440 x 810. */
+.app {
+  position: relative; height: 100%; overflow: hidden;
+  display: grid;
+  grid-template-columns: 53fr 906fr 477fr;
+  grid-template-rows: 252fr 489fr 65fr;
+  border: var(--rule) solid var(--ink);
 }
-.wordmark { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; }
-.hint { font-family: var(--mono); font-size: 12px; color: var(--mute); }
+.cell { position: relative; min-width: 0; min-height: 0; border-right: var(--rule) solid var(--ink); border-bottom: var(--rule) solid var(--ink); }
+.c-side { border-right: 0; }
+.r3 { border-bottom: 0; }
 
-.status {
-  font-family: var(--mono); font-size: 13px; padding: 10px 24px;
-  border-top: 1px solid var(--grid); min-height: 38px;
+/* Field numerals: bold, cap 12px, set in the gutter (Müller-Brockmann: numbered fields). */
+.rownum { position: absolute; left: calc(16 * var(--u)); font: 800 max(calc(18.3 * var(--u)), calc(18.3 * var(--f)))/1 var(--font); font-stretch: 118%; letter-spacing: 0; }
+.rownum .f1 { font-variation-settings: 'XTRA' 603; } /* ref3's 1 is a wider figure than Roboto Flex's; XTRA opens it */
+.r1 .rownum { bottom: calc(20 * var(--u)); }
+.r2 .rownum { top: calc(26 * var(--u)); }
+.r3 .rownum { top: 50%; transform: translateY(-50%); }
+
+/* Wordmark: black grotesk, L cap = 24vh, tracking -0.045em; the g breaks the row rule, drawn above the canvas. */
+.wordmark {
+  position: absolute; z-index: 5; pointer-events: none; margin: 0;
+  font: 760 calc(294.2 * var(--u))/1 var(--font); font-stretch: 108%;
+  font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
+  letter-spacing: -0.03em; color: var(--ink);
+  font-family: 'Roboto Flex Variable', 'Logic Wordmark Fallback', sans-serif;
+  left: calc(55 * var(--u)); top: calc(-13 * var(--u));
 }
-.status.bad { color: var(--wire-1); }
 
-.react-flow__edge-path { stroke: var(--wire-0); stroke-width: 3; }
-.react-flow__edge.on .react-flow__edge-path { stroke: var(--wire-1); }
-.react-flow__handle { width: 10px; height: 10px; background: var(--ink); border: 0; border-radius: 0; }
+/* Per-glyph fit to ref3 (Pillow, cap 194): a display cut draws caps heavier than lowercase and opens its round
+   counters; Roboto Flex exposes both as parametric axes (Google Fonts, Roboto Flex: XOPQ = thin-stroke/stem
+   thickness, XTRA = counter width), so no faux-bold and no scaleX. Pair kerns g-i and i-c are tightened by hand
+   (font-kerning alone leaves the i-c gap at 9px vs ref3's 1px). font-variation-settings does not merge per axis,
+   so each span restates the whole list. */
+.wordmark .wL { font-stretch: 106%; font-variation-settings: 'XOPQ' 126, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wo { font-variation-settings: 'XOPQ' 112, 'YOPQ' 88, 'XTRA' 476, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wg { letter-spacing: -0.04em; font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 488, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wi { letter-spacing: -0.057em; }
+.wordmark .wc { font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 494, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
 
-.switch {
-  width: 64px; height: 40px; border: 3px solid var(--ink); background: var(--bg);
-  font: 600 16px var(--mono); color: var(--ink); cursor: pointer;
-}
-.switch.on { background: var(--wire-1); border-color: var(--wire-1); color: #fff; }
-.switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+/* Top-right: ink disk + two-line caps lockup. */
+.disk { position: absolute; left: calc(25 * var(--u)); top: calc(74 * var(--u)); width: calc(153 * var(--u)); height: calc(153 * var(--u)); border-radius: 50%; border: 0; padding: 0;
+  background: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.disk svg { width: calc(100 * var(--u)); height: calc(100 * var(--u)); overflow: visible; }
+.disk path { fill: none; stroke: var(--paper); stroke-width: 13; stroke-linecap: butt; stroke-linejoin: miter; }
+.disk:hover { background: #000; box-shadow: 0 0 0 calc(4 * var(--u)) var(--paper), 0 0 0 calc(7 * var(--u)) var(--ink); }
+.disk[aria-pressed='true'] svg { transform: rotate(90deg); }
+.lockup { position: absolute; left: calc(206 * var(--u)); top: calc(96 * var(--u)); margin: 0; font: 800 max(calc(57.9 * var(--u)), calc(57.9 * var(--f)))/0.91537 var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; }
 
-.gate svg path { fill: var(--bg); stroke: var(--ink); stroke-width: 3; }
-.gate.on svg path { stroke: var(--wire-1); }
-.gate-label { font: 600 11px var(--mono); text-align: center; margin-top: 2px; }
+/* Canvas */
+.canvas { background: var(--paper); }
+.react-flow { background: transparent; }
+.react-flow__pane { cursor: default; }
 
-.lamp { width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--ink); background: var(--bg); }
-.lamp.on { background: var(--wire-1); border-color: var(--wire-1); }
+/* Components: one 6px ink outline, paper fill, lit = orange true-inset path. Outline never orange. */
+.shape { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.shape .body { fill: var(--paper); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-miterlimit: 10; }
+.shape .lit { fill: var(--one); stroke: none; }
+.node { position: relative; }
+.switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
 
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
+/* Ports: invisible 16px boxes centred on the knob; the knob itself is part of the outline path. */
+.react-flow__handle.port { position: absolute; z-index: 1; transform: none; right: auto; bottom: auto; min-width: 0; min-height: 0;
+  background: transparent; border: 0; border-radius: 0; cursor: crosshair; }
+.react-flow__handle.port:hover, .react-flow__handle.port.connectingto { outline: 2px solid var(--ink); outline-offset: 1px; }
+.react-flow__handle.port.picked { outline: 3px solid var(--ink); outline-offset: 1px; }
+
+/* Wires: 6px, orthogonal, ink = 0, orange = 1. */
+.react-flow__edge-path { stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-linecap: butt; }
+.react-flow__edge.on .react-flow__edge-path { stroke: var(--one); }
+.react-flow__edge.selected .react-flow__edge-path, .react-flow__edge:focus .react-flow__edge-path { stroke: var(--ink); stroke-dasharray: 12 6; }
+.react-flow__edge.on.selected .react-flow__edge-path, .react-flow__edge.on:focus .react-flow__edge-path { stroke: var(--one); }
+.react-flow__connection-path { stroke: var(--ink); stroke-width: 2px; stroke-dasharray: 6 4; }
+
+/* Selection + focus: ink only (WCAG 2.2 SC 2.4.7, 2.4.11; 18.9:1 on paper). */
+.react-flow .react-flow__node.selected { outline: 2px dashed var(--ink); outline-offset: -2px; }
+.react-flow .react-flow__node:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+.react-flow__handle.port:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.disk:focus-visible { outline: max(2px, calc(3 * var(--u))) solid var(--ink); outline-offset: calc(5 * var(--u)); }
+.react-flow__node { cursor: grab; }
+
+/* Inline rejection beside the failed port (GOV.UK Design System: error message next to the field).
+   22px clear of the node box so neither the knob nor its hover ring is covered (R6 defect 8). */
+.reject { position: absolute; right: calc(100% + 22px); transform: translateY(-50%); margin: 0; white-space: nowrap; z-index: 10;
+  padding: 3px 0 3px 10px; border-left: 4px solid var(--ink); background: var(--paper);
+  font: 700 14px/1.2 var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; color: var(--ink); }
+
+/* Truth table: block centred in row 02 (Tony delta 3). */
+.truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }
+.truth .label { margin: 0 0 0 calc(4 * var(--u)); font: 760 max(calc(43.7 * var(--u)), calc(43.7 * var(--f)))/0.68650 var(--font-label); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--u)); }
+.truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: calc(32 * var(--u)); }
+.truth th { font: 700 max(calc(32.4 * var(--u)), calc(32.4 * var(--f)))/0.70988 var(--font); font-stretch: 100%; padding: 0 0 0.52469em; text-align: center; border-bottom: var(--rule) solid var(--ink); }
+.truth td { font: 760 max(calc(35.8 * var(--u)), calc(35.8 * var(--f)))/1 var(--font); font-stretch: 105%; height: 1.89944em; padding: 0; text-align: center; border-bottom: var(--hair) solid var(--ink); font-variant-numeric: tabular-nums; }
+.truth th:first-child, .truth td:first-child { text-align: left; padding-left: calc(8 * var(--u)); }
+/* Column widths set so column centres land on ref3's (A 1129, B 1248, OUT 1366 at 1440 wide). */
+.truth th:nth-child(1) { width: 22.25%; } .truth th:nth-child(2) { width: 23.62%; }
+.truth th:nth-child(3) { width: 30.73%; } .truth th:nth-child(4) { width: 23.40%; }
+/* Per-glyph fit (Pillow vs ref3 at cap 23 / 26). Roboto Flex has no 'tnum' feature: its default figures are
+   already tabular (GSUB lists only liga/locl/pnum/rvrn), so ink width is fitted per figure with wdth and XTRA
+   (XTRA = counter/white width, Google Fonts Roboto Flex axis docs). */
+.truth th .hN { font-stretch: 55%; } .truth th .hA { font-stretch: 115%; } .truth th .hB { font-stretch: 130%; }
+.truth th .hO { letter-spacing: -0.061728em; } .truth th .hU { font-stretch: 115%; letter-spacing: -0.030864em; }
+.truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
+.truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
+.truth tr.live td { background: var(--one); color: var(--paper); }
+
+/* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
+.status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
+.status .msg { font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.status .msg.bad { font-weight: 700; border-left: 0.2367em solid var(--ink); padding-left: 0.59172em; }
+
+.help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--u)) 0 calc(8 * var(--u)); }
+.help p { margin: 0; white-space: nowrap; font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.help i { font-style: normal; margin: 0 .45em; }
+/* Mouse icon (Delta 7): 14x20 SVG at 1:1 (R9: sized in em of the help type, as is the chip, so the two scale together), 2px stroke = chip border. Bottom at baseline + 4px, so the
+   20px box is centred on the 12px cap band (baseline-12 .. baseline). */
+.help .mouse { display: inline-block; width: 0.8285em; height: 1.1835em; vertical-align: -0.2367em; margin-right: .5em; overflow: visible; }
+.help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 2; }
+.help .mouse .q { fill: var(--ink); stroke: none; }
+/* BKSP chip: label = help cap (12px, Medium) on the text baseline; 20px square-cornered box, 2px border,
+   4px padding above and below the cap band. */
+.help kbd { display: inline-block; vertical-align: baseline; height: 1.1835em; padding: 0 0.2367em; border: 0.1184em solid var(--ink); border-radius: 0;
+  font: 500 1em/0.94675 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
+.help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }
+
+/* Small lines: hinted Linux text rounds every advance to whole px, so a 16.9u line drifts +-4.5% as --u changes.
+   geometricPrecision keeps fractional advances (MDN: text-rendering); a 0.013em track restores the 1440 width. */
+.help p, .help kbd { text-rendering: geometricPrecision; letter-spacing: 0.013em; }
+.rownum { text-rendering: geometricPrecision; }
+/* opsz pinned to each element's 1440 size: font-optical-sizing: auto would change glyph widths with --u (MDN). */
+.rownum { font-variation-settings: 'opsz' 18.3; }
+.rownum .f1 { font-variation-settings: 'opsz' 18.3, 'XTRA' 603; }
+.lockup { font-variation-settings: 'opsz' 57.9; }
+.truth .label { font-variation-settings: 'opsz' 43.7; }
+.truth th { font-variation-settings: 'opsz' 32.4; }
+.truth td { font-variation-settings: 'opsz' 35.8; }
+.truth td .f1 { font-variation-settings: 'opsz' 35.8, 'XTRA' 520; }
+
+/* R9 zoom reflow (WCAG 2.2 SC 1.4.4 + 1.4.10). Text above carries rem floors, so under browser zoom it grows 2x in
+   device px while the layout unit --u still follows the frame. Once the frame is narrower than 70rem (or shorter than
+   39.375rem = 70rem * 9/16), the floored text no longer fits the 16:9 fields, so the letterbox gives way to a vertically
+   scrolling grid (Understanding 1.4.10: vertical scrolling is allowed). Breakpoint in rem = the ratio of zoom to window
+   (MDN, @container: relative units in the query resolve against the root font size). Order is kept:
+   header -> canvas -> table -> footer. */
+@container page style(--zoomed: 1) and ((width < 70rem) or (height < 39.375rem)) {
+  .frame { width: 100%; height: auto; align-self: start; }
+  .app { height: auto; --gut: max(calc(53 * var(--u)), calc(53 * var(--f)));
+    grid-template-columns: var(--gut) minmax(0, 1fr) max(calc(477 * var(--u)), calc(477 * var(--f)));
+    grid-template-rows: calc(252 * var(--u)) auto max(calc(489 * var(--u)), calc(489 * var(--f))) auto max(calc(65 * var(--u)), calc(65 * var(--f))); }
+  /* Field 01 splits: wordmark on its own full-width band, disk + lockup on a band below it (right-aligned, so the
+     g's descender, which still breaks the rule, lands in the empty left of that band). */
+  .c-margin.r1 { grid-area: 1 / 1 / 3 / 2; } .c-main.r1 { grid-area: 1 / 2 / 2 / 4; border-right: 0; }
+  .c-side.r1 { grid-area: 2 / 2 / 3 / 4; display: flex; align-items: center; justify-content: flex-end; gap: 1.5rem;
+    padding: 0.5rem calc(24 * var(--u)) 0.5rem 0; }
+  .c-side.r1 .disk, .c-side.r1 .lockup { position: static; flex: none; }
+  .lockup br { display: none; } /* one line: keeps the band short so the canvas stays in the first screen */
+  .c-margin.r2 { grid-area: 3 / 1 / 5 / 2; }
+  .canvas { grid-area: 3 / 2 / 4 / 4; border-right: 0; }
+  .truth { grid-area: 4 / 2 / 5 / 4; padding-block: 1.5rem; align-items: end; }
+  .truth .label, .truth table { width: calc(23.5rem - 40 * var(--u)); }
+  .c-margin.r3 { grid-area: 5 / 1; } .status { grid-area: 5 / 2; } .help { grid-area: 5 / 3; }
+  .wordmark { left: calc(var(--gut) + 2 * var(--u)); }
 }
