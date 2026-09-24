@@ -140,6 +140,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Ports: invisible 16px boxes centred on the knob; the knob itself is part of the outline path. */
 .react-flow__handle.port { position: absolute; z-index: 1; transform: none; right: auto; bottom: auto; min-width: 0; min-height: 0;
   background: transparent; border: 0; border-radius: 0; cursor: crosshair; }
+.react-flow__handle.port::after { content: ''; position: absolute; inset: -12px; } /* 44px hit target (WCAG 2.5.5); the 20px box keeps the wire end on the knob */
 .react-flow__handle.port:hover, .react-flow__handle.port.connectingto { outline: 2px solid var(--ink); outline-offset: 1px; }
 .react-flow__handle.port.picked { outline: 3px solid var(--ink); outline-offset: 1px; }
 

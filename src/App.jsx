@@ -155,7 +155,9 @@ export default function App() {
           edges={edges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
-          onNodeDoubleClick={(_, n) => removeNodes([n.id])}
+          onNodeContextMenu={(e, n) => { e.preventDefault(); removeNodes([n.id]); }}
+          onEdgeContextMenu={(e, w) => { e.preventDefault(); onEdgesChange([{ type: 'remove', id: w.id }]); }}
+          connectionRadius={36}
           deleteKeyCode={['Backspace', 'Delete']}
           zoomOnDoubleClick={false}
           onEdgesChange={onEdgesChange}
