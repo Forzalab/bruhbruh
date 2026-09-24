@@ -27,6 +27,7 @@ export default function App() {
   const [circuit, setCircuit] = useState(START);
   const [view, , onViewChange] = useNodesState(VIEW);
   const [showGrid, setShowGrid] = useState(false);
+  const [reject, setReject] = useState(null);
   const [status, setStatus] = useState({ text: 'Drag from a dot to a dot to wire. Click a switch to flip it.', bad: false });
 
   // Compute everything, then React commits the frame once. Drags never reach here.
@@ -37,7 +38,7 @@ export default function App() {
 
   const nodes = view.map((n) => ({
     ...n,
-    data: { ...circuit.nodes[n.id], on: values[n.id], onToggle: () => toggle(n.id) },
+    data: { ...circuit.nodes[n.id], on: values[n.id], onToggle: () => toggle(n.id), reject: reject?.node === n.id ? reject : null },
   }));
 
   const edges = Object.values(circuit.wires).map((w) => ({
@@ -53,7 +54,8 @@ export default function App() {
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
-    if (!check.ok) return setStatus({ text: `Can't connect: ${check.reason}.`, bad: true });
+    setReject(null);
+    if (!check.ok) return setReject({ node: target, pin: targetHandle, text: `Can't connect: ${check.reason}` });
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
     setStatus({ text: 'Connected.', bad: false });
@@ -92,6 +94,7 @@ export default function App() {
           onNodesChange={onViewChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onConnectStart={() => setReject(null)}
           snapToGrid
           snapGrid={[20, 20]}
           fitView

@@ -11,14 +11,15 @@
   --rule: #1a1a1a;
   --mute: #6b6b6b;
   --grid: #d9d9d9;
-  --wire-0: #000000;
-  --wire-1: #ff5a1f; /* signal orange: the only accent */
+  --wire-0: #767676; /* logic-0 grey, 4.54:1 on white (WCAG 1.4.11) */
+  --wire-1: #000000; /* logic-1 black */
+  --accent: #ff5a1f; /* only on lamp + live row */
   --on-ink: #ffffff;
   --font: 'Inter Tight', 'Helvetica Neue', 'Liberation Sans', Arial, sans-serif;
   --mono: 'JetBrains Mono', 'DejaVu Sans Mono', ui-monospace, monospace;
   --margin: 46px;          /* row-numeral margin column */
   --side: 30%;             /* right column = 0.30 of width */
-  --r1: 40.5%;             /* header row = 0.405 of height */
+  --r1: 38.9%;             /* header row = 0.405 of height */
   --r3: 68px;
   --hair: 1px;
   --stroke: 3px;
@@ -52,9 +53,9 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 /* Giant wordmark: sits in row 01 and its descender breaks into row 02. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.97em + 17px);
+  left: calc(var(--margin) - 4px); top: calc(var(--r1) - 0.97em + 17px + 20px);
   font: 800 25.8vw/1 var(--font); letter-spacing: -0.05em; color: var(--ink);
-  font-size: min(25.4vw, 366px);
+  font-size: min(25.9vw, 373px);
 }
 
 .canvas { background: var(--bg); }
@@ -64,11 +65,11 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .truth { display: flex; flex-direction: column; padding: 0; }
 .truth .label { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; color: var(--ink); padding: 20px 24px 0; }
 .truth table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-.truth th { font: 800 20px var(--font); text-align: left; padding: 0 24px 12px; border-bottom: var(--hair) solid var(--rule); }
+.truth th { font: 800 22px var(--font); text-align: left; padding: 0 24px 12px; border-bottom: var(--hair) solid var(--rule); }
 .truth td { font: 800 24px/1 var(--font); height: 57px; padding: 0 24px; border-bottom: var(--hair) solid var(--rule); font-variant-numeric: tabular-nums; }
 .truth th:last-child, .truth td:last-child { text-align: right; }
-.truth tr.live td { color: var(--wire-1); }
-.truth tr.live td:first-child { box-shadow: inset 4px 0 0 var(--wire-1); }
+.truth tr.live td { color: var(--accent); }
+.truth tr.live td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
 .truth .hint { margin: auto 24px 16px; font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #111; }
 
 /* The one primary action (ref2 arrow-in-circle). */
@@ -78,17 +79,17 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 .primary .disk svg { width: 56px; height: 56px; }
 .primary .txt { font: 800 30px/1 var(--font); text-transform: uppercase; letter-spacing: -0.01em; }
 .primary .sub { display: block; margin-top: 8px; font: 500 12px var(--mono); letter-spacing: .1em; }
-.primary:focus-visible, .switch:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+.primary:focus-visible, .switch:focus-visible, .react-flow__handle:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .primary[aria-pressed="true"] .disk svg { transform: rotate(90deg); }
 
 .status { display: flex; align-items: center; gap: 32px; padding: 0 14px; }
 .status .msg { font: 500 12px var(--mono); color: #111; text-transform: uppercase; letter-spacing: .12em; }
 .status.bad .msg { color: var(--ink); font-weight: 700; }
-.status.bad .msg::before { content: '\25A0  '; color: var(--wire-1); }
+.status.bad .msg::before { content: '\25A0  '; color: var(--accent); }
 
 /* Wires + handles */
-.react-flow__edge-path { stroke: var(--wire-0); stroke-width: var(--stroke); }
-.react-flow__edge.on .react-flow__edge-path { stroke: var(--wire-1); stroke-width: 3; }
+.react-flow__edge-path { stroke: var(--wire-0); stroke-width: 2px; }
+.react-flow__edge.on .react-flow__edge-path { stroke: var(--wire-1); stroke-width: 3.5px; }
 .react-flow__handle { width: 8px; height: 8px; min-width: 0; min-height: 0; background: var(--ink); border: 0; border-radius: 50%; }
 
 .node-tag { display: block; text-align: center; font: 800 15px var(--font); letter-spacing: .04em; margin-bottom: 6px; }
@@ -99,17 +100,17 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
   display: grid; cursor: pointer;
 }
 .switch-core { border: var(--stroke) solid var(--ink); background: var(--bg); }
-.switch.on .switch-core { background: var(--wire-1); border-color: var(--wire-1); }
+.switch.on .switch-core { background: var(--ink); }
 .sw-wrap .react-flow__handle { top: auto; bottom: 18px; }
 
 .gate { position: relative; width: 104px; height: 80px; }
 .gate svg { display: block; overflow: visible; }
-.gate svg path { fill: var(--ink); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
-.gate-label { position: absolute; left: 0; width: 76px; top: 50%; transform: translateY(-50%); text-align: center; font: 800 16px var(--font); letter-spacing: .06em; color: var(--on-ink); }
+.gate svg path { fill: var(--bg); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
+.gate-label { position: absolute; left: 0; width: 76px; top: 50%; transform: translateY(-50%); text-align: center; font: 800 16px var(--font); letter-spacing: .06em; color: var(--ink); }
 
 .lamp-wrap { position: relative; }
 .lamp { width: 44px; height: 44px; border-radius: 50%; border: var(--stroke) solid var(--ink); background: var(--bg); }
-.lamp.on { background: var(--wire-1); }
+.lamp.on { background: var(--accent); }
 .lamp-wrap .react-flow__handle { top: auto; bottom: 18px; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -117,17 +118,24 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font); }
 }
 
 /* Interaction states: instant, no transitions (WCAG 2.4.7 focus visible; Carbon interaction states). */
-.switch:hover { background: #ececec; }
+.switch:hover { box-shadow: 0 0 0 3px var(--ink); background: #e6e6e6; }
 .switch:active { background: var(--ink); }
 .switch:active .switch-core { border-color: var(--on-ink); }
 .primary:hover .disk { outline: 3px solid var(--ink); outline-offset: 4px; }
 .primary:hover .txt { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
 .primary:active .disk { background: #333; }
 .react-flow__handle { cursor: crosshair; }
-.react-flow__handle:hover { box-shadow: 0 0 0 4px var(--ink); }
+.react-flow__handle:hover { width: 16px; height: 16px; background: var(--bg); box-shadow: inset 0 0 0 3px var(--ink); }
 .react-flow__connection-path { stroke: var(--ink); stroke-width: 3px; stroke-dasharray: 6 4; }
 .react-flow__handle.connectingto { box-shadow: 0 0 0 4px var(--ink); }
 .react-flow__handle.connectingto.valid { background: var(--bg); box-shadow: 0 0 0 3px var(--ink); width: 14px; height: 14px; }
 .react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: 8 4; }
-.status.bad { background: var(--ink); }
-.status.bad .msg, .status.bad .label { color: var(--on-ink); }
+
+.gate:hover svg path { fill: #e6e6e6; stroke-width: 5px; }
+/* Error beside the failed port (GOV.UK error message; WCAG 3.3.1) */
+.port-err { position: absolute; right: calc(100% + 18px); margin: 0; white-space: nowrap; transform: translateY(-50%);
+  font: 800 14px/1 var(--font); text-transform: uppercase; letter-spacing: .02em; color: var(--ink);
+  background: var(--bg); padding: 4px 0 4px 10px; border-left: 4px solid var(--accent); }
+#err-in0 { top: 22px; } #err-in1 { top: 58px; }
+.lamp-wrap .port-err { top: auto; bottom: 22px; transform: translateY(50%); }
+.react-flow__handle[aria-invalid="true"] { background: var(--accent); }

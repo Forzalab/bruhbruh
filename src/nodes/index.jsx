@@ -10,10 +10,12 @@ export function SwitchNode({ id, data }) {
         aria-label={`switch ${NAMES[id] ?? id} ${data.on ? 'on' : 'off'}`}>
         <span className="switch-core" />
       </button>
-      <Handle type="source" position={Position.Right} id="out" />
+      <Handle type="source" position={Position.Right} id="out" tabIndex={0} aria-label={`output of ${NAMES[id] ?? id}`} />
     </div>
   );
 }
+
+const Err = ({ r, pin }) => r && r.pin === pin ? <p className="port-err" role="alert" id={`err-${pin}`}>{r.text}</p> : null;
 
 // IEEE distinctive-shape AND: flat back, semicircular front. Label sits inside.
 export function GateNode({ data }) {
@@ -23,9 +25,10 @@ export function GateNode({ data }) {
         <path d="M2 2 H62 A38 38 0 0 1 62 78 H2 Z" />
       </svg>
       <div className="gate-label">{data.type}</div>
-      <Handle type="target" position={Position.Left} id="in0" style={{ top: 22 }} />
-      <Handle type="target" position={Position.Left} id="in1" style={{ top: 58 }} />
-      <Handle type="source" position={Position.Right} id="out" style={{ top: 40 }} />
+      <Handle type="target" position={Position.Left} id="in0" style={{ top: 22 }} tabIndex={0} aria-label="gate input 1" aria-invalid={data.reject?.pin === 'in0' || undefined} />
+      <Handle type="target" position={Position.Left} id="in1" style={{ top: 58 }} tabIndex={0} aria-label="gate input 2" aria-invalid={data.reject?.pin === 'in1' || undefined} />
+      <Handle type="source" position={Position.Right} id="out" style={{ top: 40 }} tabIndex={0} aria-label="gate output" />
+      <Err r={data.reject} pin="in0" /><Err r={data.reject} pin="in1" />
     </div>
   );
 }
@@ -34,7 +37,8 @@ export function LampNode({ data }) {
   return (
     <div className="lamp-wrap">
       <span className="node-tag">OUT</span>
-      <Handle type="target" position={Position.Left} id="in0" />
+      <Handle type="target" position={Position.Left} id="in0" tabIndex={0} aria-label="lamp input" />
+      <Err r={data.reject} pin="in0" />
       <div className={`lamp ${data.on ? 'on' : ''}`} role="img" aria-label={data.on ? 'lamp on' : 'lamp off'} />
     </div>
   );
