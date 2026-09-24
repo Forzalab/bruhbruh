@@ -161,15 +161,20 @@ export default function App() {
 
       <div className="cell c-margin r3"><span className="rownum">03</span></div>
       <footer className="cell c-main r3 status">
-        <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
+        {/* Row 03 stays empty like ref3; only rejections are shown. Other messages remain for screen readers. */}
+        <span className={`msg ${status.bad ? 'bad' : 'sr'}`} role="status">{status.text}</span>
       </footer>
       <div className="cell c-side r3 help">
         <p className="helpline">
-          <span className="mouse" aria-hidden="true" /><span className="sr">Click</span> <span>to flip</span>
+          <svg className="mouse" viewBox="0 0 8 12" aria-hidden="true">
+            <rect x=".7" y=".7" width="6.6" height="10.6" rx="3.3" />
+            <path className="q" d="M4 .7A3.3 3.3 0 0 0 .7 4v1.4H4Z" />
+            <path d="M4 .7V5.4M.7 5.4H7.3" />
+          </svg><span className="sr">Click</span> <span>to flip</span>
           <span className="sep" aria-hidden="true">·</span>
           <span>Drag to wire</span>
           <span className="sep" aria-hidden="true">·</span>
-          <kbd className="chip"><span>Bksp</span></kbd> <span>to delete</span>
+          <kbd className="chip">Bksp</kbd> <span>to delete</span>
         </p>
       </div>
     </div>

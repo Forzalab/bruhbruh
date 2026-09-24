@@ -22,7 +22,9 @@
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--paper); color: var(--ink); font-family: var(--font); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+/* Composited non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
+.app { will-change: transform; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 .app {
@@ -73,7 +75,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); }
 
 /* Components: SVG body, one 6px stroke; outline always ink. */
 .body { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: block; }
-.body .knob { fill: var(--ink); }
+/* Knob = hollow ring (ref3): 6px ink stroke, paper hole; centred on the outer ink edge, so it bumps 9px out. */
+.body .knob { fill: var(--paper); stroke: var(--ink); stroke-width: var(--stroke); }
 .body .outline { fill: none; stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; }
 /* Pass 1 of the lit inset: fill + 18px paper stroke clipped inside = 3px under ink + 6px gap. */
 .body .fill { fill: var(--paper); stroke: var(--paper); stroke-width: 18px; }
@@ -83,7 +86,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); }
 .react-flow__node.selected { outline: 2px dashed var(--ink); outline-offset: 10px; }
 .sw-wrap, .gate, .lamp-wrap { position: relative; }
 .switch { position: absolute; inset: 0; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; display: block; }
-.switch:hover:not(.on) .fill { fill: #e4e4e4; }
+.switch:hover .outline { stroke-width: 8px; } /* ink-only hover (M3 state layer without colour) */
 .switch:active .outline { stroke-width: 10px; }
 
 /* Handles: invisible hit box centred on the knob (the knob itself is drawn in the SVG, under the outline). */
@@ -94,8 +97,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); }
 .react-flow__handle.picked { background: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 5px var(--ink); }
 
 /* Focus: 3px ink ring, offset, on every tab stop (WCAG 2.2 SC 2.4.7 / 2.4.11; GOV.UK focus state). */
-.primary:focus-visible { outline: 0; }
-.primary:focus-visible .disk { outline: 3px solid var(--ink); outline-offset: 5px; }
+.primary:focus-visible { outline: 3px solid var(--ink); outline-offset: 8px; }
 .switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 6px; }
 .react-flow .react-flow__node:focus-visible { outline: 3px solid var(--ink) !important; outline-offset: 8px; }
 .react-flow__handle:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
@@ -120,18 +122,13 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); }
 .help { display: flex; align-items: center; justify-content: flex-end; padding-right: 18px; }
 .helpline { margin: 0; white-space: nowrap; color: var(--ink); font: 500 16.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
 .helpline .sep { margin: 0 0.55em; }
-/* Mouse: rounded body (border), top-left button filled (pseudo border-left), 45% split line (pseudo border-bottom). */
-.mouse { display: inline-block; vertical-align: baseline; position: relative; overflow: hidden;
-  width: 9px; height: 12px; height: 1cap; margin-right: 0.5em;
-  border: 1.5px solid var(--ink); border-radius: 4.5px; }
-.mouse::before { content: ''; position: absolute; left: 0; top: 0; box-sizing: content-box;
-  width: 3px; height: 45%; border-left: 3px solid var(--ink); border-bottom: 1.5px solid var(--ink); }
-.chip { display: inline-block; vertical-align: baseline; overflow: hidden; position: relative; box-sizing: border-box;
-  width: 40px; height: 12px; height: 1cap; margin-right: 0.35em; border: 1.5px solid var(--ink); border-radius: 0; font: inherit; }
-/* Label centred inside the cap-high chip (weight 500, Tony delta 6). */
-.chip > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 9.5px; font-weight: 500; line-height: 1; letter-spacing: 0.08em; padding-left: 0.08em; }
-
+/* Mouse: inline SVG sized in em = Inter Tight cap height (0.7273em = 12px at 16.5px); stroke = Medium stem. */
+.mouse { display: inline-block; vertical-align: baseline; height: calc(0.7273 * 1em); width: calc(0.7273 * 1em * 8 / 12); margin-right: 0.5em; overflow: visible; }
+.mouse rect, .mouse path { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.mouse .q { fill: var(--ink); stroke: none; }
+/* BKSP chip (Delta 6 correction): label = help cap (12px, 500); line box = cap band, 2px pad + 2px border = 20px box centred on it. */
+.chip { display: inline-block; vertical-align: baseline; box-sizing: content-box; margin: 0; padding: 2px 0.35em 2px 0.43em;
+  border: 2px solid var(--ink); border-radius: 0; font: 500 16.5px/12px var(--font); letter-spacing: 0.08em; }
 /* Status line (row 03, main column): live messages only. */
 .status { display: flex; align-items: center; padding: 0 22px; }
 .status .msg { font: 500 16.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }

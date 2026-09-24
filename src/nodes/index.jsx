@@ -12,7 +12,7 @@ function Handle({ nodeId, data, ...p }) {
 
 // One 6px system. The contour sits 3px inside the node box so the outer ink edge is flush
 // with the box, and every knob centre sits exactly on that outer ink edge.
-const S = 6, H = S / 2, K = 6; // stroke, half stroke, knob radius
+const S = 6, H = S / 2, K = 6; // stroke, half stroke, knob ring centreline radius (outer r = 9: a 9px bump past the ink edge)
 
 // Lit inset: the SAME path drawn twice. Pass 1 = orange (or paper) fill with an 18px paper
 // stroke clipped to the shape, so 9px of paper eats inward: 3px under the ink + a 6px gap.
