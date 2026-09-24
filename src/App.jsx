@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState } from '@xyflow/react';
 import { canConnect, evaluate } from './sim.js';
 import { nodeTypes } from './nodes/index.jsx';
@@ -39,14 +39,30 @@ export default function App() {
   const [status, setStatus] = useState({ text: '', bad: false });
   // Canvas scale = frame width / 1440, the same factor as the CSS --u (100cqw / 1440). React Flow's viewport zoom
   // scales node geometry, strokes and knobs together, so wires stay on pin centres (React Flow docs: Viewport, zoom).
-  const frame = useRef(null);
-  const [zoom, setZoom] = useState(1);
+  // One probe, the canvas cell: zoom = --u (frame / 1440), capped so the circuit (870 x 420 flow px incl. air) still
+  // fits when the --t text tracks take more room (browser zoom, small windows). At 1440 x 810 it is exactly 1.
+  const frame = useRef(null), canvas = useRef(null);
+  const [zoom, setZoom] = useState(null);
   useLayoutEffect(() => {
-    const el = frame.current;
-    const ro = new ResizeObserver(() => setZoom(el.clientWidth / 1440));
-    ro.observe(el);
+    const f = frame.current, c = canvas.current;
+    const fit = () => setZoom(Math.min(f.clientWidth / 1440, c.clientWidth / 870, c.clientHeight / 420));
+    const ro = new ResizeObserver(fit);
+    ro.observe(f); ro.observe(c);
     return () => ro.disconnect();
   }, []);
+  // Pan and zoom are the user's; a resize rescales their viewport by zoom/zoom_prev instead of resetting it
+  // (React Flow docs: useReactFlow, getViewport / setViewport).
+  const [rf, setRf] = useState(null);
+  const prevZoom = useRef(null);
+  useEffect(() => {
+    if (!rf || zoom == null) return;
+    if (prevZoom.current == null) rf.setViewport({ x: 0, y: 0, zoom });
+    else if (prevZoom.current !== zoom) {
+      const v = rf.getViewport(), k = zoom / prevZoom.current;
+      rf.setViewport({ x: v.x * k, y: v.y * k, zoom: v.zoom * k });
+    }
+    prevZoom.current = zoom;
+  }, [rf, zoom]);
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
@@ -136,7 +152,7 @@ export default function App() {
       <h1 className="wordmark" aria-label="Logic"><span className="sr">Logic</span><span aria-hidden="true"><span className="wL">L</span><span className="wo">o</span><span className="wg">g</span><span className="wi">i</span><span className="wc">c</span></span></h1>
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
-      <main className="cell c-main r2 canvas">
+      <main className="cell c-main r2 canvas" ref={canvas}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -149,12 +165,9 @@ export default function App() {
           onConnect={onConnect}
           snapToGrid
           snapGrid={[20, 20]}
-          viewport={{ x: 0, y: 0, zoom }}
-          minZoom={0.25}
+          onInit={setRf}
+          minZoom={0.1}
           maxZoom={4}
-          panOnDrag={false}
-          zoomOnScroll={false}
-          zoomOnPinch={false}
           proOptions={{ hideAttribution: true }}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
@@ -163,7 +176,7 @@ export default function App() {
       <aside className="cell c-side r2 truth" aria-label="Truth table">
         <h2 className="label">Truth table</h2>
         <table>
-          <thead><tr><th><span className="hN">#</span></th><th><span className="hA">A</span></th><th><span className="hB">B</span></th><th aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
+          <thead><tr><th scope="col"><span className="hN">#</span></th><th scope="col"><span className="hA">A</span></th><th scope="col"><span className="hB">B</span></th><th scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
           <tbody>
             {rows.map(([x, y], i) => (
               <tr key={i} className={x === +a && y === +b ? 'live' : ''}>

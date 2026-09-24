@@ -35,19 +35,31 @@
      cqw resolves on each using element against the .frame container. Canvas internals stay in flow px:
      React Flow scales them by viewport zoom = frame width / 1440 (App.jsx). */
   --u: calc(100cqw / 1440);
+  /* Text unit (WCAG 2.2 SC 1.4.4 Resize Text): never smaller than 1/16 rem, so browser zoom, which shrinks the CSS
+     viewport and with it --u, still enlarges every label (MDN: max(); W3C Understanding 1.4.4). At 1440 x 810, 100%,
+     --t = --u = 1px, so the approved render is unchanged. Text-bearing tracks (header and footer rows, margin and
+     side columns) are sized in --t; the canvas row and column absorb the difference. */
+  --t: max(var(--u), 1rem / 16);
+  /* Wordmark unit: --u, capped so the logotype always fits the canvas column left between the --t tracks
+     (756u = its box width at 1440 plus the 2u left gap, with 34u of air before the column rule). */
+  --w: min(var(--u), (100cqw - 530 * var(--t)) / 790);
   /* Rules snap to whole CSS px (CSS Values 4 round()); Chromium floors fractional border widths otherwise (1.78 -> 1px). */
-  --rule: round(nearest, calc(2 * var(--u)), 1px);
+  --rule: max(1px, round(nearest, calc(2 * var(--u)), 1px));
+  --hair: max(1px, round(nearest, var(--u), 1px));
   --stroke: 6px;
 }
 
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; }
+html, body, #root { margin: 0; }
 /* Letterbox: the composition is a fixed-proportion grid (Müller-Brockmann: field proportions are the system), so a
    non-16:9 window centres one 16:9 frame on paper instead of re-flowing fields. aspect ratio held with explicit
    min() sizes (CSS Values 4 min(); CSS Sizing 4 aspect-ratio). Paper bars = same colour as the page, no scroll. */
-html, body { overflow: hidden; }
-#root { display: grid; place-items: center; background: var(--paper); }
-.frame { container-type: size; width: min(100vw, 100vh * 16 / 9); height: min(100vh, 100vw * 9 / 16); }
+/* Under zoom the --t tracks can outgrow the 16:9 box; the frame then grows downward and the page scrolls vertically
+   only (WCAG 2.2 SC 1.4.10 Reflow allows one scroll direction). */
+html, body { overflow-x: hidden; }
+html, body { height: auto; min-height: 100%; }
+#root { display: grid; place-items: center; min-height: 100vh; height: auto; background: var(--paper); }
+.frame { container-type: inline-size; display: grid; width: min(100vw, 100vh * 16 / 9); min-height: min(100vh, 100vw * 9 / 16); }
 body { background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased;
   font-optical-sizing: auto; font-kerning: normal; font-feature-settings: 'kern' 1; }
 /* Composited, non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
@@ -55,31 +67,33 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* 1440x810 target: rules at x 53/959, y 252/741, 2px, outer frame 2px. fr = px at 1440 x 810. */
 .app {
-  position: relative; height: 100%; overflow: hidden;
+  position: relative; overflow: hidden;
   display: grid;
-  grid-template-columns: 53fr 906fr 477fr;
-  grid-template-rows: 252fr 489fr 65fr;
+  grid-template-columns: calc(53 * var(--t)) minmax(0, 1fr) calc(477 * var(--t));
+  grid-template-rows: calc(252 * var(--t)) 1fr calc(65 * var(--t));
   border: var(--rule) solid var(--ink);
 }
 .cell { position: relative; min-width: 0; min-height: 0; border-right: var(--rule) solid var(--ink); border-bottom: var(--rule) solid var(--ink); }
 .c-side { border-right: 0; }
+.truth { min-height: auto; } /* row 02 never shorter than the table (grid auto minimum) */
 .r3 { border-bottom: 0; }
 
 /* Field numerals: bold, cap 12px, set in the gutter (Müller-Brockmann: numbered fields). */
-.rownum { position: absolute; left: calc(16 * var(--u)); font: 800 calc(18.3 * var(--u))/1 var(--font); font-stretch: 118%; letter-spacing: 0; }
+.rownum { position: absolute; left: calc(16 * var(--t)); font: 800 calc(18.3 * var(--t))/1 var(--font); font-stretch: 118%; letter-spacing: 0; }
 .rownum .f1 { font-variation-settings: 'XTRA' 603; } /* ref3's 1 is a wider figure than Roboto Flex's; XTRA opens it */
-.r1 .rownum { bottom: calc(20 * var(--u)); }
-.r2 .rownum { top: calc(26 * var(--u)); }
+.r1 .rownum { bottom: calc(20 * var(--t)); }
+.r2 .rownum { top: calc(26 * var(--t)); }
 .r3 .rownum { top: 50%; transform: translateY(-50%); }
 
 /* Wordmark: black grotesk, L cap = 24vh, tracking -0.045em; the g breaks the row rule, drawn above the canvas. */
 .wordmark {
   position: absolute; z-index: 5; pointer-events: none; margin: 0;
-  font: 760 calc(294.2 * var(--u))/1 var(--font); font-stretch: 108%;
+  font: 760 calc(294.2 * var(--w))/1 var(--font); font-stretch: 108%;
   font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
   letter-spacing: -0.03em; color: var(--ink);
   font-family: 'Roboto Flex Variable', 'Logic Wordmark Fallback', sans-serif;
-  left: calc(55 * var(--u)); top: calc(-13 * var(--u));
+  /* Hung from the row-01 rule so the g always crosses it, whatever the --t header height. */
+  left: calc(53 * var(--t) + 2 * var(--w)); top: calc(252 * var(--t) - 265 * var(--w));
 }
 
 /* Per-glyph fit to ref3 (Pillow, cap 194): a display cut draws caps heavier than lowercase and opens its round
@@ -94,13 +108,13 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .wordmark .wc { font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 494, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
 
 /* Top-right: ink disk + two-line caps lockup. */
-.disk { position: absolute; left: calc(25 * var(--u)); top: calc(74 * var(--u)); width: calc(153 * var(--u)); height: calc(153 * var(--u)); border-radius: 50%; border: 0; padding: 0;
+.disk { position: absolute; left: calc(25 * var(--t)); top: calc(74 * var(--t)); width: calc(153 * var(--t)); height: calc(153 * var(--t)); border-radius: 50%; border: 0; padding: 0;
   background: var(--ink); cursor: pointer; display: grid; place-items: center; }
-.disk svg { width: calc(100 * var(--u)); height: calc(100 * var(--u)); overflow: visible; }
+.disk svg { width: calc(100 * var(--t)); height: calc(100 * var(--t)); overflow: visible; }
 .disk path { fill: none; stroke: var(--paper); stroke-width: 13; stroke-linecap: butt; stroke-linejoin: miter; }
-.disk:hover { background: #000; box-shadow: 0 0 0 calc(4 * var(--u)) var(--paper), 0 0 0 calc(7 * var(--u)) var(--ink); }
+.disk:hover { background: #000; box-shadow: 0 0 0 calc(4 * var(--t)) var(--paper), 0 0 0 calc(7 * var(--t)) var(--ink); }
 .disk[aria-pressed='true'] svg { transform: rotate(90deg); }
-.lockup { position: absolute; left: calc(206 * var(--u)); top: calc(96 * var(--u)); margin: 0; font: 800 calc(57.9 * var(--u))/calc(53 * var(--u)) var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; }
+.lockup { position: absolute; left: calc(206 * var(--t)); top: calc(96 * var(--t)); margin: 0; font: 800 calc(57.9 * var(--t))/calc(53 * var(--t)) var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; }
 
 /* Canvas */
 .canvas { background: var(--paper); }
@@ -132,7 +146,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .react-flow .react-flow__node:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
 .switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
 .react-flow__handle.port:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-.disk:focus-visible { outline: calc(3 * var(--u)) solid var(--ink); outline-offset: calc(5 * var(--u)); }
+.disk:focus-visible { outline: max(2px, calc(3 * var(--t))) solid var(--ink); outline-offset: calc(5 * var(--t)); }
 .react-flow__node { cursor: grab; }
 
 /* Inline rejection beside the failed port (GOV.UK Design System: error message next to the field).
@@ -142,12 +156,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   font: 700 14px/1.2 var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; color: var(--ink); }
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
-.truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }
-.truth .label { margin: 0 0 0 calc(4 * var(--u)); font: 760 calc(43.7 * var(--u))/calc(30 * var(--u)) var(--font); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--u)); }
-.truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: calc(32 * var(--u)); }
-.truth th { font: 700 calc(32.4 * var(--u))/calc(23 * var(--u)) var(--font); font-stretch: 100%; padding: 0 0 calc(17 * var(--u)); text-align: center; border-bottom: var(--rule) solid var(--ink); }
-.truth td { font: 760 calc(35.8 * var(--u))/1 var(--font); font-stretch: 105%; height: calc(68 * var(--u)); padding: 0; text-align: center; border-bottom: calc(1 * var(--u)) solid var(--ink); font-variant-numeric: tabular-nums; }
-.truth th:first-child, .truth td:first-child { text-align: left; padding-left: calc(8 * var(--u)); }
+.truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--t)); }
+.truth .label { margin: 0 0 0 calc(4 * var(--t)); font: 760 calc(43.7 * var(--t))/calc(30 * var(--t)) var(--font); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--t)); }
+.truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: calc(32 * var(--t)); }
+.truth th { font: 700 calc(32.4 * var(--t))/calc(23 * var(--t)) var(--font); font-stretch: 100%; padding: 0 0 calc(17 * var(--t)); text-align: center; border-bottom: var(--rule) solid var(--ink); }
+.truth td { font: 760 calc(35.8 * var(--t))/1 var(--font); font-stretch: 105%; height: calc(68 * var(--t)); padding: 0; text-align: center; border-bottom: var(--hair) solid var(--ink); font-variant-numeric: tabular-nums; }
+.truth th:first-child, .truth td:first-child { text-align: left; padding-left: calc(8 * var(--t)); }
 /* Column widths set so column centres land on ref3's (A 1129, B 1248, OUT 1366 at 1440 wide). */
 .truth th:nth-child(1) { width: 22.25%; } .truth th:nth-child(2) { width: 23.62%; }
 .truth th:nth-child(3) { width: 30.73%; } .truth th:nth-child(4) { width: 23.40%; }
@@ -155,28 +169,28 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    already tabular (GSUB lists only liga/locl/pnum/rvrn), so ink width is fitted per figure with wdth and XTRA
    (XTRA = counter/white width, Google Fonts Roboto Flex axis docs). */
 .truth th .hN { font-stretch: 55%; } .truth th .hA { font-stretch: 115%; } .truth th .hB { font-stretch: 130%; }
-.truth th .hO { letter-spacing: calc(-2 * var(--u)); } .truth th .hU { font-stretch: 115%; letter-spacing: calc(-1 * var(--u)); }
+.truth th .hO { letter-spacing: calc(-2 * var(--t)); } .truth th .hU { font-stretch: 115%; letter-spacing: calc(-1 * var(--t)); }
 .truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
 .truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
 .truth tr.live td { background: var(--one); color: var(--paper); }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
-.status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
-.status .msg { font: 500 calc(16.9 * var(--u))/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
-.status .msg.bad { font-weight: 700; border-left: calc(4 * var(--u)) solid var(--ink); padding-left: calc(10 * var(--u)); }
+.status { display: flex; align-items: center; padding: 0 calc(16 * var(--t)); }
+.status .msg { font: 500 calc(16.9 * var(--t))/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.status .msg.bad { font-weight: 700; border-left: calc(4 * var(--t)) solid var(--ink); padding-left: calc(10 * var(--t)); }
 
-.help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--u)) 0 calc(8 * var(--u)); }
-.help p { margin: 0; white-space: nowrap; font: 500 calc(16.9 * var(--u))/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--t)) 0 calc(8 * var(--t)); }
+.help p { margin: 0; white-space: nowrap; font: 500 calc(16.9 * var(--t))/1 var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
 .help i { font-style: normal; margin: 0 .45em; }
 /* Mouse icon (Delta 7): 14x20 SVG at 1:1, 2px stroke = chip border. Bottom at baseline + 4px, so the
    20px box is centred on the 12px cap band (baseline-12 .. baseline). */
-.help .mouse { display: inline-block; width: max(12.6px, calc(14 * var(--u))); height: max(18px, calc(20 * var(--u))); vertical-align: calc(-4 * var(--u)); margin-right: .5em; overflow: visible; }
+.help .mouse { display: inline-block; width: calc(14 * var(--t)); height: calc(20 * var(--t)); vertical-align: calc(-4 * var(--t)); margin-right: .5em; overflow: visible; }
 .help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 2; }
 .help .mouse .q { fill: var(--ink); stroke: none; }
 /* BKSP chip: label = help cap (12px, Medium) on the text baseline; 20px square-cornered box, 2px border,
    4px padding above and below the cap band. */
-.help kbd { display: inline-block; vertical-align: baseline; height: calc(20 * var(--u)); padding: 0 calc(4 * var(--u)); border: calc(2 * var(--u)) solid var(--ink); border-radius: 0;
-  font: 500 calc(16.9 * var(--u))/calc(16 * var(--u)) var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
+.help kbd { display: inline-block; vertical-align: baseline; height: calc(20 * var(--t)); padding: 0 calc(4 * var(--t)); border: calc(2 * var(--t)) solid var(--ink); border-radius: 0;
+  font: 500 calc(16.9 * var(--t))/calc(16 * var(--t)) var(--font); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
 .help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }
@@ -193,3 +207,15 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth th { font-variation-settings: 'opsz' 32.4; }
 .truth td { font-variation-settings: 'opsz' 35.8; }
 .truth td .f1 { font-variation-settings: 'opsz' 35.8, 'XTRA' 520; }
+
+/* Reflow under heavy zoom (WCAG 2.2 SC 1.4.10; MDN "CSS container queries"). The condition is in rem, so it
+   tracks the text unit, not a device: once the 477t side column would leave the canvas under ~400 CSS px
+   (frame < 58rem, i.e. 200% zoom on a 1440 window), row 02 splits: canvas across both columns, the truth table
+   in its own row below it. Header and footer keep their fields. */
+@container (width < 58rem) {
+  .app { grid-template-rows: calc(252 * var(--t)) minmax(calc(489 * var(--u)), 1fr) auto calc(65 * var(--t)); }
+  .c-margin.r2 { grid-row: 2 / 4; grid-column: 1; }
+  .canvas { grid-row: 2; grid-column: 2 / 4; border-right: 0; }
+  .truth { grid-row: 3; grid-column: 2 / 4; padding-block: calc(24 * var(--t)); }
+  .r3 { grid-row: 4; }
+}
