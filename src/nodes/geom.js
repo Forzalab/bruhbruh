@@ -52,6 +52,80 @@ export function andGeom() {
   return { w: cx + R + PAD, h: y0 + H + PAD, outline, inset, in: inY.map((y) => [x0, y]), out: [ox, cy] };
 }
 
+/* ---------- OR gate: IEEE Std 91, curved (concave) back ---------- */
+export const OR = { H: 84, a: 46, bulge: 20 }; // centreline height, front span, back-curve reach
+export function orGeom() {
+  const { H, a, bulge } = OR, R = H / 2;
+  const x0 = PAD, y0 = PAD, cx = x0 + a, cy = y0 + R;
+  const xb = x0 + bulge; // back curve's mid-height apex, pulled toward the front
+  const inY = [y0 + H / 4, y0 + (3 * H) / 4];
+  const ox = cx + Math.sqrt(R * R - KNOB * KNOB);
+  const kOut = knob(ox, cy, +1);
+  const kIn1 = knob(xb, inY[1], -1); // bottom -> top on the curved back, same order as AND
+  const kIn0 = knob(xb, inY[0], -1);
+  const outline =
+    `M${x0} ${y0}H${cx}` +
+    `A${R} ${R} 0 0 1 ${f(ox)} ${f(cy - KNOB)}` + kOut.arc +
+    `A${R} ${R} 0 0 1 ${cx} ${y0 + H}H${x0}` +
+    `Q${f(xb)} ${f(y0 + H)} ${f(kIn1.from[0])} ${f(kIn1.from[1])}` + kIn1.arc +
+    `Q${f(xb)} ${f(cy)} ${f(kIn0.from[0])} ${f(kIn0.from[1])}` + kIn0.arc +
+    `Q${f(xb)} ${f(y0)} ${x0} ${y0}Z`;
+  // Approximate inset: straight edges move in by d as AND does; the curved back keeps its shape,
+  // scaled toward the front by d (good enough for the paper-gap glow, not a true offset curve).
+  const d = INSET, r = R - d;
+  const inset =
+    `M${x0 + d} ${y0 + d}H${cx}A${r} ${r} 0 0 1 ${cx} ${y0 + H - d}H${x0 + d}` +
+    `Q${f(xb + d)} ${f(y0 + H - d)} ${f(x0 + d + bulge * 0.6)} ${f(cy)}` +
+    `Q${f(xb + d)} ${f(y0 + d)} ${x0 + d} ${y0 + d}Z`;
+  return { w: cx + R + PAD, h: y0 + H + PAD, outline, inset, in: [[xb, inY[0]], [xb, inY[1]]], out: [ox, cy] };
+}
+
+/* ---------- NOT gate: triangle, knob fused into the flat side, inversion bubble at the tip ---------- */
+export const NOT = { H: 68, a: 58 }; // centreline height, tip span
+export function notGeom() {
+  const { H, a } = NOT;
+  const x0 = PAD, y0 = PAD, y1 = y0 + H, cy = (y0 + y1) / 2, tipX = x0 + a;
+  const kIn = knob(x0, cy, -1); // fused into the flat side, same idiom as the lamp's input knob
+  const bubbleR = KNOB - 2, gap = 3;
+  const bubbleCx = tipX + bubbleR + gap;
+  const ox = bubbleCx + bubbleR + gap;
+  const kOut = knob(ox, cy, +1);
+  const outline =
+    `M${f(kIn.from[0])} ${f(kIn.from[1])}${kIn.arc}` +
+    `L${x0} ${y1}L${tipX} ${cy}L${x0} ${y0}Z`;
+  const bubble = `M${bubbleCx - bubbleR} ${cy}A${bubbleR} ${bubbleR} 0 1 1 ${bubbleCx + bubbleR} ${cy}` +
+    `A${bubbleR} ${bubbleR} 0 1 1 ${bubbleCx - bubbleR} ${cy}Z`;
+  // Inset triangle: scale each corner toward the centroid by d (true inset of a straight-edge
+  // triangle keeps mitred corners; the centroid scale is exact for an isoceles triangle like this one).
+  const d = INSET, cxC = (x0 + x0 + tipX) / 3, s = 1 - d / (a / 3 + d);
+  const toward = (x, y) => [f(cxC + (x - cxC) * s), f(cy + (y - cy) * s)];
+  const [ax, ay] = toward(x0, y0), [bx, by] = toward(tipX, cy), [dx2, dy2] = toward(x0, y1);
+  const inset = `M${ax} ${ay}L${bx} ${by}L${dx2} ${dy2}Z`;
+  return { w: ox + KNOB + PAD, h: y1 + PAD, outline, bubble, inset, in: [[x0, cy]], out: [ox, cy] };
+}
+
+// NAND/NOR = AND/OR + an inversion bubble stitched onto the output knob (IEEE Std 91 negation).
+// The knob stays put; the bubble and the wire start just sit further out, so `out` moves and `w` grows.
+function withBubble(base) {
+  const [ox, oy] = base.out, bubbleR = KNOB - 2, gap = 3;
+  const bubbleCx = ox + bubbleR + gap;
+  const newOx = bubbleCx + bubbleR + gap;
+  const bubble = `M${bubbleCx - bubbleR} ${oy}A${bubbleR} ${bubbleR} 0 1 1 ${bubbleCx + bubbleR} ${oy}` +
+    `A${bubbleR} ${bubbleR} 0 1 1 ${bubbleCx - bubbleR} ${oy}Z`;
+  return { ...base, w: base.w + 2 * (bubbleR + gap), bubble, out: [newOx, oy] };
+}
+export function nandGeom() { return withBubble(andGeom()); }
+export function norGeom() { return withBubble(orGeom()); }
+
+// XOR = OR with an extra curved line just behind the back curve (IEEE Std 91 XOR).
+export function xorGeom() {
+  const base = orGeom();
+  const { H, bulge } = OR, R = OR.H / 2, x0 = PAD, y0 = PAD, cy = y0 + R, xb = x0 + bulge, extra = 8;
+  const x0e = Math.max(0, x0 - extra);
+  const extraCurve = `M${x0e} ${y0}Q${f(xb - extra)} ${f(cy)} ${x0e} ${y0 + H}`;
+  return { ...base, extraCurve };
+}
+
 /* ---------- Lamp: ring, knob fused into the left side ---------- */
 export const LAMP = { R: 45 }; // centreline radius; outer Ø = 96
 export function lampGeom() {

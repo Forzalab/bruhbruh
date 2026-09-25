@@ -1,7 +1,7 @@
 import { Handle as RFHandle, Position } from '@xyflow/react';
-import { switchGeom, andGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
+import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
 
-const SWG = switchGeom(), ANDG = andGeom(), LAMPG = lampGeom();
+const SWG = switchGeom(), LAMPG = lampGeom();
 const HB = 20; // handle box centred on the knob chord: the wire end lands 10px out, inside the knob ink ring (6..12)
 const REACH = KNOB + 30; // how far a hit zone extends past the knob tip
 
@@ -11,12 +11,26 @@ const REACH = KNOB + 30; // how far a hit zone extends past the knob tip
 const SW_X1 = PAD + SW.side;
 const SW_ZONES = { out: { x: SW_X1, y: 0, w: REACH, h: SWG.h } };
 
-const AND_X0 = PAD, AND_CY = ANDG.out[1], AND_OX = ANDG.out[0];
-const AND_ZONES = {
-  in0: { x: AND_X0 - REACH, y: 0, w: REACH, h: AND_CY },
-  in1: { x: AND_X0 - REACH, y: AND_CY, w: REACH, h: ANDG.h - AND_CY },
-  out: { x: AND_OX, y: 0, w: REACH, h: ANDG.h }, // starts at the curve apex: the body itself stays a drag target
+// Generic gate hit zones from its geometry: each input gets a vertical slice of the left edge
+// split at the midpoint between neighbouring pins (matches AND's in0/in1 split for the 2-pin case),
+// the output gets the whole right edge starting at the body (same idiom as AND_ZONES.out).
+function gateZones(g) {
+  const zones = {};
+  const ys = g.in.map(([, y]) => y);
+  g.in.forEach(([x, y], i) => {
+    const top = i === 0 ? 0 : (ys[i - 1] + y) / 2;
+    const bottom = i === ys.length - 1 ? g.h : (y + ys[i + 1]) / 2;
+    zones[`in${i}`] = { x: x - REACH, y: top, w: REACH, h: bottom - top };
+  });
+  zones.out = { x: g.out[0], y: 0, w: REACH, h: g.h };
+  return zones;
+}
+
+// One geometry + zone set per gate type, built once (same pattern as SWG/LAMPG above).
+const GATE_GEOM = {
+  AND: andGeom(), OR: orGeom(), NOT: notGeom(), NAND: nandGeom(), NOR: norGeom(), XOR: xorGeom(),
 };
+const GATE_ZONES = Object.fromEntries(Object.entries(GATE_GEOM).map(([type, g]) => [type, gateZones(g)]));
 
 const LAMP_KX = LAMPG.in[0];
 const LAMP_ZONES = { in0: { x: LAMP_KX - REACH, y: 0, w: REACH, h: LAMPG.h } };
@@ -35,10 +49,13 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 }
 
 // Outline = one path (body + knobs, one continuous stroke). Lit = second path: the true inset contour.
+// bubble (NAND/NOR/NOT) and extraCurve (XOR) are optional extra ink paths, same stroke system.
 function Shape({ g, on }) {
   return (
     <svg className="shape" width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true">
+      {g.extraCurve && <path className="body" d={g.extraCurve} />}
       <path className="body" d={g.outline} />
+      {g.bubble && <path className="body" d={g.bubble} />}
       {on && <path className="lit" d={g.inset} />}
     </svg>
   );
@@ -58,14 +75,17 @@ export function SwitchNode({ id, data }) {
 }
 
 export function GateNode({ id, data }) {
+  const g = GATE_GEOM[data.type], zones = GATE_ZONES[data.type];
+  const rejectPin = data.reject && +data.reject.handle.slice(2);
   return (
-    <div className="node gate" style={{ width: ANDG.w, height: ANDG.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
-      <Shape g={ANDG} on={data.on} />
-      <Handle nodeId={id} data={data} at={ANDG.in[0]} zone={AND_ZONES.in0} type="target" position={Position.Left} id="in0" />
-      <Handle nodeId={id} data={data} at={ANDG.in[1]} zone={AND_ZONES.in1} type="target" position={Position.Left} id="in1" />
-      <Handle nodeId={id} data={data} at={ANDG.out} zone={AND_ZONES.out} type="source" position={Position.Right} id="out" />
+    <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
+      <Shape g={g} on={data.on} />
+      {g.in.map((at, i) => (
+        <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
+      ))}
+      <Handle nodeId={id} data={data} at={g.out} zone={zones.out} type="source" position={Position.Right} id="out" />
       {data.reject && (
-        <p className="reject" role="alert" style={{ top: ANDG.in[data.reject.handle === 'in1' ? 1 : 0][1] }}>{data.reject.text}</p>
+        <p className="reject" role="alert" style={{ top: g.in[rejectPin][1] }}>{data.reject.text}</p>
       )}
     </div>
   );
