@@ -133,6 +133,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Components: one 6px ink outline, paper fill, lit = orange true-inset path. Outline never orange. */
 .shape { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .shape .body { fill: var(--paper); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-miterlimit: 10; }
+.shape .line { fill: none; }
 .shape .lit { fill: var(--one); stroke: none; }
 .node { position: relative; }
 .switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
