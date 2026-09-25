@@ -179,17 +179,16 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Onboarding bubble (once ever), matched to Tony's comic ref with Pillow: balloon 2:1 (ref 173x84), ~3.8u ink outline
    (ref 3-4px), short curved tail from the lower left whose tip touches the tab's right edge. The balloon sits in the
    gap between the demo's two switches (ellipse centre 15u above the tab's, tip 4.5u above the tab's bottom), never on a node.
-   Size from the ref's balloon : tab ratio (4.55 tab widths wide). Lettering = Comic Neue 700 (OFL): at the ref's
-   18px cap its ink density is 0.349 vs the ref's 0.360; tracking -0.02em, and GATES
-   (bold italic, heavier in the ref) gets a hairline stroke. SVG box 200x130 drawn at 1.052u per unit. */
+   Size from the ref's balloon : tab ratio (4.55 tab widths wide). Lettering = Anime Ace 3 BB outlines (src/hintLettering.js), the
+   face the ref imitates; shipped as paths, never as a font. SVG box 200x130 drawn at 1.052u per unit. */
 .pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 - 6.3 * var(--u)); top: calc(50% - 65.5 * var(--u));
   width: calc(210.4 * var(--u)); height: calc(136.8 * var(--u)); pointer-events: none; }
 .pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 3.6; stroke-linejoin: round; }
-.pal-hint span { position: absolute; left: calc(105.2 * var(--u)); top: calc(50.5 * var(--u)); transform: translate(-50%, -50%); white-space: nowrap; text-align: center;
-  font: 700 max(calc(26 * var(--u)), calc(26 * var(--f)), 15px)/1.08 'Comic Neue', 'Comic Sans MS', var(--font); letter-spacing: -0.02em;
-  text-transform: uppercase; color: var(--ink); } /* 15px floor = 11px caps at 1024 */
-.pal-hint em { font-style: italic; -webkit-text-stroke: 0.02em currentColor; }
+.pal-hint .lettering { position: absolute; left: calc(105.2 * var(--u)); top: calc(50.5 * var(--u)); inset-block-end: auto; inset-inline-end: auto;
+  width: calc(136 * var(--u)); height: auto; transform: translate(-50%, -50%); overflow: visible; } /* ref: text ~75% of the balloon width; scales with the balloon */
+.pal-hint .lettering path { fill: var(--ink); stroke: none; }
+.pal-hint .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; } /* +0.022em: Regular up to the ref's weight */
 .react-flow { background: transparent; }
 .react-flow__pane { cursor: default; }
 

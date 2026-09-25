@@ -1,7 +1,5 @@
 import { createRoot } from 'react-dom/client';
 import '@xyflow/react/dist/style.css';
-import '@fontsource/comic-neue/700.css';
-import '@fontsource/comic-neue/700-italic.css';
 import './theme.css';
 import App from './App.jsx';
 

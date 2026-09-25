@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Glyph } from './nodes/index.jsx';
+import { HINT_VIEWBOX, HINT_EMPH, HINT_REST } from './hintLettering.js';
 
 // Vertical palette (Tony, Sep 25): groups in/out | plain ("yea") | inverted ("nah"), glyphs only.
 // Each plain gate sits in the same slot as its inverted twin (AND/NAND, OR/NOR, XOR/NOT).
@@ -89,7 +90,8 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
                 whose tip (6, 96) touches the tab's right edge */}
             <path d="M55.5 81.9A84 40 0 1 0 30.4 70.4Q14 90 6 96Q34 90 55.5 81.9Z" />
           </svg>
-          <span><em>Gates</em> are<br />in here.</span>
+          <span className="sr">Gates are in here.</span>
+          <svg className="lettering" viewBox={HINT_VIEWBOX} aria-hidden="true"><path d={HINT_EMPH} /><path className="rest" d={HINT_REST} /></svg>
         </p>
       )}
     </div>
