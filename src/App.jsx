@@ -29,6 +29,15 @@ let nextWire = 1;
 const fig = (v) => [<span key="t" className="sr">{String(v)}</span>,
   <span key="g" aria-hidden="true">{[...String(v)].map((c, k) => <span key={k} className={'f' + c}>{c}</span>)}</span>];
 
+// Help-bar mouse: left button filled = click, right button filled = right-click.
+const Mouse = ({ right }) => (
+  <svg className="mouse" width="14" height="20" viewBox="0 0 14 20" aria-hidden="true">
+    <path className="q" d={right ? 'M7 1A6 6 0 0 1 13 7V9H7Z' : 'M7 1A6 6 0 0 0 1 7V9H7Z'} />
+    <rect x="1" y="1" width="12" height="18" rx="6" />
+    <path d="M7 1V9M1 9H13" />
+  </svg>
+);
+
 export default function App() {
   const [circuit, setCircuit] = useState(START);
   const [view, setView, onViewChange] = useNodesState(VIEW);
@@ -98,6 +107,25 @@ export default function App() {
     setStatus({ text: '', bad: false }); // silent success: ref3 leaves row 03 empty
   };
 
+  // The drop target is decided HERE, by the port hit zones under the pointer (the same big zones a
+  // drag starts from). React Flow's own snap is off (connectionRadius 0): it only looks within a
+  // radius of each knob centre, ignores the zones, and could lose a fast release on a busy first load.
+  // The drag origin is kept ourselves: on a fast release React Flow's connection state can already be cleared.
+  const dragFrom = useRef(null);
+  const onConnectStart = (_, { nodeId, handleId, handleType }) => { dragFrom.current = { node: nodeId, handle: handleId, type: handleType }; };
+  const onConnectEnd = (e, cs) => {
+    const from = dragFrom.current;
+    dragFrom.current = null;
+    if (!from || (cs.toHandle && cs.isValid)) return; // React Flow already connected it
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
+    const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__handle');
+    const node = el?.closest('.react-flow__node')?.dataset.id;
+    if (!node || el.classList.contains(from.type)) return; // nothing there, or same-kind port
+    const to = { node, handle: el.dataset.handleid };
+    const [src, dst] = from.type === 'source' ? [from, to] : [to, from];
+    onConnect({ source: src.node, target: dst.node, targetHandle: dst.handle });
+  };
+
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
   const onPort = (node, handle) => {
     if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: pick an input`, bad: false }); }
@@ -155,11 +183,15 @@ export default function App() {
           edges={edges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
-          onNodeDoubleClick={(_, n) => removeNodes([n.id])}
+          onNodeContextMenu={(e, n) => { e.preventDefault(); removeNodes([n.id]); }}
+          onEdgeContextMenu={(e, w) => { e.preventDefault(); onEdgesChange([{ type: 'remove', id: w.id }]); }}
+          connectionRadius={0}
           deleteKeyCode={['Backspace', 'Delete']}
           zoomOnDoubleClick={false}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onConnectStart={onConnectStart}
+          onConnectEnd={onConnectEnd}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
@@ -191,12 +223,10 @@ export default function App() {
       </footer>
       <div className="cell c-side r3 help">
         <p>
-          <svg className="mouse" width="14" height="20" viewBox="0 0 14 20" aria-hidden="true">
-            <path className="q" d="M7 1A6 6 0 0 0 1 7V9H7Z" />
-            <rect x="1" y="1" width="12" height="18" rx="6" />
-            <path d="M7 1V9M1 9H13" />
-          </svg>
-          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i><span className="sr">, </span>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><span className="sr">, </span><kbd>Bksp</kbd> to delete
+          <Mouse />
+          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i><span className="sr">, </span>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><span className="sr">, </span>
+          <Mouse right />
+          <span className="sr">Right-click</span> to delete
         </p>
       </div>
     </div>

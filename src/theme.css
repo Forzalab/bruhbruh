@@ -140,6 +140,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Ports: invisible 16px boxes centred on the knob; the knob itself is part of the outline path. */
 .react-flow__handle.port { position: absolute; z-index: 1; transform: none; right: auto; bottom: auto; min-width: 0; min-height: 0;
   background: transparent; border: 0; border-radius: 0; cursor: crosshair; }
+/* Hit area tiles the node's side (Tony's sketch): sized per-port from --hit-* vars the
+   component computes from geom.js, in pixels relative to the 20px handle box. The box itself
+   (left/top/width/height, set inline) stays centred on the knob so the wire end is unmoved. */
+.react-flow__handle.port::after { content: ''; position: absolute;
+  left: var(--hit-left); top: var(--hit-top); width: var(--hit-w); height: var(--hit-h); }
+.debug-hitzones .react-flow__handle.port::after { outline: 1px dashed red; background: rgba(255, 0, 0, 0.08); }
 .react-flow__handle.port:hover, .react-flow__handle.port.connectingto { outline: 2px solid var(--ink); outline-offset: 1px; }
 .react-flow__handle.port.picked { outline: 3px solid var(--ink); outline-offset: 1px; }
 
@@ -196,17 +202,13 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .help .mouse { display: inline-block; width: 0.8285em; height: 1.1835em; vertical-align: -0.2367em; margin-right: .5em; overflow: visible; }
 .help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 2; }
 .help .mouse .q { fill: var(--ink); stroke: none; }
-/* BKSP chip: label = help cap (12px, Medium) on the text baseline; 20px square-cornered box, 2px border,
-   4px padding above and below the cap band. */
-.help kbd { display: inline-block; vertical-align: baseline; height: 1.1835em; padding: 0 0.2367em; border: 0.1184em solid var(--ink); border-radius: 0;
-  font: 500 1em/0.94675 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; margin: 0 .45em 0 .1em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
 .help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }
 
 /* Small lines: hinted Linux text rounds every advance to whole px, so a 16.9u line drifts +-4.5% as --u changes.
    geometricPrecision keeps fractional advances (MDN: text-rendering); a 0.013em track restores the 1440 width. */
-.help p, .help kbd { text-rendering: geometricPrecision; letter-spacing: 0.013em; }
+.help p { text-rendering: geometricPrecision; letter-spacing: 0.013em; }
 .rownum { text-rendering: geometricPrecision; }
 /* opsz pinned to each element's 1440 size: font-optical-sizing: auto would change glyph widths with --u (MDN). */
 .rownum { font-variation-settings: 'opsz' 18.3; }
