@@ -135,27 +135,29 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-bar { position: absolute; inset: 0 auto 0 0; width: var(--pw); background: var(--paper); border-right: var(--rule) solid var(--ink);
   transform: translateX(-100%); visibility: hidden; transition: transform .16s ease-out, visibility 0s .16s; pointer-events: auto; }
 .palette.open .pal-bar { transform: none; visibility: visible; transition: transform .16s ease-out; }
-.palette.open.tucked .pal-bar { transform: translateX(-100%); visibility: hidden; transition: transform .12s ease-in, visibility 0s .12s; }
+.palette.open.tucked .pal-bar { transform: translateX(-100%); clip-path: inset(0 0 0 100%); transition: transform .12s ease-in, clip-path .12s ease-in; }
+/* Tucked hides by sliding + clipping, never visibility/display: Chromium can cancel an HTML5 drag whose source goes hidden
+   mid-drag (measured 7/8 drops landing before, see commit). */
 .pal-tab { position: absolute; top: 50%; left: calc(var(--tw) / -2); width: var(--tw); height: calc(80 * var(--u)); transform: translateY(-50%);
   margin: 0; padding: 0; background: var(--paper); border: var(--rule) solid var(--ink); border-radius: 0; cursor: pointer;
   display: grid; place-items: center; pointer-events: auto; transition: left .16s ease-out; }
 .palette.open .pal-tab { left: calc(var(--pw) - var(--tw) / 2); }
 .palette.open.tucked .pal-tab { left: calc(var(--tw) / -2); }
 .pal-tab svg { width: calc(14 * var(--u)); height: calc(24 * var(--u)); overflow: visible; }
-.pal-tab path, .pal-more path { fill: none; stroke: var(--ink); stroke-width: 3.5; stroke-linecap: butt; stroke-linejoin: miter; }
+.pal-tab path { fill: none; stroke: var(--ink); stroke-width: 3.5; stroke-linecap: butt; stroke-linejoin: miter; }
 .pal-tab:hover, .pal-tab:focus-visible { background: var(--ink); outline: none; }
 .pal-tab:hover path, .pal-tab:focus-visible path { stroke: var(--paper); }
 
-/* Column on the frame's baseline grid (Tony, Sep 25: "think of the grid first"). Row 02 = 480u = 24 baselines of 20u:
-   1 top pad + 8 parts x 2 + 2 group breaks x 3 + 1 bottom pad = 24. Each part owns a 40u module (glyph centred in it);
-   each break is 60u with its 2u rule centred. Glyphs = the canvas circuit at 0.34 so the tallest (lamp, ~33u ink)
-   keeps air inside its module; switch : gate : lamp keep the canvas proportions. Ink centred in the full 100u bar. */
+/* Column on the frame's baseline grid (20u). Glyphs = the canvas circuit at 0.41 (Tony: bigger, as in PR 3's first
+   version); the tallest (lamp, ~40u ink) gets a 60u module = 3 baselines, and each group break is one 60u module
+   with its 2u rule centred. 20u pad + 8 x 60 + 2 x 60 + 20u pad = 640u > the 480u row, so the list scrolls: at rest
+   the NAND module is sliced by the bottom margin (the peek) and the arrowhead sits in that margin. */
 .pal-list, .pal-list ul { list-style: none; margin: 0; padding: 0; }
 .pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: calc(20 * var(--u)) 0; box-sizing: border-box; }
 .pal-list::-webkit-scrollbar { display: none; }
 .pal-group ul { display: flex; flex-direction: column; align-items: center; padding-left: calc(4 * var(--u)); } /* pins pull ink left of the box: +2u optical shift */
-.pal-group li { height: calc(40 * var(--u)); display: grid; place-items: center; }
-.pal-group:first-child li:first-child .glyph { left: calc(-3 * var(--u)); } /* switch ink measured L39/R33: its knob sits right */
+.pal-group li { height: calc(60 * var(--u)); display: grid; place-items: center; }
+.pal-group:first-child li:first-child .glyph { left: calc(-3 * var(--u)); } /* switch knob sits right: optical centre */
 .pal-group + .pal-group { margin: calc(29 * var(--u)) auto 0; padding-top: calc(29 * var(--u)); border-top: var(--rule) solid var(--ink); width: calc(48 * var(--u)); }
 .pal-group + .pal-group ul { margin-inline: calc(-16 * var(--u)); }
 .pal-item { display: block; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; cursor: grab; }
@@ -163,19 +165,19 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-item:active { cursor: grabbing; }
 .pal-item[aria-disabled] { cursor: not-allowed; opacity: 1; }
 .pal-item[aria-disabled] .shape .body { stroke: var(--ink-2); }
-.glyph { position: relative; display: block; width: calc(var(--gw) * .34 * var(--u)); height: calc(var(--gh) * .34 * var(--u)); }
+.glyph { position: relative; display: block; width: calc(var(--gw) * .41 * var(--u)); height: calc(var(--gh) * .41 * var(--u)); }
 .glyph .shape { width: 100%; height: 100%; }
 /* One palette stroke at the frame rule weight: scaled 6-unit outlines rounded to 2px on some parts, 3px on others. */
 .glyph .shape .body { stroke-width: var(--rule); vector-effect: non-scaling-stroke; }
 
-/* Scroll cues, NYCTA-style: a solid black band with a white arrow, shown only on a side that has more items.
-   Hard edge, no fade: the frame never uses gradients. Click pages the list. */
-.pal-more { position: absolute; left: 0; right: 0; height: calc(40 * var(--u)); margin: 0; padding: 0; border: 0; border-radius: 0;
-  background: var(--ink); display: none; place-items: center; cursor: pointer; }
+/* Scroll cues: a 16x8u solid ink arrowhead centred in a 20u (one baseline) paper margin at the list edge. The next part
+   is cut off by that margin (overlap/peek, RUI p.170), which says "more below" by itself; the arrowhead confirms it.
+   No box, no fill band, no hover, default cursor: it must not read as a button (RUI p.52-53 pyramid). */
+.pal-more { position: absolute; left: 0; right: 0; height: calc(20 * var(--u)); background: var(--paper); display: none; place-items: center; cursor: default; }
 .pal-more.on { display: grid; }
 .pal-more.up { top: 0; } .pal-more.down { bottom: 0; }
-.pal-more svg { width: calc(20 * var(--u)); height: calc(20 * var(--u)); overflow: visible; }
-.pal-more path { stroke: var(--paper); stroke-width: 13; }
+.pal-more svg { width: calc(16 * var(--u)); height: calc(8 * var(--u)); }
+.pal-more path { fill: var(--ink); }
 
 /* Onboarding bubble (once ever), matched to Tony's comic ref with Pillow: balloon 2:1 (ref 173x84), ~3.8u ink outline
    (ref 3-4px), short curved tail from the lower left whose tip touches the tab's right edge. The balloon sits in the

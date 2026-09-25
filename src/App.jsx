@@ -122,7 +122,7 @@ export default function App() {
   const switchFull = !canAddSwitch(circuit).ok;
   const addNode = (it, at) => {
     if (it.kind === 'S' && switchFull) return;
-    const id = `${it.kind.toLowerCase()}${it.type ? it.type.toLowerCase() : ''}${nextNode++}`;
+    const id = `${it.kind.toLowerCase()}${it.type ? it.type.toLowerCase() : ''}_${nextNode++}`; // "_" keeps added parts clear of the demo ids (s1, s2, g1, l1)
     if (!at) {
       const box = frame.current.querySelector('.canvas').getBoundingClientRect();
       const c = rf.screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
@@ -227,7 +227,11 @@ export default function App() {
       <h1 className="wordmark" lang="sv" aria-label="Figur"><span className="sr">Figur</span><span aria-hidden="true"><span className="wF">F</span><span className="wi">i</span><span className="wg">g</span><span className="wu">u</span><span className="wr">r</span></span></h1>
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
-      <main className="cell c-main r2 canvas">
+      {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
+          (nodes like the switch button would otherwise swallow it). */}
+      <main className="cell c-main r2 canvas"
+        onDragOverCapture={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
+        onDropCapture={onDrop}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -244,8 +248,6 @@ export default function App() {
           onConnectEnd={onConnectEnd}
           onNodeDragStart={() => setTucked(true)}
           onNodeDragStop={() => setTucked(false)}
-          onDragOver={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
-          onDrop={onDrop}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
