@@ -212,6 +212,11 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .shape .body { fill: var(--paper); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-miterlimit: 10; }
 .shape .line { fill: none; }
 .shape .lit { fill: var(--one); stroke: none; }
+.stubs { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.stubs line { stroke: var(--ink-2); stroke-width: 2; stroke-dasharray: 2 4; stroke-linecap: butt; }
+/* Hovering a wire previews its deletion in the stubs' language: it turns dotted (a click removes it). */
+.react-flow__edge:hover .react-flow__edge-path { stroke-dasharray: 2 6; }
+.react-flow__edge { cursor: pointer; }
 .node { position: relative; }
 .switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
 
@@ -276,11 +281,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--u)) 0 calc(8 * var(--u)); }
 .help p { margin: 0; white-space: nowrap; font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
 .help i { font-style: normal; margin: 0 .45em; }
-/* Mouse icon (Delta 7): 14x20 SVG at 1:1 (R9: sized in em of the help type, as is the chip, so the two scale together), 2px stroke = chip border. Bottom at baseline + 4px, so the
-   20px box is centred on the 12px cap band (baseline-12 .. baseline). */
-.help .mouse { display: inline-block; width: 0.8285em; height: 1.1835em; vertical-align: -0.2367em; margin-right: .5em; overflow: visible; }
-.help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 2; }
-.help .mouse .q { fill: var(--ink); stroke: none; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Small lines: hinted Linux text rounds every advance to whole px, so a 16.9u line drifts +-4.5% as --u changes.

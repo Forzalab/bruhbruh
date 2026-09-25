@@ -69,12 +69,27 @@ export function Glyph({ kind, type }) {
   return <span className="glyph" style={{ '--gw': g.w, '--gh': g.h }}><Shape g={g} idle /></span>;
 }
 
+// Free-pin stubs (Tony's sketch): a dotted lead on every pin with no wire yet, drawn exactly over that pin's grab
+// zone (from the knob's ink tip out to the zone edge), so what you see is what you can grab. They vanish once wired
+// (RUI p.205: supporting UI only while it does something); --ink-2 dots at rule weight = a quiet, shape-coded cue.
+const TIP = KNOB + 3; // knob ink tip, measured from the pin's centreline
+function Stubs({ ins = [], out, wired }) {
+  const seg = (x0, x1, y, k) => <line key={k} x1={x0} y1={y} x2={x1} y2={y} />;
+  return (
+    <svg className="stubs" aria-hidden="true">
+      {ins.map(([x, y], i) => !wired.in[i] && seg(x - TIP, x - REACH, y, i))}
+      {out && !wired.out && seg(out[0] + TIP, out[0] + REACH, out[1], 'o')}
+    </svg>
+  );
+}
+
 const NAMES = { s1: 'A', s2: 'B' };
 
 export function SwitchNode({ id, data }) {
   return (
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
       <Shape g={SWG} on={data.on} />
+      <Stubs out={SWG.out} wired={data.wired} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
@@ -88,6 +103,7 @@ export function GateNode({ id, data }) {
   return (
     <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
       <Shape g={g} on={data.on} />
+      <Stubs ins={g.in} out={g.out} wired={data.wired} />
       {g.in.map((at, i) => (
         <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
       ))}
@@ -103,6 +119,7 @@ export function LampNode({ id, data }) {
   return (
     <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={data.on ? 'Lamp on' : 'Lamp off'}>
       <Shape g={LAMPG} on={data.on} />
+      <Stubs ins={[LAMPG.in]} wired={data.wired} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
       {data.reject && <p className="reject" role="alert" style={{ top: LAMPG.in[1] }}>{data.reject.text}</p>}
     </div>

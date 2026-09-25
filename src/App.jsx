@@ -30,15 +30,6 @@ let nextWire = 1, nextNode = 1;
 const fig = (v) => [<span key="t" className="sr">{String(v)}</span>,
   <span key="g" aria-hidden="true">{[...String(v)].map((c, k) => <span key={k} className={'f' + c}>{c}</span>)}</span>];
 
-// Help-bar mouse: left button filled = click, right button filled = right-click.
-const Mouse = ({ right }) => (
-  <svg className="mouse" width="14" height="20" viewBox="0 0 14 20" aria-hidden="true">
-    <path className="q" d={right ? 'M7 1A6 6 0 0 1 13 7V9H7Z' : 'M7 1A6 6 0 0 0 1 7V9H7Z'} />
-    <rect x="1" y="1" width="12" height="18" rx="6" />
-    <path d="M7 1V9M1 9H13" />
-  </svg>
-);
-
 export default function App() {
   const [circuit, setCircuit] = useState(START);
   const [view, setView, onViewChange] = useNodesState(VIEW);
@@ -80,9 +71,11 @@ export default function App() {
   const toggle = (id) =>
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { ...c.nodes[id], value: !c.nodes[id].value } } }));
 
+  const wires = Object.values(circuit.wires);
   const nodes = view.map((n) => ({
     ...n,
-    data: { ...circuit.nodes[n.id], on: values[n.id], onToggle: () => { setReject(null); toggle(n.id); },
+    data: { ...circuit.nodes[n.id], on: values[n.id],
+      wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
       reject: reject && reject.node === n.id ? reject : null,
       pending, onPort: (handle) => onPort(n.id, handle) },
   }));
@@ -220,6 +213,7 @@ export default function App() {
           onNodesChange={onNodesChange}
           onNodeContextMenu={(e, n) => { e.preventDefault(); removeNodes([n.id]); }}
           onEdgeContextMenu={(e, w) => { e.preventDefault(); onEdgesChange([{ type: 'remove', id: w.id }]); }}
+          onEdgeClick={(e, w) => onEdgesChange([{ type: 'remove', id: w.id }])} // Tony: a click deletes a wire; hover previews it dotted
           connectionRadius={0}
           deleteKeyCode={['Backspace', 'Delete']}
           zoomOnDoubleClick={false}
@@ -260,12 +254,7 @@ export default function App() {
       <footer className="cell c-main r3 status">
         <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
-      <div className="cell c-side r3 help">
-        <p>
-          <Mouse right />
-          <span className="sr">Right-click</span> to delete
-        </p>
-      </div>
+      <div className="cell c-side r3 help" />
     </div>
     </div>
   );
