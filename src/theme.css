@@ -102,7 +102,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
   letter-spacing: -0.03em; color: var(--ink);
   font-family: 'Roboto Flex Variable', 'Logic Wordmark Fallback', sans-serif;
-  left: calc(55 * var(--u)); top: calc(-13 * var(--u));
+  left: calc(55 * var(--u)); top: calc(-3 * var(--u)); /* g drops ~27px past the rule, as in ref */
 }
 
 /* Per-glyph fit to ref3 (Pillow, cap 194): a display cut draws caps heavier than lowercase and opens its round
