@@ -94,12 +94,16 @@ export default function App() {
     selected: edgeSel.has(w.id),
   }));
 
+  // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
+  const REJECT_TEXT = { 'pin taken': 'That input already has a wire' };
+
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
     if (!check.ok) {
-      setReject({ node: target, handle: targetHandle, text: `Can't connect: ${check.reason}` });
-      return setStatus({ text: `Rejected: ${check.reason}`, bad: true });
+      const text = REJECT_TEXT[check.reason] ?? `Can't connect: ${check.reason}`;
+      setReject({ node: target, handle: targetHandle, text });
+      return setStatus({ text, bad: true });
     }
     setReject(null);
     const id = `w${nextWire++}`;
@@ -223,8 +227,6 @@ export default function App() {
       </footer>
       <div className="cell c-side r3 help">
         <p>
-          <Mouse />
-          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i><span className="sr">, </span>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><span className="sr">, </span>
           <Mouse right />
           <span className="sr">Right-click</span> to delete
         </p>
