@@ -84,9 +84,9 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
       </button>
       {hint && !open && !tucked && (
         <p className="pal-hint" role="status">
-          <svg viewBox="0 0 238 112" aria-hidden="true">
-            {/* one outline: ellipse cut on its left side, closed by a straight tail that points at the tab */}
-            <path d="M42 72.4A100 48 0 1 0 42 39.6L4 62Z" />
+          <svg viewBox="0 0 200 80" aria-hidden="true">
+            {/* box 20..200 x 0..80 on the 20u grid; wedge 20u deep, 20u tall, tip on the tab edge */}
+            <path d="M20 1H199V79H20V50L1 40L20 30Z" />
           </svg>
           <span>Gates are<br />in <em>here.</em></span>
         </p>
