@@ -84,11 +84,12 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
       </button>
       {hint && !open && !tucked && (
         <p className="pal-hint" role="status">
-          <svg viewBox="0 0 238 112" aria-hidden="true">
-            {/* one outline: ellipse cut on its left side, closed by a straight tail that points at the tab */}
-            <path d="M42 72.4A100 48 0 1 0 42 39.6L4 62Z" />
+          <svg viewBox="0 0 200 130" aria-hidden="true">
+            {/* one outline: a 2:1 ellipse (the ref balloon, 173x84) opened at its lower left into a short curved tail
+                whose tip (6, 96) touches the tab's right edge */}
+            <path d="M55.5 81.9A84 40 0 1 0 30.4 70.4Q14 90 6 96Q34 90 55.5 81.9Z" />
           </svg>
-          <span>Gates are<br />in <em>here.</em></span>
+          <span><em>Gates</em> are<br />in here.</span>
         </p>
       )}
     </div>

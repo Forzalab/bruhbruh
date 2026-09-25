@@ -176,15 +176,20 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-more svg { width: calc(20 * var(--u)); height: calc(20 * var(--u)); overflow: visible; }
 .pal-more path { stroke: var(--paper); stroke-width: 13; }
 
-/* Onboarding bubble (once ever): the draft's balloon at 0.8 scale (238x112 -> 190x90u) — one outline, straight tail
-   whose tip (y62 of 112) sits on the tab's centre line, UI grotesk caps. Outline held at the 2px rule weight. */
-.pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 + 4 * var(--u)); top: calc(50% - 49.6 * var(--u));
-  width: calc(190.4 * var(--u)); height: calc(89.6 * var(--u)); display: grid; place-items: center; pointer-events: none; }
+/* Onboarding bubble (once ever), matched to Tony's comic ref with Pillow: balloon 2:1 (ref 173x84), ~3.8u ink outline
+   (ref 3-4px), short curved tail from the lower left whose tip touches the tab's right edge. The balloon sits in the
+   gap between the demo's two switches (ellipse centre 15u above the tab's, tip 4.5u above the tab's bottom), never on a node.
+   Size from the ref's balloon : tab ratio (4.55 tab widths wide). Lettering = Comic Neue 700 (OFL): at the ref's
+   18px cap its ink density is 0.349 vs the ref's 0.360; tracking -0.02em, and GATES
+   (bold italic, heavier in the ref) gets a hairline stroke. SVG box 200x130 drawn at 1.052u per unit. */
+.pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 - 6.3 * var(--u)); top: calc(50% - 65.5 * var(--u));
+  width: calc(210.4 * var(--u)); height: calc(136.8 * var(--u)); pointer-events: none; }
 .pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: var(--rule); vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
-.pal-hint span { position: relative; margin-left: calc(22.4 * var(--u)); font: 800 max(calc(19.6 * var(--u)), calc(19.6 * var(--f)), 15px)/1 var(--font); font-stretch: 112%; /* 15px floor = 11px caps at 1024 */
-  text-transform: uppercase; letter-spacing: 0.01em; }
-.pal-hint em { font-style: italic; }
+.pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 3.6; stroke-linejoin: round; }
+.pal-hint span { position: absolute; left: calc(105.2 * var(--u)); top: calc(50.5 * var(--u)); transform: translate(-50%, -50%); white-space: nowrap; text-align: center;
+  font: 700 max(calc(26 * var(--u)), calc(26 * var(--f)), 15px)/1.08 'Comic Neue', 'Comic Sans MS', var(--font); letter-spacing: -0.02em;
+  text-transform: uppercase; color: var(--ink); } /* 15px floor = 11px caps at 1024 */
+.pal-hint em { font-style: italic; -webkit-text-stroke: 0.02em currentColor; }
 .react-flow { background: transparent; }
 .react-flow__pane { cursor: default; }
 
