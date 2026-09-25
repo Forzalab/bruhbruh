@@ -33,17 +33,18 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
     return () => ro.disconnect();
   }, [open]);
 
-  // Onboarding: the bubble shows once ever, 1s after load, only if the person has not started yet.
+  // Onboarding: the bubble shows the first time only, 1s after load, if the person has not started yet.
+  // Once shown, the first click or key anywhere retires it for good; every later close/tuck just hides the bar.
   useEffect(() => {
     if (seen()) return;
-    let touched = false;
-    const stop = () => { touched = true; };
-    window.addEventListener('pointerdown', stop, { once: true });
-    window.addEventListener('keydown', stop, { once: true });
-    const t = setTimeout(() => { if (!touched) setHint(true); }, 1000);
-    return () => { clearTimeout(t); window.removeEventListener('pointerdown', stop); window.removeEventListener('keydown', stop); };
+    let shown = false;
+    const t = setTimeout(() => { shown = true; setHint(true); }, 1000);
+    const stop = () => { clearTimeout(t); if (shown) { setHint(false); markSeen(); } off(); };
+    const off = () => { window.removeEventListener('pointerdown', stop); window.removeEventListener('keydown', stop); };
+    window.addEventListener('pointerdown', stop);
+    window.addEventListener('keydown', stop);
+    return () => { clearTimeout(t); off(); };
   }, []);
-  useEffect(() => { if (open && hint) { setHint(false); markSeen(); } }, [open, hint]);
 
   const page = (dir) => list.current?.scrollBy({ top: dir * list.current.clientHeight * 0.8, behavior: 'smooth' });
 
@@ -81,7 +82,7 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
       <button className="pal-tab" aria-expanded={open} aria-label={open ? 'Close parts' : 'Open parts'} onClick={() => setOpen(!open)}>
         <svg viewBox="0 0 24 40" aria-hidden="true"><path d={open ? 'M16 8L6 20L16 32' : 'M8 8L18 20L8 32'} /></svg>
       </button>
-      {hint && !open && (
+      {hint && !open && !tucked && (
         <p className="pal-hint" role="status">
           <svg viewBox="0 0 238 112" aria-hidden="true">
             {/* one outline: ellipse cut on its left side, closed by a straight tail that points at the tab */}
