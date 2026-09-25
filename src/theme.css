@@ -76,12 +76,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Composited, non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
 .app { will-change: transform; }
 
-/* 1440x810 target: rules at x 53/959, y 252/741, 2px, outer frame 2px. fr = px at 1440 x 810. */
+/* 1440x810 target: rules at x 53/959, 2px, outer frame 2px. Rows 260/480/60 (Tony, Sep 25; was ref3's 252/489/65). */
 .app {
   position: relative; height: 100%; overflow: hidden;
   display: grid;
   grid-template-columns: 53fr 906fr 477fr;
-  grid-template-rows: 252fr 489fr 65fr;
+  grid-template-rows: 260fr 480fr 60fr;
   border: var(--rule) solid var(--ink);
 }
 .cell { position: relative; min-width: 0; min-height: 0; border-right: var(--rule) solid var(--ink); border-bottom: var(--rule) solid var(--ink); }
@@ -189,6 +189,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
 .truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
 .truth tr.live td { background: var(--one); color: var(--paper); }
+.truth tr:not(.live) td { font-weight: 560; } /* 1c: non-live rows one weight step down, same ink */
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
@@ -204,8 +205,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 2; }
 .help .mouse .q { fill: var(--ink); stroke: none; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-/* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
-.help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }
 
 /* Small lines: hinted Linux text rounds every advance to whole px, so a 16.9u line drifts +-4.5% as --u changes.
    geometricPrecision keeps fractional advances (MDN: text-rendering); a 0.013em track restores the 1440 width. */
