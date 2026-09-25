@@ -131,14 +131,14 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Palette (Tony, Sep 25): a vertical bar inside the canvas' left edge, as tall as row 02, one 2px rule on its right.
    Closed = only the tab, straddling the margin rule; open = the tab straddles the bar's rule, same height, so it
    never jumps. Tucked = a drag is running: the bar slides away, then comes back as it was (state untouched). */
-.palette { position: absolute; inset: 0 auto 0 0; z-index: 4; pointer-events: none; --pw: calc(100 * var(--u)); --tw: calc(40 * var(--u)); }
+.palette { position: absolute; inset: 0 auto 0 0; z-index: 4; pointer-events: none; --pw: calc(100 * var(--u)); --tw: max(calc(40 * var(--u)), 44px); } /* tab never under HIG's 44pt */
 .pal-bar { position: absolute; inset: 0 auto 0 0; width: var(--pw); background: var(--paper); border-right: var(--rule) solid var(--ink);
   transform: translateX(-100%); visibility: hidden; transition: transform .16s ease-out, visibility 0s .16s; pointer-events: auto; }
 .palette.open .pal-bar { transform: none; visibility: visible; transition: transform .16s ease-out; }
 .palette.open.tucked .pal-bar { transform: translateX(-100%); clip-path: inset(0 0 0 100%); transition: transform .12s ease-in, clip-path .12s ease-in; }
 /* Tucked hides by sliding + clipping, never visibility/display: Chromium can cancel an HTML5 drag whose source goes hidden
    mid-drag (measured 7/8 drops landing before, see commit). */
-.pal-tab { position: absolute; top: 50%; left: calc(var(--tw) / -2); width: var(--tw); height: calc(80 * var(--u)); transform: translateY(-50%);
+.pal-tab { position: absolute; top: 50%; left: calc(var(--tw) / -2); width: var(--tw); height: max(calc(80 * var(--u)), 88px); transform: translateY(-50%);
   margin: 0; padding: 0; background: var(--paper); border: var(--rule) solid var(--ink); border-radius: 0; cursor: pointer;
   display: grid; place-items: center; pointer-events: auto; transition: left .16s ease-out; }
 .palette.open .pal-tab { left: calc(var(--pw) - var(--tw) / 2); }
@@ -160,8 +160,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-group:first-child li:first-child .glyph { left: calc(-3 * var(--u)); } /* switch knob sits right: optical centre */
 .pal-group + .pal-group { margin: calc(29 * var(--u)) auto 0; padding-top: calc(29 * var(--u)); border-top: var(--rule) solid var(--ink); width: calc(48 * var(--u)); }
 .pal-group + .pal-group ul { margin-inline: calc(-16 * var(--u)); }
-.pal-item { display: block; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; cursor: grab; }
-.pal-item:hover, .pal-item:focus-visible { outline: var(--rule) solid var(--ink); outline-offset: 0; }
+.pal-group li { width: 100%; height: max(calc(60 * var(--u)), 44px); }
+/* Hit target = the whole row (bar width x module), >= 44pt at every size (Apple HIG); the feedback outline stays on
+   the glyph, so nothing looks like a button at rest. */
+.pal-item { display: grid; place-items: center; width: 100%; height: 100%; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; cursor: grab; }
+.pal-item:hover .glyph, .pal-item:focus-visible .glyph { outline: var(--rule) solid var(--ink); outline-offset: calc(4 * var(--u)); }
+.pal-item:focus-visible { outline: none; }
 .pal-item:active { cursor: grabbing; }
 .pal-item[aria-disabled] { cursor: not-allowed; opacity: 1; }
 .pal-item[aria-disabled] .shape .body { stroke: var(--ink-2); }
