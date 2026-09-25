@@ -156,6 +156,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-group ul { display: flex; flex-direction: column; align-items: center; gap: calc(8 * var(--u)); padding-left: calc(4 * var(--u)); } /* pins pull ink left of the box: +2u optical shift, measured 20/24 -> 22/22px */
 .pal-group + .pal-group { margin: calc(20 * var(--u)) auto 0; padding-top: calc(20 * var(--u)); border-top: var(--rule) solid var(--ink); width: calc(48 * var(--u)); }
 .pal-group + .pal-group ul { margin-inline: calc(-16 * var(--u)); }
+.pal-group:first-child li:first-child .glyph { left: calc(-3.5 * var(--u)); } /* switch ink measured L37/R30 vs ~27/25: its knob sits right */
 .pal-item { display: block; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; cursor: grab; }
 .pal-item:hover, .pal-item:focus-visible { outline: var(--rule) solid var(--ink); outline-offset: 0; }
 .pal-item:active { cursor: grabbing; }
@@ -163,6 +164,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-item[aria-disabled] .shape .body { stroke: var(--ink-2); }
 .glyph { position: relative; display: block; width: calc(var(--gw) * .41 * var(--u)); height: calc(var(--gh) * .41 * var(--u)); }
 .glyph .shape { width: 100%; height: 100%; }
+/* One palette stroke at the frame rule weight: scaled 6-unit outlines rounded to 2px on some parts, 3px on others. */
+.glyph .shape .body { stroke-width: var(--rule); vector-effect: non-scaling-stroke; }
 
 /* Scroll cues, NYCTA-style: a solid black band with a white arrow, shown only on a side that has more items.
    Hard edge, no fade: the frame never uses gradients. Click pages the list. */
@@ -179,7 +182,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   width: calc(190.4 * var(--u)); height: calc(89.6 * var(--u)); display: grid; place-items: center; pointer-events: none; }
 .pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: var(--rule); vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
-.pal-hint span { position: relative; margin-left: calc(22.4 * var(--u)); font: 800 max(calc(19.6 * var(--u)), calc(19.6 * var(--f)))/1 var(--font); font-stretch: 112%;
+.pal-hint span { position: relative; margin-left: calc(22.4 * var(--u)); font: 800 max(calc(19.6 * var(--u)), calc(19.6 * var(--f)), 15px)/1 var(--font); font-stretch: 112%; /* 15px floor = 11px caps at 1024 */
   text-transform: uppercase; letter-spacing: 0.01em; }
 .pal-hint em { font-style: italic; }
 .react-flow { background: transparent; }
