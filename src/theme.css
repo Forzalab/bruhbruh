@@ -133,6 +133,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    never jumps. Tucked = a drag is running: the bar slides away, then comes back as it was (state untouched). */
 .palette { position: absolute; inset: 0 auto 0 0; z-index: 4; pointer-events: none; --pw: calc(100 * var(--u)); --tw: max(calc(40 * var(--u)), 44px); } /* tab never under HIG's 44pt */
 .pal-bar { position: absolute; inset: 0 auto 0 0; width: var(--pw); background: var(--paper); border-right: var(--rule) solid var(--ink);
+  box-shadow: calc(12 * var(--u)) 0 0 var(--paper); /* invisible border (RUI p.172): canvas ink never touches the bar's rule */
   transform: translateX(-100%); visibility: hidden; transition: transform .16s ease-out, visibility 0s .16s; pointer-events: auto; }
 .palette.open .pal-bar { transform: none; visibility: visible; transition: transform .16s ease-out; }
 .palette.open.tucked .pal-bar { transform: translateX(-100%); clip-path: inset(0 0 0 100%); transition: transform .12s ease-in, clip-path .12s ease-in; }
@@ -162,7 +163,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-list::-webkit-scrollbar { display: none; }
 .pal-group ul { display: flex; flex-direction: column; align-items: center; padding-left: calc(4 * var(--u)); } /* pins pull ink left of the box: +2u optical shift */
 .pal-group li { height: calc(60 * var(--u)); display: grid; place-items: center; }
-.pal-group:first-child li:first-child .glyph { left: calc(-3 * var(--u)); } /* switch knob sits right: optical centre */
+.pal-group:first-child li:first-child .glyph { left: calc(-3 * var(--u)); width: calc(var(--gw) * .41 * 1.3 * var(--u)); height: calc(var(--gh) * .41 * 1.3 * var(--u)); }
+/* switch: knob sits right (optical centre); its square is only 68 tall vs the gates' 90, so it gets x1.3 to match their ink height */
 .pal-group + .pal-group { margin: calc(29 * var(--u)) auto 0; padding-top: calc(29 * var(--u)); border-top: var(--rule) solid var(--ink); width: calc(48 * var(--u)); }
 .pal-group + .pal-group ul { margin-inline: calc(-16 * var(--u)); }
 .pal-group li { width: 100%; height: max(calc(60 * var(--u)), 44px); }
@@ -176,8 +178,9 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-item[aria-disabled] .shape .body { stroke: var(--ink-2); }
 .glyph { position: relative; display: block; width: calc(var(--gw) * .41 * var(--u)); height: calc(var(--gh) * .41 * var(--u)); }
 .glyph .shape { width: 100%; height: 100%; }
-/* One palette stroke at the frame rule weight: scaled 6-unit outlines rounded to 2px on some parts, 3px on others. */
-.glyph .shape .body { stroke-width: var(--rule); vector-effect: non-scaling-stroke; }
+/* Palette stroke = the canvas 6 scaled with the glyph (6 x 0.41): same stroke-to-size ratio, so tray and canvas read
+   equally black (Pillow ink density tray/canvas 0.92; a flat 4px on both measured 2.19x darker in the tray, RUI p.48-51). */
+.glyph .shape .body { stroke-width: calc(6 * .41 * var(--u)); vector-effect: non-scaling-stroke; }
 
 /* Scroll cues: a 16x8u solid ink arrowhead centred in a 20u (one baseline) paper margin at the list edge. The next part
    is cut off by that margin (overlap/peek, RUI p.170), which says "more below" by itself; the arrowhead confirms it.
