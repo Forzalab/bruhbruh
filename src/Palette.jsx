@@ -70,7 +70,7 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
     <div className={`palette ${open ? 'open' : ''} ${tucked ? 'tucked' : ''}`}
       onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}>
       <nav className="pal-bar" aria-label="Parts" aria-hidden={!open || undefined} inert={!open || undefined}>
-        <ul ref={list} className="pal-list" onScroll={measure}>
+        <ul ref={list} className={`pal-list ${more.up ? 'fu' : ''} ${more.down ? 'fd' : ''}`} onScroll={measure}>
           {GROUPS.map((g, i) => <li key={i} className="pal-group"><ul>{g.map(item)}</ul></li>)}
         </ul>
         {/* Scroll cues: a bare ink arrowhead in a one-baseline paper margin, no box and no fill behind it (a solid block

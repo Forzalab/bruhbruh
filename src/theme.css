@@ -153,7 +153,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    with its 2u rule centred. 20u pad + 8 x 60 + 2 x 60 + 20u pad = 640u > the 480u row, so the list scrolls: at rest
    the NAND module is sliced by the bottom margin (the peek) and the arrowhead sits in that margin. */
 .pal-list, .pal-list ul { list-style: none; margin: 0; padding: 0; }
-.pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: calc(20 * var(--u)) 0; box-sizing: border-box; }
+.pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: calc(20 * var(--u)) 0; box-sizing: border-box; --fa: 0px; --fb: 0px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--fa) * .5), #000 var(--fa), #000 calc(100% - var(--fb)), transparent calc(100% - var(--fb) * .5));
+          mask-image: linear-gradient(to bottom, transparent calc(var(--fa) * .5), #000 var(--fa), #000 calc(100% - var(--fb)), transparent calc(100% - var(--fb) * .5)); }
+/* Edge fade (Tony: the hard cut read as broken): a transparency MASK, not a colour gradient, so ink and paper stay flat.
+   Only on a side with more parts; it runs over one 40u span and is fully clear at the 20u margin holding the arrowhead. */
+.pal-list.fd { --fb: calc(40 * var(--u)); } .pal-list.fu { --fa: calc(40 * var(--u)); }
 .pal-list::-webkit-scrollbar { display: none; }
 .pal-group ul { display: flex; flex-direction: column; align-items: center; padding-left: calc(4 * var(--u)); } /* pins pull ink left of the box: +2u optical shift */
 .pal-group li { height: calc(60 * var(--u)); display: grid; place-items: center; }
@@ -177,7 +182,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Scroll cues: a 16x8u solid ink arrowhead centred in a 20u (one baseline) paper margin at the list edge. The next part
    is cut off by that margin (overlap/peek, RUI p.170), which says "more below" by itself; the arrowhead confirms it.
    No box, no fill band, no hover, default cursor: it must not read as a button (RUI p.52-53 pyramid). */
-.pal-more { position: absolute; left: 0; right: 0; height: calc(20 * var(--u)); background: var(--paper); display: none; place-items: center; cursor: default; }
+.pal-more { position: absolute; left: 0; right: 0; height: calc(20 * var(--u)); background: transparent; display: none; place-items: center; cursor: default; }
 .pal-more.on { display: grid; }
 .pal-more.up { top: 0; } .pal-more.down { bottom: 0; }
 .pal-more svg { width: calc(16 * var(--u)); height: calc(8 * var(--u)); }

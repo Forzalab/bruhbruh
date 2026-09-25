@@ -227,6 +227,7 @@ export default function App() {
           onConnect={onConnect}
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
+          onPaneClick={() => setPalOpen(false)} // HIG: an overlay panel is transient; a click on the work closes it
           onNodeDragStart={() => setTucked(true)}
           onNodeDragStop={() => setTucked(false)}
           snapToGrid
