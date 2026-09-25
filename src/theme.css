@@ -146,21 +146,22 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-tab:hover, .pal-tab:focus-visible { background: var(--ink); outline: none; }
 .pal-tab:hover path, .pal-tab:focus-visible path { stroke: var(--paper); }
 
-/* Column = the canvas circuit at 0.42 scale (glyph geometry and 6-unit outline scale together, so switch : gate : lamp
-   keep the canvas proportions). Bar 100u; ink is centred in the 80u left of the tab's inner half. Vertical rhythm in
-   one 4u step: 8u between parts, 12u + 2u rule + 12u between groups, 16u top/bottom = 480u = row 02, no scroll. */
+/* Column = the canvas circuit at 0.41 scale (glyph geometry and 6-unit outline scale together, so switch : gate : lamp
+   keep the canvas proportions). Bar 100u; ink is centred in the full bar (22px each side at 1440). Vertical rhythm in
+   one step: 8u box gap (16px ink gap) between parts, 20u + 2u rule + 20u (24px ink) between groups, column centred
+   vertically (equal top/bottom), no scroll. */
 .pal-list, .pal-list ul { list-style: none; margin: 0; padding: 0; }
-.pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: calc(16 * var(--u)) calc(var(--tw) / 2) calc(16 * var(--u)) 0; box-sizing: border-box; }
+.pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: 0; box-sizing: border-box; display: flex; flex-direction: column; justify-content: safe center; }
 .pal-list::-webkit-scrollbar { display: none; }
-.pal-group ul { display: flex; flex-direction: column; align-items: center; gap: calc(8 * var(--u)); padding-left: calc(3 * var(--u)); } /* pins pull ink left of box centre: measured 14 vs 17u */
-.pal-group + .pal-group { margin: calc(12 * var(--u)) auto 0; padding-top: calc(12 * var(--u)); border-top: var(--rule) solid var(--ink); width: calc(48 * var(--u)); }
+.pal-group ul { display: flex; flex-direction: column; align-items: center; gap: calc(8 * var(--u)); padding-left: calc(4 * var(--u)); } /* pins pull ink left of the box: +2u optical shift, measured 20/24 -> 22/22px */
+.pal-group + .pal-group { margin: calc(20 * var(--u)) auto 0; padding-top: calc(20 * var(--u)); border-top: var(--rule) solid var(--ink); width: calc(48 * var(--u)); }
 .pal-group + .pal-group ul { margin-inline: calc(-16 * var(--u)); }
 .pal-item { display: block; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; cursor: grab; }
 .pal-item:hover, .pal-item:focus-visible { outline: var(--rule) solid var(--ink); outline-offset: 0; }
 .pal-item:active { cursor: grabbing; }
 .pal-item[aria-disabled] { cursor: not-allowed; opacity: 1; }
 .pal-item[aria-disabled] .shape .body { stroke: var(--ink-2); }
-.glyph { position: relative; display: block; width: calc(var(--gw) * .42 * var(--u)); height: calc(var(--gh) * .42 * var(--u)); }
+.glyph { position: relative; display: block; width: calc(var(--gw) * .41 * var(--u)); height: calc(var(--gh) * .41 * var(--u)); }
 .glyph .shape { width: 100%; height: 100%; }
 
 /* Scroll cues, NYCTA-style: a solid black band with a white arrow, shown only on a side that has more items.
@@ -178,7 +179,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   width: calc(190.4 * var(--u)); height: calc(89.6 * var(--u)); display: grid; place-items: center; pointer-events: none; }
 .pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: var(--rule); vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
-.pal-hint span { position: relative; margin-left: calc(22.4 * var(--u)); font: 800 max(calc(15.2 * var(--u)), calc(15.2 * var(--f)))/1 var(--font); font-stretch: 112%;
+.pal-hint span { position: relative; margin-left: calc(22.4 * var(--u)); font: 800 max(calc(19.6 * var(--u)), calc(19.6 * var(--f)))/1 var(--font); font-stretch: 112%;
   text-transform: uppercase; letter-spacing: 0.01em; }
 .pal-hint em { font-style: italic; }
 .react-flow { background: transparent; }
