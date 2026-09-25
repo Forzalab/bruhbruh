@@ -178,7 +178,7 @@ export default function App() {
         </button>
         <p className="lockup">Circuit<br /> editor</p>
       </div>
-      <h1 className="wordmark" aria-label="Logic"><span className="sr">Logic</span><span aria-hidden="true"><span className="wL">L</span><span className="wo">o</span><span className="wg">g</span><span className="wi">i</span><span className="wc">c</span></span></h1>
+      <h1 className="wordmark" lang="sv" aria-label="Figur"><span className="sr">Figur</span><span aria-hidden="true"><span className="wF">F</span><span className="wi">i</span><span className="wg">g</span><span className="wu">u</span><span className="wr">r</span></span></h1>
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       <main className="cell c-main r2 canvas">
