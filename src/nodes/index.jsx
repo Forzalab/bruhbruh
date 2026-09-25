@@ -51,16 +51,22 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // Outline = one path (body + knobs, one continuous stroke). Lit = second path: the true inset contour.
 // bubble (NAND/NOR/NOT) and extraCurve (XOR) are optional extra ink paths, same stroke system.
 // Inverting gates: the body shows the value before the NOT, the bubble shows the output.
-function Shape({ g, on }) {
+function Shape({ g, on, idle }) {
   return (
     <svg className="shape" width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true">
       {g.extraCurve && <path className="body line" d={g.extraCurve} />}
       <path className="body" d={g.outline} />
       {g.bubble && <path className="body" d={g.bubble} />}
-      {(g.bubble ? !on : on) && <path className="lit" d={g.inset} />}
-      {g.bubble && on && <path className="lit" d={g.bubbleInset} />}
+      {!idle && (g.bubble ? !on : on) && <path className="lit" d={g.inset} />}
+      {!idle && g.bubble && on && <path className="lit" d={g.bubbleInset} />}
     </svg>
   );
+}
+
+// Palette glyph: the same Shape a node draws, never lit (a part in the tray has no value yet), sized by CSS (--gw = geometry width in px at 1440).
+export function Glyph({ kind, type }) {
+  const g = kind === 'S' ? SWG : kind === 'L' ? LAMPG : GATE_GEOM[type];
+  return <span className="glyph" style={{ '--gw': g.w, '--gh': g.h }}><Shape g={g} idle /></span>;
 }
 
 const NAMES = { s1: 'A', s2: 'B' };

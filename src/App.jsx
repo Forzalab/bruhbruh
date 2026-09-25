@@ -1,7 +1,8 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState } from '@xyflow/react';
-import { canConnect, evaluate } from './sim.js';
+import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes } from './nodes/index.jsx';
+import Palette, { DND } from './Palette.jsx';
 
 // Sim data: the truth. Positions live separately in React Flow (view only).
 const START = {
@@ -22,7 +23,7 @@ const VIEW = [
   { id: 'l1', type: 'L', position: { x: 736, y: 181 }, data: {} },
 ];
 
-let nextWire = 1;
+let nextWire = 1, nextNode = 1;
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
 // Glyph spans are aria-hidden; one visually hidden run carries the whole word ("01", not "0 1").
@@ -46,6 +47,9 @@ export default function App() {
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
   const [status, setStatus] = useState({ text: '', bad: false });
+  // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
+  const [palOpen, setPalOpen] = useState(false);
+  const [tucked, setTucked] = useState(false);
   // Canvas scale = frame width / 1440, the same factor as the CSS --u (100cqw / 1440). React Flow's viewport zoom
   // scales node geometry, strokes and knobs together, so wires stay on pin centres (React Flow docs: Viewport, zoom).
   const frame = useRef(null);
@@ -69,6 +73,25 @@ export default function App() {
     }
     prevZoom.current = zoom;
   }, [rf, zoom]);
+
+  // The open bar covers the canvas' left 140u. The view slides right only as far as needed to clear the
+  // leftmost node (+20u), and back by the same amount on close: nothing hides under it, nothing is pushed off
+  // the right edge for no reason (React Flow docs: setViewport with duration).
+  const palShift = useRef(0);
+  useLayoutEffect(() => {
+    if (!rf) return;
+    const v = rf.getViewport();
+    if (palOpen && !palShift.current) {
+      const minX = Math.min(...rf.getNodes().map((n) => n.position.x));
+      const dx = Math.max(0, 160 * zoom - (v.x + minX * v.zoom));
+      if (!dx) return;
+      palShift.current = dx;
+      rf.setViewport({ ...v, x: v.x + dx }, { duration: 160 });
+    } else if (!palOpen && palShift.current) {
+      rf.setViewport({ ...v, x: v.x - palShift.current }, { duration: 160 });
+      palShift.current = 0;
+    }
+  }, [rf, palOpen, zoom]);
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
@@ -94,6 +117,28 @@ export default function App() {
     selected: edgeSel.has(w.id),
   }));
 
+  // New node from the palette. `at` = flow position of the drop; none (click / Enter) = canvas centre,
+  // nudged per add so repeated adds don't stack exactly.
+  const switchFull = !canAddSwitch(circuit).ok;
+  const addNode = (it, at) => {
+    if (it.kind === 'S' && switchFull) return;
+    const id = `${it.kind.toLowerCase()}${it.type ? it.type.toLowerCase() : ''}${nextNode++}`;
+    if (!at) {
+      const box = frame.current.querySelector('.canvas').getBoundingClientRect();
+      const c = rf.screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
+      at = { x: c.x - 60 + ((nextNode % 5) * 20), y: c.y - 54 + ((nextNode % 5) * 20) };
+    }
+    setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { id, kind: it.kind, ...(it.type && { type: it.type }), ...(it.kind === 'S' && { value: false }) } } }));
+    setView((v) => [...v, { id, type: it.kind, position: at, data: {} }]);
+  };
+  const onDrop = (e) => {
+    const raw = e.dataTransfer.getData(DND);
+    if (!raw) return;
+    e.preventDefault();
+    const p = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    addNode(JSON.parse(raw), { x: p.x - 40, y: p.y - 54 }); // pointer lands near the glyph's middle
+  };
+
   // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
   const REJECT_TEXT = { 'pin taken': 'That input already has a wire' };
 
@@ -116,8 +161,9 @@ export default function App() {
   // radius of each knob centre, ignores the zones, and could lose a fast release on a busy first load.
   // The drag origin is kept ourselves: on a fast release React Flow's connection state can already be cleared.
   const dragFrom = useRef(null);
-  const onConnectStart = (_, { nodeId, handleId, handleType }) => { dragFrom.current = { node: nodeId, handle: handleId, type: handleType }; };
+  const onConnectStart = (_, { nodeId, handleId, handleType }) => { dragFrom.current = { node: nodeId, handle: handleId, type: handleType }; setTucked(true); };
   const onConnectEnd = (e, cs) => {
+    setTucked(false);
     const from = dragFrom.current;
     dragFrom.current = null;
     if (!from || (cs.toHandle && cs.isValid)) return; // React Flow already connected it
@@ -196,6 +242,10 @@ export default function App() {
           onConnect={onConnect}
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
+          onNodeDragStart={() => setTucked(true)}
+          onNodeDragStop={() => setTucked(false)}
+          onDragOver={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
+          onDrop={onDrop}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
@@ -206,6 +256,7 @@ export default function App() {
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
         </ReactFlow>
+        <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
       </main>
       <aside className="cell c-side r2 truth" aria-label="Truth table">
         <h2 className="label">Truth table</h2>

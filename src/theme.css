@@ -35,6 +35,7 @@
   color-scheme: light;
   --paper: #ffffff;
   --ink: #111111;
+  --ink-2: #767676;        /* de-emphasis ink, 4.54:1 on paper (disabled palette item) */
   --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
   --grid: #e2e2e2;
   --font: 'Roboto Flex Variable', 'Roboto Flex Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -126,6 +127,58 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Canvas */
 .canvas { background: var(--paper); }
+
+/* Palette (Tony, Sep 25): a vertical bar inside the canvas' left edge, as tall as row 02, one 2px rule on its right.
+   Closed = only the tab, straddling the margin rule; open = the tab straddles the bar's rule, same height, so it
+   never jumps. Tucked = a drag is running: the bar slides away, then comes back as it was (state untouched). */
+.palette { position: absolute; inset: 0 auto 0 0; z-index: 4; pointer-events: none; --pw: calc(140 * var(--u)); --tw: calc(36 * var(--u)); }
+.pal-bar { position: absolute; inset: 0 auto 0 0; width: var(--pw); background: var(--paper); border-right: var(--rule) solid var(--ink);
+  transform: translateX(-100%); visibility: hidden; transition: transform .16s ease-out, visibility 0s .16s; pointer-events: auto; }
+.palette.open .pal-bar { transform: none; visibility: visible; transition: transform .16s ease-out; }
+.palette.open.tucked .pal-bar { transform: translateX(-100%); visibility: hidden; transition: transform .12s ease-in, visibility 0s .12s; }
+.pal-tab { position: absolute; top: 50%; left: calc(var(--tw) / -2); width: var(--tw); height: calc(96 * var(--u)); transform: translateY(-50%);
+  margin: 0; padding: 0; background: var(--paper); border: var(--rule) solid var(--ink); border-radius: 0; cursor: pointer;
+  display: grid; place-items: center; pointer-events: auto; transition: left .16s ease-out; }
+.palette.open .pal-tab { left: calc(var(--pw) - var(--tw) / 2); }
+.palette.open.tucked .pal-tab { left: calc(var(--tw) / -2); }
+.pal-tab svg { width: calc(14 * var(--u)); height: calc(24 * var(--u)); overflow: visible; }
+.pal-tab path, .pal-more path { fill: none; stroke: var(--ink); stroke-width: 3.5; stroke-linecap: butt; stroke-linejoin: miter; }
+.pal-tab:hover, .pal-tab:focus-visible { background: var(--ink); outline: none; }
+.pal-tab:hover path, .pal-tab:focus-visible path { stroke: var(--paper); }
+
+/* Glyph column: centred on the space left of the tab. Groups split by a short 2px rule with twice the item gap. */
+.pal-list, .pal-list ul { list-style: none; margin: 0; padding: 0; }
+.pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: calc(40 * var(--u)) calc(18 * var(--u)) calc(40 * var(--u)) 0; box-sizing: border-box; }
+.pal-list::-webkit-scrollbar { display: none; }
+.pal-group ul { display: flex; flex-direction: column; align-items: center; gap: calc(24 * var(--u)); }
+.pal-group + .pal-group { margin-top: calc(24 * var(--u)); padding-top: calc(24 * var(--u)); border-top: var(--rule) solid var(--ink); margin-inline: calc(20 * var(--u)); }
+.pal-group + .pal-group ul { margin-inline: calc(-20 * var(--u)); }
+.pal-item { display: block; margin: 0; padding: calc(4 * var(--u)); background: none; border: var(--rule) solid transparent; border-radius: 0; cursor: grab; }
+.pal-item:hover, .pal-item:focus-visible { border-color: var(--ink); outline: none; }
+.pal-item:active { cursor: grabbing; }
+.pal-item[aria-disabled] { cursor: not-allowed; opacity: 1; }
+.pal-item[aria-disabled] .shape .body { stroke: var(--ink-2); }
+.glyph { position: relative; display: block; width: calc(var(--gw) * .6 * var(--u)); height: calc(var(--gh) * .6 * var(--u)); }
+.glyph .shape { width: 100%; height: 100%; }
+
+/* Scroll cues, NYCTA-style: a solid black band with a white arrow, shown only on a side that has more items.
+   Hard edge, no fade: the frame never uses gradients. Click pages the list. */
+.pal-more { position: absolute; left: 0; right: 0; height: calc(32 * var(--u)); margin: 0; padding: 0; border: 0; border-radius: 0;
+  background: var(--ink); display: none; place-items: center; cursor: pointer; }
+.pal-more.on { display: grid; }
+.pal-more.up { top: 0; } .pal-more.down { bottom: 0; }
+.pal-more svg { width: calc(20 * var(--u)); height: calc(20 * var(--u)); overflow: visible; }
+.pal-more path { stroke: var(--paper); stroke-width: 13; }
+
+/* Onboarding bubble (once ever): Swiss take on a comic balloon — one geometric outline at rule weight,
+   straight tail aimed at the tab, UI grotesk caps. */
+.pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 + 6 * var(--u)); top: calc(50% - 62 * var(--u));
+  width: calc(238 * var(--u)); height: calc(112 * var(--u)); display: grid; place-items: center; pointer-events: none; }
+.pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 2; stroke-linejoin: miter; }
+.pal-hint span { position: relative; margin-left: calc(28 * var(--u)); font: 800 max(calc(19 * var(--u)), calc(19 * var(--f)))/1 var(--font); font-stretch: 112%;
+  text-transform: uppercase; letter-spacing: 0.01em; }
+.pal-hint em { font-style: italic; }
 .react-flow { background: transparent; }
 .react-flow__pane { cursor: default; }
 
