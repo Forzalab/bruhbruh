@@ -74,7 +74,7 @@ export default function App() {
     prevZoom.current = zoom;
   }, [rf, zoom]);
 
-  // The open bar covers the canvas' left 120u. The view slides right only as far as needed to clear the
+  // The open bar covers the canvas' left 100u. The view slides right only as far as needed to clear the
   // leftmost node (+20u), and back by the same amount on close: nothing hides under it, nothing is pushed off
   // the right edge for no reason (React Flow docs: setViewport with duration).
   const palShift = useRef(0);
@@ -83,7 +83,7 @@ export default function App() {
     const v = rf.getViewport();
     if (palOpen && !palShift.current) {
       const minX = Math.min(...rf.getNodes().map((n) => n.position.x));
-      const dx = Math.max(0, 140 * zoom - (v.x + minX * v.zoom));
+      const dx = Math.max(0, 120 * zoom - (v.x + minX * v.zoom));
       if (!dx) return;
       palShift.current = dx;
       rf.setViewport({ ...v, x: v.x + dx }, { duration: 160 });

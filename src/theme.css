@@ -131,7 +131,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Palette (Tony, Sep 25): a vertical bar inside the canvas' left edge, as tall as row 02, one 2px rule on its right.
    Closed = only the tab, straddling the margin rule; open = the tab straddles the bar's rule, same height, so it
    never jumps. Tucked = a drag is running: the bar slides away, then comes back as it was (state untouched). */
-.palette { position: absolute; inset: 0 auto 0 0; z-index: 4; pointer-events: none; --pw: calc(120 * var(--u)); --tw: calc(40 * var(--u)); }
+.palette { position: absolute; inset: 0 auto 0 0; z-index: 4; pointer-events: none; --pw: calc(100 * var(--u)); --tw: calc(40 * var(--u)); }
 .pal-bar { position: absolute; inset: 0 auto 0 0; width: var(--pw); background: var(--paper); border-right: var(--rule) solid var(--ink);
   transform: translateX(-100%); visibility: hidden; transition: transform .16s ease-out, visibility 0s .16s; pointer-events: auto; }
 .palette.open .pal-bar { transform: none; visibility: visible; transition: transform .16s ease-out; }
@@ -146,23 +146,22 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-tab:hover, .pal-tab:focus-visible { background: var(--ink); outline: none; }
 .pal-tab:hover path, .pal-tab:focus-visible path { stroke: var(--paper); }
 
-/* Grid-derived column: bar 120u = 3 modules of 40u; glyphs at exactly 1/2 canvas size (AND 112x108 -> 56x54u),
-   outline 4 units at 1/2 = 2u, the frame's rule weight. Column centred left of the tab's inner half (20u).
-   All spacing in 20u baseline steps; groups split by a 2u rule inset 20u each side. */
+/* Column = the canvas circuit at 0.42 scale (glyph geometry and 6-unit outline scale together, so switch : gate : lamp
+   keep the canvas proportions). Bar 100u; ink is centred in the 80u left of the tab's inner half. Vertical rhythm in
+   one 4u step: 8u between parts, 12u + 2u rule + 12u between groups, 16u top/bottom = 480u = row 02, no scroll. */
 .pal-list, .pal-list ul { list-style: none; margin: 0; padding: 0; }
-.pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: calc(40 * var(--u)) calc(20 * var(--u)) calc(40 * var(--u)) 0; box-sizing: border-box; }
+.pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: calc(16 * var(--u)) calc(var(--tw) / 2) calc(16 * var(--u)) 0; box-sizing: border-box; }
 .pal-list::-webkit-scrollbar { display: none; }
-.pal-group ul { display: flex; flex-direction: column; align-items: center; gap: calc(20 * var(--u)); }
-.pal-group + .pal-group { margin-top: calc(20 * var(--u)); padding-top: calc(20 * var(--u)); border-top: var(--rule) solid var(--ink); margin-inline: calc(20 * var(--u)); }
-.pal-group + .pal-group ul { margin-inline: calc(-20 * var(--u)); }
-.pal-item { display: block; margin: 0; padding: 0; background: none; border: var(--rule) solid transparent; border-radius: 0; cursor: grab; }
-.pal-item:hover, .pal-item:focus-visible { border-color: var(--ink); outline: none; }
+.pal-group ul { display: flex; flex-direction: column; align-items: center; gap: calc(8 * var(--u)); padding-left: calc(3 * var(--u)); } /* pins pull ink left of box centre: measured 14 vs 17u */
+.pal-group + .pal-group { margin: calc(12 * var(--u)) auto 0; padding-top: calc(12 * var(--u)); border-top: var(--rule) solid var(--ink); width: calc(48 * var(--u)); }
+.pal-group + .pal-group ul { margin-inline: calc(-16 * var(--u)); }
+.pal-item { display: block; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; cursor: grab; }
+.pal-item:hover, .pal-item:focus-visible { outline: var(--rule) solid var(--ink); outline-offset: 0; }
 .pal-item:active { cursor: grabbing; }
 .pal-item[aria-disabled] { cursor: not-allowed; opacity: 1; }
 .pal-item[aria-disabled] .shape .body { stroke: var(--ink-2); }
-.glyph { position: relative; display: block; width: calc(var(--gw) * .5 * var(--u)); height: calc(var(--gh) * .5 * var(--u)); }
+.glyph { position: relative; display: block; width: calc(var(--gw) * .42 * var(--u)); height: calc(var(--gh) * .42 * var(--u)); }
 .glyph .shape { width: 100%; height: 100%; }
-.glyph .shape .body { stroke-width: 4px; }
 
 /* Scroll cues, NYCTA-style: a solid black band with a white arrow, shown only on a side that has more items.
    Hard edge, no fade: the frame never uses gradients. Click pages the list. */
@@ -173,13 +172,13 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-more svg { width: calc(20 * var(--u)); height: calc(20 * var(--u)); overflow: visible; }
 .pal-more path { stroke: var(--paper); stroke-width: 13; }
 
-/* Onboarding hint (once ever): a grid box, not a comic balloon. 200 x 80u (5 x 2 modules) at rule weight,
-   a 20u wedge whose tip touches the tab's right edge; box and tab share one centre line. */
-.pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2); top: calc(50% - 40 * var(--u));
-  width: calc(200 * var(--u)); height: calc(80 * var(--u)); display: grid; align-items: center; pointer-events: none; }
+/* Onboarding bubble (once ever): the draft's balloon at 0.8 scale (238x112 -> 190x90u) — one outline, straight tail
+   whose tip (y62 of 112) sits on the tab's centre line, UI grotesk caps. Outline held at the 2px rule weight. */
+.pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 + 4 * var(--u)); top: calc(50% - 49.6 * var(--u));
+  width: calc(190.4 * var(--u)); height: calc(89.6 * var(--u)); display: grid; place-items: center; pointer-events: none; }
 .pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 2; stroke-linejoin: miter; }
-.pal-hint span { position: relative; margin-left: calc(40 * var(--u)); font: 800 max(calc(19 * var(--u)), calc(19 * var(--f)))/1 var(--font); font-stretch: 112%;
+.pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: var(--rule); vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
+.pal-hint span { position: relative; margin-left: calc(22.4 * var(--u)); font: 800 max(calc(15.2 * var(--u)), calc(15.2 * var(--f)))/1 var(--font); font-stretch: 112%;
   text-transform: uppercase; letter-spacing: 0.01em; }
 .pal-hint em { font-style: italic; }
 .react-flow { background: transparent; }
