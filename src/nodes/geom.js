@@ -103,7 +103,7 @@ export function orGeom(inv = false, shift = 0) {
 }
 
 /* ---------- NOT gate: triangle, knob fused into the flat side, bubble at the tip ---------- */
-export const NOT = { H: 68, a: 58 }; // centreline height, tip span
+export const NOT = { H: 84, a: 72 }; // centreline height, tip span
 export function notGeom() {
   const { H, a } = NOT;
   const x0 = PAD, y0 = PAD, y1 = y0 + H, cy = (y0 + y1) / 2, tipX = x0 + a;
