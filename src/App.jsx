@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
@@ -55,6 +55,8 @@ export default function App() {
     setTimeout(() => setToasts((l) => l.filter((t) => t.id !== id)), TOAST_MS);
   };
   const [status, setStatus] = useState({ phrase: null, text: '' }); // phrase = a key of sayLettering.js
+  useEffect(() => { if (!reject) return; const t = setTimeout(() => setReject(null), TOAST_MS); return () => clearTimeout(t); }, [reject]);
+  useEffect(() => { if (!status.phrase) return; const t = setTimeout(() => setStatus({ phrase: null, text: '' }), TOAST_MS); return () => clearTimeout(t); }, [status.phrase]);
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
   const [tucked, setTucked] = useState(false);
@@ -278,7 +280,7 @@ export default function App() {
           onConnect={onConnect}
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
-          onPaneClick={() => setPalOpen(false)} // HIG: an overlay panel is transient; a click on the work closes it
+          onPaneClick={() => { setPalOpen(false); setReject(null); }} // HIG: an overlay panel is transient; a click on the work closes it
           onNodeDragStart={() => setTucked(true)}
           onNodeDragStop={() => setTucked(false)}
           snapToGrid
