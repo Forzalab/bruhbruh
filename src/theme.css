@@ -345,3 +345,16 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* Variant A: Blambot classic. Oval balloon, 2.5px ink line, paper fill, upright caps with bold italic on the stressed
+   word; the tail is a narrow wedge whose tip stops short of the speaker. Errors get the heavier "shout" line. */
+.say { padding: 9px 17px 10px; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 50%;
+  font: 600 13px/1.18 var(--font); font-stretch: 92%; letter-spacing: 0.02em; text-align: center; }
+.say b { font-weight: 900; font-style: oblique 10deg; }
+.say-part, .say-logo.bad { border-width: 3.5px; }
+.say::before { background: var(--ink); }
+.say::after { background: var(--paper); }
+.say-part::before { width: 18px; height: 22px; bottom: -22px; left: calc(50% - 4px); clip-path: polygon(0 0, 100% 0, 18% 100%); }
+.say-part::after { width: 11px; height: 18px; bottom: -13px; left: calc(50% - 0.5px); clip-path: polygon(0 0, 100% 0, 10% 100%); }
+.say-logo::before { width: 22px; height: 16px; left: -21px; top: calc(50% - 4px); clip-path: polygon(100% 0, 100% 100%, 0 90%); }
+.say-logo::after { width: 18px; height: 10px; left: -13px; top: calc(50% - 0.5px); clip-path: polygon(100% 0, 100% 100%, 0 95%); }
