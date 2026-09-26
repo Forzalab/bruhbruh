@@ -202,6 +202,7 @@ export default function App() {
     const base = from ? stuck(me.id, from) : [];
     if (!worse(stuck(me.id, node.position), base)) return;
     const p = free(node.position, me.type, me.id, (q) => !worse(stuck(me.id, q), base));
+    if (import.meta.env.DEV) (window.__nudges ??= []).push(Math.hypot(p.x - node.position.x, p.y - node.position.y)); // harness probe
     setView((v) => v.map((n) => (n.id === me.id ? { ...n, position: p } : n)));
   };
   const addNode = (it, at) => {
