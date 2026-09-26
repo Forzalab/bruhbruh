@@ -1,5 +1,6 @@
-# t3r-a: remove # only, re-balance
-- Truth.jsx: dropped the `#` header th (hN) and the per-row number td (+ now-unused `digits`) -- task: remove the numbered column.
-- theme.css: dropped `.hN` stretch and the `:first-child` left-align/8u indent -- both existed only for the # column.
-- theme.css: classic widths A/B/OUT = ref3's 23.62/30.73/23.40 rescaled to 100% (30.38/39.52/30.10) -- same proportions, table keeps its old width.
-- Same default circuit (2 switches, AND, 1 lamp) for orig and variant; Playwright full page at 1440/1280/1920.
+# t3r-b: remove #, A takes its slot flush-left, B/OUT stay put
+- Truth.jsx: dropped the `#` header th (hN) and per-row number td (+ unused `digits`) -- task; NYCTA: say only what is needed, one message per sign.
+- theme.css: dropped `.hN` stretch -- it fitted only the removed glyph (subtract only).
+- theme.css: kept the existing `:first-child` left-set + 8u indent, now on A -- Muller-Brockmann flush-left axis: A hangs on the same edge as TRUTH TABLE and the table rules.
+- theme.css: classic widths 45.87 / 30.73 / 23.40 -- B and OUT keep ref3's original centres (1248 / 1366 at 1440), so nothing already fitted moves; A absorbs the freed 22.25%.
+- n13 stress (13 switches, 8,192 rows): header stays pinned (delta 0), 11 rows rendered, add 11 switches ~0.95 s, jump to mid ~0.4 s; # overlap of orig (4-digit numbers over A) is gone; OUT still clips at 14 columns, same as orig.
