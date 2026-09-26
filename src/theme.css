@@ -267,39 +267,31 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }
-/* T3 legibility pass (reasons + sources: pit2/t3/REASONS.md). L1-L8 below. */
-.truth .label { margin: 0 0 0 calc(4 * var(--u)); font: 760 max(calc(43.7 * var(--u)), calc(43.7 * var(--f)))/0.68650 var(--font-label); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--u)); }
+/* T3-D: one voice with the rest of the page (audit: pit2/t3/AUDIT.md). Same family and cut as the lockup and field
+   numerals (Roboto Flex 800, wdth 112-118%), ink only, --rule / --hair ink lines like the grid, type on the page's
+   scale (18.3 numerals / 28.3 / 43.7 label). No greys: 0 and 1 differ by glyph, the live row by --one. */
+.truth .label { margin: 0; font: 800 max(calc(43.7 * var(--u)), calc(43.7 * var(--f)))/0.91537 var(--font); font-stretch: 112%; text-transform: uppercase; letter-spacing: 0; }
 .truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 0; }
-/* L2: one header style = the label voice at small size: caps, wide tracking (M3 label-large +0.1px; Ruder: caps need space). */
-.truth th { font: 700 max(calc(17 * var(--u)), calc(17 * var(--f)))/1 var(--font); font-stretch: 100%; letter-spacing: 0.06em;
-  padding: 0 0 calc(10 * var(--u)); text-align: center; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
-/* L1/L3/L4: one figure style (tabular, one width), compact rows (M3 dense: 32-36 dp at this size). */
-.truth td { font: 600 max(calc(24 * var(--u)), calc(24 * var(--f)))/1 var(--font); font-stretch: 100%; height: calc(34 * var(--u)); padding: 0;
-  text-align: center; border-bottom: var(--hair) solid var(--grid); font-variant-numeric: tabular-nums; }
-.truth th.n, .truth td.n { text-align: left; padding-left: calc(8 * var(--u)); width: 16%; }
-.truth td.n { color: var(--ink-2); font-weight: 500; font-size: max(calc(17 * var(--u)), calc(17 * var(--f))); letter-spacing: 0.04em; } /* L5 */
-.truth td.v0 { color: var(--ink-2); font-weight: 500; } /* L6: 0 recedes, 1 carries the ink (Rams: less, but better) */
-.truth td.v1 { color: var(--ink); font-weight: 760; }
+.truth th { font: 800 max(calc(18.3 * var(--u)), calc(18.3 * var(--f)))/1 var(--font); font-stretch: 118%; letter-spacing: 0;
+  padding: 0 0 calc(10 * var(--u)); text-align: center; text-transform: uppercase; white-space: nowrap; overflow: hidden; color: var(--ink); vertical-align: bottom; }
+.truth td { font: 800 max(calc(28.3 * var(--u)), calc(28.3 * var(--f)))/1 var(--font); font-stretch: 112%; height: calc(37 * var(--u)); padding: 0;
+  text-align: center; color: var(--ink); border-bottom: var(--hair) solid var(--ink); font-variant-numeric: tabular-nums; }
 /* Rows scroll inside the table box under a sticky header; a click on a row sets the switches. */
 .truth .tt { max-height: calc(360 * var(--u)); overflow-y: auto; scrollbar-width: thin; margin-top: calc(28 * var(--u)); }
 .truth thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; border-bottom: 0; box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); } /* sticky cells drop collapsed borders: draw the rule as a shadow */
 .truth tbody tr:not(.pad) { cursor: pointer; scroll-snap-align: start; }
 .truth .tt { scroll-snap-type: y proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */
-.truth tbody tr:not(.live):not(.pad):hover td { background: #f4f4f4; }
-/* L7: live row = --one fill with INK text: #111 on #ff5a1f is 6.6:1 (WCAG 1.4.3 AA), white on it was 3.0:1. */
-.truth tr.live td, .truth tr.live td.v0, .truth tr.live td.n { background: var(--one); color: var(--ink); }
-/* T3 variant C: column kinds by glyph + weight (M3: icon + label; Rams #4: the table speaks the canvas's shapes).
-   Each header carries its part's canvas silhouette: square = switch, D = gate, circle = lamp. Gate figures quieter,
-   lamp figures heavier, so the eye lands on inputs and result. */
-.truth th:not(.n)::before { content: ''; display: block; margin: 0 auto calc(7 * var(--u)); width: calc(14 * var(--u)); height: calc(14 * var(--u));
-  border: calc(3 * var(--u)) solid var(--ink); box-sizing: border-box; }
+/* Hover = the palette's hover language (ink rule), not a grey fill. */
+.truth tbody tr:not(.live):not(.pad):hover td { box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); }
+/* Live row = --one with ink text (6.6:1, WCAG 1.4.3). */
+.truth tr.live td { background: var(--one); color: var(--ink); }
+/* Column kinds by the canvas silhouettes (square switch, D gate, round lamp), drawn in --rule ink outline like the
+   parts' own strokes; groups split by a --rule ink line, the grid's one rule weight. */
+.truth th::before { content: ''; display: block; margin: 0 auto calc(8 * var(--u)); width: calc(18 * var(--u)); height: calc(18 * var(--u));
+  border: var(--rule) solid var(--ink); box-sizing: border-box; }
 .truth th.g::before { border-radius: 0 999px 999px 0; }
-.truth th.l::before { border-radius: 50%; background: var(--ink); }
-.truth th.n { vertical-align: bottom; }
-.truth td.g { font-size: max(calc(20 * var(--u)), calc(20 * var(--f))); }
-.truth td.g.v1 { font-weight: 560; }
-.truth td.l.v1 { font-weight: 900; font-stretch: 115%; }
-.truth th.first:not(.s), .truth td.first:not(.s) { border-left: var(--hair) solid var(--ink); }
+.truth th.l::before { border-radius: 50%; }
+.truth th.first:not(:first-child), .truth td.first:not(:first-child) { border-left: var(--rule) solid var(--ink); }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
@@ -320,8 +312,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .rownum .f1 { font-variation-settings: 'opsz' 18.3, 'XTRA' 603; }
 .lockup { font-variation-settings: 'opsz' 57.9; }
 .truth .label { font-variation-settings: 'opsz' 43.7; }
-.truth th { font-variation-settings: 'opsz' 17; }
-.truth td { font-variation-settings: 'opsz' 24; }
+.truth th { font-variation-settings: 'opsz' 18.3; }
+.truth td { font-variation-settings: 'opsz' 28.3; }
 
 /* R9 zoom reflow (WCAG 2.2 SC 1.4.4 + 1.4.10). Text above carries rem floors, so under browser zoom it grows 2x in
    device px while the layout unit --u still follows the frame. Once the frame is narrower than 70rem (or shorter than

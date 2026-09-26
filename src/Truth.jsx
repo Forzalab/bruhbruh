@@ -33,7 +33,6 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
     ...gates.map((id, i) => [gType.filter((t) => t === gType[i]).length > 1 ? `${gType[i]}${gType.slice(0, i + 1).filter((t) => t === gType[i]).length}` : gType[i], 'g']),
     ...outs.map((_, i) => [outs.length === 1 ? 'OUT' : `Q${i + 1}`, 'l'])];
   const grp = (j) => heads[j][1] + (j === 0 || heads[j - 1][1] !== heads[j][1] ? ' first' : '');
-  const digits = Math.max(2, String(rows.length).length);
 
   // Windowing: fixed row height measured from the first rendered row.
   const box = useRef(null);
@@ -61,7 +60,6 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
       <div className="tt" ref={box} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
         <table>
           <thead><tr>
-            <th scope="col" className="n">#</th>
             {heads.map(([h], j) => <th key={h} scope="col" className={grp(j)}>{h}</th>)}
           </tr></thead>
           <tbody>
@@ -70,7 +68,6 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
               const i = first + k;
               return (
                 <tr key={i} className={i === live ? 'live' : ''} onClick={() => setSwitches(ins, row.slice(0, ins.length))}>
-                  <td className="n">{String(i + 1).padStart(digits, '0')}</td>
                   {row.map((b, j) => <td key={j} className={`${grp(j)} v${b}`}>{b}</td>)}
                 </tr>
               );
