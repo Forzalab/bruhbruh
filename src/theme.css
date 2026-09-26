@@ -56,12 +56,14 @@
   --dpr: 1;
   --f: min(1rem / 16, var(--u) * var(--dpr));
   /* Rules snap to whole CSS px (CSS Values 4 round()); Chromium floors fractional border widths otherwise (1.78 -> 1px). */
-  /* max(1px, ...) keeps a rule from rounding to 0 on a tiny frame; within 1 CSS px of 2u everywhere. */
-  --rule: max(1px, round(nearest, calc(2 * var(--u)), 1px));
+  /* max(1px, ...) keeps a rule from rounding to 0 on a tiny frame; within 1 CSS px of 4u everywhere. */
+  /* pit2/t1w-c: one shared line weight for the whole page. --rule rises 2u -> 4u to meet the parts'
+     stroke, which drops 6 -> 4 (src/nodes/geom.js): grid and canvas both draw at 4px, ratio 1:1. */
+  --rule: max(1px, round(nearest, calc(4 * var(--u)), 1px));
   --hair: max(1px, round(nearest, var(--u), 1px));
   /* Gutter: 53u, but in the zoom reflow it must still hold the rem-floored field numerals. */
   --gut: calc(53 * var(--u));
-  --stroke: 6px;
+  --stroke: 4px; /* pit2/t1w-c: == --rule, see src/nodes/geom.js */
 }
 
 * { box-sizing: border-box; }
@@ -181,7 +183,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .glyph .shape { width: 100%; height: 100%; }
 /* Palette stroke = the canvas 6 scaled with the glyph (6 x 0.41): same stroke-to-size ratio, so tray and canvas read
    equally black (Pillow ink density tray/canvas 0.92; a flat 4px on both measured 2.19x darker in the tray, RUI p.48-51). */
-.glyph .shape .body { stroke-width: calc(6 * .41 * var(--u)); vector-effect: non-scaling-stroke; }
+.glyph .shape .body { stroke-width: calc(4 * .41 * var(--u)); vector-effect: non-scaling-stroke; }
 
 /* Scroll cues: a 16x8u solid ink arrowhead centred in a 20u (one baseline) paper margin at the list edge. The next part
    is cut off by that margin (overlap/peek, RUI p.170), which says "more below" by itself; the arrowhead confirms it.

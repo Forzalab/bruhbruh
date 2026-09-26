@@ -1,11 +1,12 @@
-// Component geometry. One stroke system: 6px ink outline (IBM Carbon / Müller-Brockmann: a single
-// line weight), knobs as semicircles appended INTO the outline path (one continuous stroke),
+// Component geometry. One stroke system: 4px ink outline (pit2/t1w-c: parts+wires meet the page grid
+// at one shared line weight, --rule also 4px, Müller-Brockmann's "a single line weight" taken literally
+// across canvas AND grid), knobs as semicircles appended INTO the outline path (one continuous stroke),
 // and the lit state as a TRUE inset contour: the outline offset inward by (stroke/2 + gap).
 
-export const STROKE = 6;         // outline + wire weight
+export const STROKE = 4;         // outline + wire weight (was 6; now == --rule, see theme.css)
 export const GAP = 6;            // paper gap between outline and orange inset
-export const INSET = STROKE / 2 + GAP; // centreline -> inset contour distance (9)
-export const KNOB = 9;           // knob centreline radius: ink reaches 12 from the outline centreline = a 9px bump past the 3px outer ink
+export const INSET = STROKE / 2 + GAP; // centreline -> inset contour distance (recomputed: 8, was 9)
+export const KNOB = 12 - STROKE / 2; // knob centreline radius: ink reaches a fixed 12 from the outline centreline (recomputed: 10, was 9)
 export const PAD = 12;           // svg padding around the outline centreline
 
 const f = (n) => +n.toFixed(3);

@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { Handle as RFHandle, Position } from '@xyflow/react';
 import Remove from '../Remove.jsx';
 import Say from '../Say.jsx';
-import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB, INSET, BUB } from './geom.js';
+import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB, INSET, BUB, STROKE } from './geom.js';
 
 const SWG = switchGeom(), LAMPG = lampGeom();
 const HB = 20; // handle box centred on the knob chord: the wire end lands 10px out, inside the knob ink ring (6..12)
@@ -62,8 +62,9 @@ export const XORV = 'e2';
 // Midline where the dotted empty half meets the orange half: f1 = orange dots, f2 = no midline, f3 = grey dots; f1/f3 sit 4px into the paper, off the orange edge.
 export const MIDV = 'f2';
 const KI = KNOB + 5; // 2px past // knob ink tip from the pin centreline (the wire end lands inside it)
-const DEEP = INSET + 3; // reaches 3px into the lit inset contour so the joint has no seam
-const neck = (x0, x1, y) => `M${Math.min(x0, x1)} ${y - 3}H${Math.max(x0, x1)}V${y + 3}H${Math.min(x0, x1)}Z`;
+const HALF = STROKE / 2; // half the outline/wire weight: the neck's half-width, so it butts the ink flush
+const DEEP = INSET + HALF; // reaches half a stroke into the lit inset contour so the joint has no seam
+const neck = (x0, x1, y) => `M${Math.min(x0, x1)} ${y - HALF}H${Math.max(x0, x1)}V${y + HALF}H${Math.min(x0, x1)}Z`;
 function bleeds(g, lit, bodyLit, on) {
   if (!lit) return '';
   let d = '';
@@ -74,7 +75,7 @@ function bleeds(g, lit, bodyLit, on) {
   // XOR: its knob tips touch the extra back curve. XORV picks how the orange meets it (Tony decides):
   // e1 = the extra curve opens at the neck, e2 = the curve stays ink over the neck (wire hops it), e3 = no neck.
   const xo = g.extraCurve ? { e1: 6, e2: 0, e3: null }[XORV] : 0;
-  ins.forEach(([x, y], i) => { if (lit.in?.[i] && xo !== null) d += neck(x - KI - xo, x + (bodyLit || multi ? DEEP : 3), y); });
+  ins.forEach(([x, y], i) => { if (lit.in?.[i] && xo !== null) d += neck(x - KI - xo, x + (bodyLit || multi ? DEEP : HALF), y); });
   if (g.out && lit.out) {
     const [x, y] = g.out;
     d += g.bubble ? (on ? neck(x - BUB, x + 10, y) : '') : neck(x - DEEP, x + KI, y);
@@ -112,7 +113,7 @@ function Shape({ g, on, idle, lit }) {
           <path d={g.inset} clipPath={`url(#${cid}o)`} />
           {MIDV !== 'f2' && <line className={MIDV === 'f1' ? 'one' : ''} x1={0} x2={g.w} clipPath={`url(#${cid}i)`}
             y1={g.h / 2 + (j ? off : -off)} y2={g.h / 2 + (j ? off : -off)} />}
-          <line x1={px - KNOB + 3} x2={px + INSET} y1={py} y2={py} />
+          <line x1={px - KNOB + HALF} x2={px + INSET} y1={py} y2={py} />
         </g>;
       })()}
     </svg>
