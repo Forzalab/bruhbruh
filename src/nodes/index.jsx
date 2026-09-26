@@ -55,7 +55,7 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // Pin bleed: a pin whose wire carries 1 is coloured together with the wire's start, one orange piece.
 // The zone sits UNDER the re-stroked ink outline (outline never orange); only the wire-width bridge crosses the
 // knob ink, because that is the wire itself entering the pin. Variant picks the zone shape.
-export const BLEED = 'a';
+export const BLEED = 'b';
 const KI = KNOB + 3; // knob ink tip from the pin centreline
 function zone(x, y, d, bubble) {
   const r = (x0, x1, y0, y1) => `M${Math.min(x0, x1)} ${y0}H${Math.max(x0, x1)}V${y1}H${Math.min(x0, x1)}Z`;
