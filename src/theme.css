@@ -196,14 +196,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    gap between the demo's two switches (ellipse centre 15u above the tab's, tip 4.5u above the tab's bottom), never on a node.
    Size from the ref's balloon : tab ratio (4.55 tab widths wide). Lettering = Anime Ace 3 BB outlines (src/hintLettering.js), the
    face the ref imitates; shipped as paths, never as a font. SVG box 200x130 drawn at 1.052u per unit. */
-.pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 - 6.3 * var(--u)); top: calc(50% - 65.5 * var(--u));
-  width: calc(210.4 * var(--u)); height: calc(136.8 * var(--u)); pointer-events: none; }
-.pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 3.6; stroke-linejoin: round; }
-.pal-hint .lettering { position: absolute; left: calc(105.2 * var(--u)); top: calc(35.8 * var(--u)); inset-block-end: auto; inset-inline-end: auto;
-  width: calc(136 * var(--u)); height: auto; transform: translate(-50%, -50%); overflow: visible; } /* ref: text ~75% of the balloon width; scales with the balloon */
-.pal-hint .lettering path { fill: var(--ink); stroke: none; }
-.pal-hint .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; } /* +0.022em: Regular up to the ref's weight */
 .react-flow { background: transparent; }
 .react-flow__pane { cursor: default; }
 
@@ -270,6 +262,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .say .emph { fill: var(--ink); stroke: var(--ink); stroke-width: 0.5; stroke-linejoin: round; } /* Bold Italic held above the thickened Regular */
 .say .rest { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; } /* +0.022em, as the hint */
 .say-part { --ax: 42%; --ay: -9px; } /* tip just above the part's top edge, short of it */
+.pal-hint { --k: var(--u); --ax: calc(var(--tw) / 2); --ay: calc(50% + 35.515 * var(--u)); z-index: 6; } /* same balloon; tail tip kept at the tab's right edge (77.00, 540.24 at 1440) */
 .say-logo { --k: var(--u); --ax: calc(771 * var(--u)); --ay: calc(112 * var(--u)); z-index: 6; } /* tip at the r's shoulder */
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
