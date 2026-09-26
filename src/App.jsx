@@ -7,6 +7,7 @@ import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
+import { partNames } from './names.js';
 import Controls from './Controls.jsx';
 
 const HISTORY = 10; // linear undo stack depth (Tony)
@@ -138,9 +139,10 @@ export default function App() {
   };
 
   const wires = Object.values(circuit.wires);
+  const names = partNames(view, circuit);
   const nodes = view.map((n) => ({
     ...n,
-    data: { ...circuit.nodes[n.id], on: values[n.id],
+    data: { ...circuit.nodes[n.id], on: values[n.id], name: names[n.id],
       wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) },
       lit: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin && values[w.source])), out: !!values[n.id] && wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
       reject: reject && reject.node === n.id ? reject : null,
@@ -360,7 +362,7 @@ export default function App() {
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
           (nodes like the switch button would otherwise swallow it). */}
-      <main style={{ '--stroke': `${STROKE * userZoom ** (ZOOM_EXP - 1)}px` }} className="cell c-main r2 canvas" aria-label="Circuit canvas"
+      <main style={{ '--stroke': `${STROKE * userZoom ** (ZOOM_EXP - 1)}px`, '--zk': userZoom ** (ZOOM_EXP - 1) }} className="cell c-main r2 canvas" aria-label="Circuit canvas"
         onDragOverCapture={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
         onDropCapture={onDrop} onPointerMove={wireGuides}>
         {/* Palette first in DOM: its tab is the first stop in the canvas (absolute, so nothing moves) */}

@@ -167,7 +167,15 @@ export function pinYs(kind, type) {
   const g = GATE_GEOM[type]; return { ins: g.in.map(([, y]) => y), out: g.out[1] };
 }
 
-const NAMES = { s1: 'A', s2: 'B' };
+// Name plate (T3 Swedish "skylt"). Switch + lamp: a keyline plate = "this is a table column"; lit orange when the
+// part is 1 (orange = logic 1 only). Gate: bare name, no plate (gates are not table columns). Hung under the outline,
+// pointer-events none, so it never widens the node's hover (the delete X keeps its own hit rule).
+export const PLATE = (import.meta.env.DEV && new URLSearchParams(location.search).get('plate')) || 'hang'; // 'hang' (8u gap) | 'tab' (joined to the outline) | 'ink' (inverted plate)
+function Plate({ g, x, name, on, bare }) {
+  if (!name) return null;
+  return <span className={`plate p-${PLATE} ${bare ? 'bare' : ''} ${on && !bare ? 'on' : ''}`} aria-hidden="true"
+    style={{ left: x, top: g.h - PAD }}>{name}</span>;
+}
 
 // T4 error mark: the one non-text signal on a refused port (words belong to the comic balloon). One shape: a SOLID
 // ring round the knob at the wire weight (dots already mean "free pin"). r 24 flow px = 48 px across at 1440, 34 at 1024.
@@ -186,9 +194,10 @@ export function SwitchNode({ id, data }) {
       <Shape g={SWG} on={data.on} lit={data.lit} />
       <Stubs out={SWG.out} wired={data.wired} />
       <X g={SWG} label="Delete switch" data={data} />
+      <Plate g={SWG} x={PAD + SW.side / 2} name={data.name} on={data.on} />
       <Mark data={data} at={{ out: SWG.out }} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
-        aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
+        aria-label={`Switch ${data.name ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
     </div>
   );
@@ -197,10 +206,11 @@ export function SwitchNode({ id, data }) {
 export function GateNode({ id, data }) {
   const g = GATE_GEOM[data.type], zones = GATE_ZONES[data.type];
   return (
-    <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
+    <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate ${data.name ?? ''}, output ${data.on ? 1 : 0}`}>
       <Shape g={g} on={data.on} lit={data.lit} />
       <Stubs ins={g.in} out={g.out} wired={data.wired} />
       <X g={g} label={`Delete ${data.type} gate`} data={data} />
+      <Plate g={g} x={mass(g)[0]} name={data.name} bare />
       <Mark data={data} at={{ ...Object.fromEntries(g.in.map((p, i) => [`in${i}`, p])), out: g.out }} />
       {g.in.map((at, i) => (
         <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
@@ -215,10 +225,11 @@ export function GateNode({ id, data }) {
 
 export function LampNode({ id, data }) {
   return (
-    <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={data.on ? 'Lamp on' : 'Lamp off'}>
+    <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={`Lamp ${data.name ?? ''} ${data.on ? 'on' : 'off'}`}>
       <Shape g={LAMPG} on={data.on} lit={data.lit} />
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
       <X g={LAMPG} label="Delete lamp" data={data} />
+      <Plate g={LAMPG} x={PAD + 45} name={data.name} on={data.on} />
       <Mark data={data} at={{ in0: LAMPG.in }} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
       {data.reject && <Say phrase={data.reject.phrase} text={data.reject.text} className="say-part" role="alert" />}

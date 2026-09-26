@@ -427,3 +427,17 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .wipe-bubble .lettering { inset: auto; left: calc(132 * var(--bu)); top: calc(40 * var(--bu)); width: calc(174 * var(--bu)); height: auto; transform: translate(-50%, -50%); }
 .wipe-bubble .lettering path { fill: var(--ink); stroke: none; }
 .wipe-bubble .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; }
+
+/* T3 Swedish name plates. Every length is flow px = u at userZoom 1 (React Flow scales flow px by frame/1440, the --u law);
+   --zk = userZoom^(ZOOM_EXP-1) is the stroke's own zoom law, so plate type + keyline follow the parts exactly.
+   23u type = 16.4px at 1024 (floor 16), 23px at 1440. Keyline = --stroke: the part's weight, one weight per object. */
+.plate { position: absolute; transform: translateX(-50%); margin-top: calc(var(--stroke) / 2 + 8px * var(--zk, 1));
+  display: grid; place-items: center; box-sizing: border-box; height: calc(32px * var(--zk, 1)); min-width: calc(32px * var(--zk, 1));
+  padding: 0 calc(6px * var(--zk, 1)); border: var(--stroke) solid var(--ink); border-radius: 0; background: var(--paper);
+  font: 700 calc(23px * var(--zk, 1))/1 var(--font); font-stretch: 100%; letter-spacing: 0.02em; color: var(--ink);
+  white-space: nowrap; pointer-events: none; user-select: none; z-index: 2; }
+.plate.on { background: var(--one); }                               /* part = 1: orange plate, ink glyph 6.06:1 */
+.plate.bare { border-color: transparent; background: none; color: var(--ink-2); } /* gate: name only, not a column */
+.plate.p-tab { margin-top: calc(var(--stroke) * -0.5); }             /* joined: plate top rule = the part's bottom outline */
+.plate.p-ink:not(.bare) { background: var(--ink); color: var(--paper); }
+.plate.p-ink.on { background: var(--one); color: var(--ink); }
