@@ -7,8 +7,22 @@
 // S = switch (output only), G = gate (in + out), L = lamp (input only).
 
 export const GATES = {
-  AND: { pins: 2, fn: (a, b) => a && b },
+  AND:  { pins: 2, fn: (a, b) => a && b },
+  OR:   { pins: 2, fn: (a, b) => a || b },
+  NOT:  { pins: 1, fn: (a) => !a },
+  NAND: { pins: 2, fn: (a, b) => !(a && b) },
+  NOR:  { pins: 2, fn: (a, b) => !(a || b) },
+  XOR:  { pins: 2, fn: (a, b) => a !== b },
 };
+
+// Input-switch cap: kept as sim-level policy so any future "add switch" UI can check it the same
+// way canConnect is checked before wiring. No add-switch UI exists yet (see App.jsx START/VIEW).
+export const MAX_SWITCHES = 13;
+export function canAddSwitch(circuit) {
+  const count = Object.values(circuit.nodes).filter((n) => n.kind === 'S').length;
+  if (count >= MAX_SWITCHES) return { ok: false, reason: `only ${MAX_SWITCHES} switches allowed` };
+  return { ok: true };
+}
 
 export function pinCount(node) {
   if (node.kind === 'S') return 0;

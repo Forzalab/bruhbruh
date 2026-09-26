@@ -1,7 +1,12 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ReactFlow, Background, useNodesState } from '@xyflow/react';
-import { canConnect, evaluate } from './sim.js';
-import { nodeTypes } from './nodes/index.jsx';
+import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
+import { canConnect, canAddSwitch, evaluate } from './sim.js';
+import { nodeTypes, pinYs } from './nodes/index.jsx';
+import Palette, { DND } from './Palette.jsx';
+import Wire from './Wire.jsx';
+import Truth from './Truth.jsx';
+
+const edgeTypes = { wire: Wire };
 
 // Sim data: the truth. Positions live separately in React Flow (view only).
 const START = {
@@ -22,21 +27,12 @@ const VIEW = [
   { id: 'l1', type: 'L', position: { x: 736, y: 181 }, data: {} },
 ];
 
-let nextWire = 1;
+let nextWire = 1, nextNode = 1;
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
 // Glyph spans are aria-hidden; one visually hidden run carries the whole word ("01", not "0 1").
 const fig = (v) => [<span key="t" className="sr">{String(v)}</span>,
   <span key="g" aria-hidden="true">{[...String(v)].map((c, k) => <span key={k} className={'f' + c}>{c}</span>)}</span>];
-
-// Help-bar mouse: left button filled = click, right button filled = right-click.
-const Mouse = ({ right }) => (
-  <svg className="mouse" width="14" height="20" viewBox="0 0 14 20" aria-hidden="true">
-    <path className="q" d={right ? 'M7 1A6 6 0 0 1 13 7V9H7Z' : 'M7 1A6 6 0 0 0 1 7V9H7Z'} />
-    <rect x="1" y="1" width="12" height="18" rx="6" />
-    <path d="M7 1V9M1 9H13" />
-  </svg>
-);
 
 export default function App() {
   const [circuit, setCircuit] = useState(START);
@@ -46,6 +42,9 @@ export default function App() {
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
   const [status, setStatus] = useState({ text: '', bad: false });
+  // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
+  const [palOpen, setPalOpen] = useState(false);
+  const [tucked, setTucked] = useState(false);
   // Canvas scale = frame width / 1440, the same factor as the CSS --u (100cqw / 1440). React Flow's viewport zoom
   // scales node geometry, strokes and knobs together, so wires stay on pin centres (React Flow docs: Viewport, zoom).
   const frame = useRef(null);
@@ -76,11 +75,13 @@ export default function App() {
   const toggle = (id) =>
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { ...c.nodes[id], value: !c.nodes[id].value } } }));
 
+  const wires = Object.values(circuit.wires);
   const nodes = view.map((n) => ({
     ...n,
-    data: { ...circuit.nodes[n.id], on: values[n.id], onToggle: () => { setReject(null); toggle(n.id); },
+    data: { ...circuit.nodes[n.id], on: values[n.id],
+      wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
       reject: reject && reject.node === n.id ? reject : null,
-      pending, onPort: (handle) => onPort(n.id, handle) },
+      pending, onPort: (handle) => onPort(n.id, handle), onRemove: () => removeNodes([n.id]) },
   }));
 
   const edges = Object.values(circuit.wires).map((w) => ({
@@ -89,17 +90,45 @@ export default function App() {
     sourceHandle: 'out',
     target: w.target,
     targetHandle: `in${w.pin}`,
-    type: 'step',
+    type: 'wire',
+    selectable: false, focusable: false, // a click on a wire does nothing; only its X deletes
+    data: { onRemove: (id) => onEdgesChange([{ type: 'remove', id }]) },
     className: values[w.source] ? 'on' : '',
     selected: edgeSel.has(w.id),
   }));
+
+  // New node from the palette. `at` = flow position of the drop; none (click / Enter) = canvas centre,
+  // nudged per add so repeated adds don't stack exactly.
+  const switchFull = !canAddSwitch(circuit).ok;
+  const addNode = (it, at) => {
+    if (it.kind === 'S' && switchFull) return;
+    const id = `${it.kind.toLowerCase()}${it.type ? it.type.toLowerCase() : ''}_${nextNode++}`; // "_" keeps added parts clear of the demo ids (s1, s2, g1, l1)
+    if (!at) {
+      const box = frame.current.querySelector('.canvas').getBoundingClientRect();
+      const c = rf.screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
+      at = { x: c.x - 60 + ((nextNode % 5) * 20), y: c.y - 54 + ((nextNode % 5) * 20) };
+    }
+    setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { id, kind: it.kind, ...(it.type && { type: it.type }), ...(it.kind === 'S' && { value: false }) } } }));
+    setView((v) => [...v, { id, type: it.kind, position: at, data: {} }]);
+  };
+  const onDrop = (e) => {
+    const raw = e.dataTransfer.getData(DND);
+    if (!raw) return;
+    e.preventDefault();
+    const p = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    addNode(JSON.parse(raw), { x: p.x - 40, y: p.y - 54 }); // pointer lands near the glyph's middle
+  };
+
+  // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
+  const REJECT_TEXT = { 'pin taken': 'That input already has a wire' };
 
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
     if (!check.ok) {
-      setReject({ node: target, handle: targetHandle, text: `Can't connect: ${check.reason}` });
-      return setStatus({ text: `Rejected: ${check.reason}`, bad: true });
+      const text = REJECT_TEXT[check.reason] ?? `Can't connect: ${check.reason}`;
+      setReject({ node: target, handle: targetHandle, text });
+      return setStatus({ text, bad: true });
     }
     setReject(null);
     const id = `w${nextWire++}`;
@@ -112,8 +141,9 @@ export default function App() {
   // radius of each knob centre, ignores the zones, and could lose a fast release on a busy first load.
   // The drag origin is kept ourselves: on a fast release React Flow's connection state can already be cleared.
   const dragFrom = useRef(null);
-  const onConnectStart = (_, { nodeId, handleId, handleType }) => { dragFrom.current = { node: nodeId, handle: handleId, type: handleType }; };
+  const onConnectStart = (_, { nodeId, handleId, handleType }) => { dragFrom.current = { node: nodeId, handle: handleId, type: handleType }; setTucked(true); };
   const onConnectEnd = (e, cs) => {
+    setTucked(false); setGuides([]);
     const from = dragFrom.current;
     dragFrom.current = null;
     if (!from || (cs.toHandle && cs.isValid)) return; // React Flow already connected it
@@ -145,9 +175,36 @@ export default function App() {
     setReject(null); setPending(null);
     setStatus({ text: '', bad: false });
   };
+  // Snap guides (Tony, Sep 25; Figma/Canva smart guides). A pin within SNAP flow units of another node's pin height
+  // pulls the dragged node onto that line, and a thin dotted --ink-2 guide shows it. SNAP = 8: the 20u grid already
+  // quantizes positions, but pin heights differ per part (switch 43, gates 33/75, lamp 57), so grid snap alone never
+  // lines pins up; 8 catches "nearly level" without fighting the grid.
+  const SNAP = 8;
+  const [guides, setGuides] = useState([]);
+  const pinsAbs = (n, which) => { const c = circuit.nodes[n.id]; if (!c) return []; const p = pinYs(c.kind, c.type);
+    const ys = which === 'in' ? p.ins : which === 'out' ? (p.out == null ? [] : [p.out]) : [...p.ins, ...(p.out == null ? [] : [p.out])];
+    return ys.map((y) => n.position.y + y); };
+  const snapNode = (ch) => {
+    const me = view.find((n) => n.id === ch.id); if (!me) return ch;
+    const moved = { ...me, position: ch.position }; let best = null;
+    for (const y of pinsAbs(moved)) for (const o of view) if (o.id !== ch.id) for (const oy of pinsAbs(o)) {
+      const d = oy - y; if (Math.abs(d) <= SNAP && (!best || Math.abs(d) < Math.abs(best.d))) best = { d, y: oy };
+    }
+    setGuides(best ? [best.y] : []);
+    return best ? { ...ch, position: { ...ch.position, y: ch.position.y + best.d } } : ch;
+  };
   const onNodesChange = (changes) => {
     removeNodes(changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id));
-    onViewChange(changes.filter((ch) => ch.type !== 'remove'));
+    // The release also carries a (grid-snapped) position: snap it too, or it undoes the alignment by up to 1px.
+    onViewChange(changes.filter((ch) => ch.type !== 'remove').map((ch) => (ch.type === 'position' && ch.position ? snapNode(ch) : ch)));
+    if (changes.some((ch) => ch.type === 'position' && ch.dragging === false)) setGuides([]);
+  };
+  // Wire drag: a guide on every pin of the other kind whose height is within SNAP of the cursor.
+  const wireGuides = (e) => {
+    const from = dragFrom.current; if (!from || !rf) return;
+    const { y } = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    const want = from.type === 'source' ? 'in' : 'out';
+    setGuides(view.filter((n) => n.id !== from.node).flatMap((n) => pinsAbs(n, want)).filter((py) => Math.abs(py - y) <= SNAP));
   };
 
   const onEdgesChange = (changes) => {
@@ -158,9 +215,9 @@ export default function App() {
     setCircuit((c) => ({ ...c, wires: Object.fromEntries(Object.entries(c.wires).filter(([id]) => !gone.includes(id))) }));
   };
 
-  // Truth table for the 2-switch AND demo; live row = current switch state.
-  const a = !!circuit.nodes.s1?.value, b = !!circuit.nodes.s2?.value; // switch state itself, never a derived value
-  const rows = [[0, 0], [0, 1], [1, 0], [1, 1]];
+  // A truth-table row click sets every input switch to that row's bits.
+  const setSwitches = (ids, bits) => setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
+    ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } }));
 
   return (
     <div className="frame" ref={frame}>
@@ -174,14 +231,19 @@ export default function App() {
         </button>
         <p className="lockup">Circuit<br /> editor</p>
       </div>
-      <h1 className="wordmark" aria-label="Logic"><span className="sr">Logic</span><span aria-hidden="true"><span className="wL">L</span><span className="wo">o</span><span className="wg">g</span><span className="wi">i</span><span className="wc">c</span></span></h1>
+      <h1 className="wordmark" lang="sv" aria-label="Figur"><span className="sr">Figur</span><span aria-hidden="true"><span className="wF">F</span><span className="wi">i</span><span className="wg">g</span><span className="wu">u</span><span className="wr">r</span></span></h1>
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
-      <main className="cell c-main r2 canvas">
+      {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
+          (nodes like the switch button would otherwise swallow it). */}
+      <main className="cell c-main r2 canvas"
+        onDragOverCapture={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
+        onDropCapture={onDrop} onPointerMove={wireGuides}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onNodeContextMenu={(e, n) => { e.preventDefault(); removeNodes([n.id]); }}
           onEdgeContextMenu={(e, w) => { e.preventDefault(); onEdgesChange([{ type: 'remove', id: w.id }]); }}
@@ -192,6 +254,9 @@ export default function App() {
           onConnect={onConnect}
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
+          onPaneClick={() => setPalOpen(false)} // HIG: an overlay panel is transient; a click on the work closes it
+          onNodeDragStart={() => setTucked(true)}
+          onNodeDragStop={() => setTucked(false)}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
@@ -201,34 +266,17 @@ export default function App() {
           proOptions={{ hideAttribution: true }}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
+          <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
         </ReactFlow>
+        <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
       </main>
-      <aside className="cell c-side r2 truth" aria-label="Truth table">
-        <h2 className="label">Truth table</h2>
-        <table>
-          <thead><tr><th scope="col"><span className="hN">#</span></th><th scope="col"><span className="hA">A</span></th><th scope="col"><span className="hB">B</span></th><th scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
-          <tbody>
-            {rows.map(([x, y], i) => (
-              <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
-                <td>{fig(String(i + 1).padStart(2, '0'))}</td><td>{fig(x)}</td><td>{fig(y)}</td><td>{fig(x & y)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </aside>
+      <Truth circuit={circuit} view={view} fig={fig} setSwitches={setSwitches} />
 
       <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">
         <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
-      <div className="cell c-side r3 help">
-        <p>
-          <Mouse />
-          <span className="sr">Click</span> to flip<i aria-hidden="true">·</i><span className="sr">, </span>drag <span className="to2">to</span> wire<i aria-hidden="true">·</i><span className="sr">, </span>
-          <Mouse right />
-          <span className="sr">Right-click</span> to delete
-        </p>
-      </div>
+      <div className="cell c-side r3 help" />
     </div>
     </div>
   );

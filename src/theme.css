@@ -35,6 +35,7 @@
   color-scheme: light;
   --paper: #ffffff;
   --ink: #111111;
+  --ink-2: #767676;        /* de-emphasis ink, 4.54:1 on paper (disabled palette item) */
   --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
   --grid: #e2e2e2;
   --font: 'Roboto Flex Variable', 'Roboto Flex Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -76,12 +77,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Composited, non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
 .app { will-change: transform; }
 
-/* 1440x810 target: rules at x 53/959, y 252/741, 2px, outer frame 2px. fr = px at 1440 x 810. */
+/* 1440x810 target: rules at x 53/959, 2px, outer frame 2px. Rows 260/480/60 (Tony, Sep 25; was ref3's 252/489/65). */
 .app {
   position: relative; height: 100%; overflow: hidden;
   display: grid;
   grid-template-columns: 53fr 906fr 477fr;
-  grid-template-rows: 252fr 489fr 65fr;
+  grid-template-rows: 260fr 480fr 60fr;
   border: var(--rule) solid var(--ink);
 }
 .cell { position: relative; min-width: 0; min-height: 0; border-right: var(--rule) solid var(--ink); border-bottom: var(--rule) solid var(--ink); }
@@ -102,19 +103,18 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140;
   letter-spacing: -0.03em; color: var(--ink);
   font-family: 'Roboto Flex Variable', 'Logic Wordmark Fallback', sans-serif;
-  left: calc(55 * var(--u)); top: calc(-13 * var(--u));
+  left: calc(55 * var(--u)); top: calc(-3 * var(--u)); /* g drops ~27px past the rule, as in ref */
 }
 
 /* Per-glyph fit to ref3 (Pillow, cap 194): a display cut draws caps heavier than lowercase and opens its round
    counters; Roboto Flex exposes both as parametric axes (Google Fonts, Roboto Flex: XOPQ = thin-stroke/stem
-   thickness, XTRA = counter width), so no faux-bold and no scaleX. Pair kerns g-i and i-c are tightened by hand
-   (font-kerning alone leaves the i-c gap at 9px vs ref3's 1px). font-variation-settings does not merge per axis,
+   thickness, XTRA = counter width), so no faux-bold and no scaleX. "Figur" (Tony, Sep 25): pairs kerned by hand to an
+   even ~10px ink gap at 1440 (default spacing gave F-i 3px, the i dot touching the F arm; u-r 15px). font-variation-settings does not merge per axis,
    so each span restates the whole list. */
-.wordmark .wL { font-stretch: 106%; font-variation-settings: 'XOPQ' 126, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
-.wordmark .wo { font-variation-settings: 'XOPQ' 112, 'YOPQ' 88, 'XTRA' 476, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wF { letter-spacing: -0.006em; font-stretch: 106%; font-variation-settings: 'XOPQ' 126, 'YOPQ' 88, 'XTRA' 466, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wi { letter-spacing: -0.02em; }
 .wordmark .wg { letter-spacing: -0.04em; font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 488, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
-.wordmark .wi { letter-spacing: -0.057em; }
-.wordmark .wc { font-variation-settings: 'XOPQ' 108, 'YOPQ' 88, 'XTRA' 494, 'YTUC' 660, 'YTLC' 570, 'YTDE' -140; }
+.wordmark .wu { letter-spacing: -0.047em; }
 
 /* Top-right: ink disk + two-line caps lockup. */
 .disk { position: absolute; left: calc(25 * var(--u)); top: calc(74 * var(--u)); width: calc(153 * var(--u)); height: calc(153 * var(--u)); border-radius: 50%; border: 0; padding: 0;
@@ -127,13 +127,108 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Canvas */
 .canvas { background: var(--paper); }
+
+/* Palette (Tony, Sep 25): a vertical bar inside the canvas' left edge, as tall as row 02, one 2px rule on its right.
+   Closed = only the tab, straddling the margin rule; open = the tab straddles the bar's rule, same height, so it
+   never jumps. Tucked = a drag is running: the bar slides away, then comes back as it was (state untouched). */
+.palette { position: absolute; inset: 0 auto 0 0; z-index: 4; pointer-events: none; --pw: calc(100 * var(--u)); --tw: max(calc(40 * var(--u)), 44px); } /* tab never under HIG's 44pt */
+.pal-bar { position: absolute; inset: 0 auto 0 0; width: var(--pw); background: var(--paper); border-right: var(--rule) solid var(--ink);
+  box-shadow: calc(12 * var(--u)) 0 0 var(--paper); /* invisible border (RUI p.172): canvas ink never touches the bar's rule */
+  transform: translateX(-100%); visibility: hidden; transition: transform .16s ease-out, visibility 0s .16s; pointer-events: auto; }
+.palette.open .pal-bar { transform: none; visibility: visible; transition: transform .16s ease-out; }
+.palette.open.tucked .pal-bar { transform: translateX(-100%); clip-path: inset(0 0 0 100%); transition: transform .12s ease-in, clip-path .12s ease-in; }
+/* Tucked hides by sliding + clipping, never visibility/display: Chromium can cancel an HTML5 drag whose source goes hidden
+   mid-drag (measured 7/8 drops landing before, see commit). */
+.pal-tab { position: absolute; top: 50%; left: calc(var(--tw) / -2); width: var(--tw); height: max(calc(80 * var(--u)), 88px); transform: translateY(-50%);
+  margin: 0; padding: 0; background: var(--paper); border: var(--rule) solid var(--ink); border-radius: 0; cursor: pointer;
+  display: grid; place-items: center; pointer-events: auto; transition: left .16s ease-out; }
+.palette.open .pal-tab { left: calc(var(--pw) - var(--tw) / 2); }
+.palette.open.tucked .pal-tab { left: calc(var(--tw) / -2); }
+.pal-tab svg { width: calc(14 * var(--u)); height: calc(24 * var(--u)); overflow: visible; }
+.pal-tab path { fill: none; stroke: var(--ink); stroke-width: 3.5; stroke-linecap: butt; stroke-linejoin: miter; }
+.pal-tab:hover, .pal-tab:focus-visible { background: var(--ink); outline: none; }
+.pal-tab:hover path, .pal-tab:focus-visible path { stroke: var(--paper); }
+
+/* Column on the frame's baseline grid (20u). Glyphs = the canvas circuit at 0.41 (Tony: bigger, as in PR 3's first
+   version); the tallest (lamp, ~40u ink) gets a 60u module = 3 baselines, and each group break is one 60u module
+   with its 2u rule centred. 20u pad + 8 x 60 + 2 x 60 + 20u pad = 640u > the 480u row, so the list scrolls: at rest
+   the NAND module is sliced by the bottom margin (the peek) and the arrowhead sits in that margin. */
+.pal-list, .pal-list ul { list-style: none; margin: 0; padding: 0; }
+.pal-list { height: 100%; overflow-y: auto; scrollbar-width: none; padding: calc(20 * var(--u)) 0; box-sizing: border-box; --fa: 0px; --fb: 0px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--fa) * .5), #000 var(--fa), #000 calc(100% - var(--fb)), transparent calc(100% - var(--fb) * .5));
+          mask-image: linear-gradient(to bottom, transparent calc(var(--fa) * .5), #000 var(--fa), #000 calc(100% - var(--fb)), transparent calc(100% - var(--fb) * .5)); }
+/* Edge fade (Tony: the hard cut read as broken): a transparency MASK, not a colour gradient, so ink and paper stay flat.
+   Only on a side with more parts; it runs over one 40u span and is fully clear at the 20u margin holding the arrowhead. */
+.pal-list.fd { --fb: calc(40 * var(--u)); } .pal-list.fu { --fa: calc(40 * var(--u)); }
+.pal-list::-webkit-scrollbar { display: none; }
+.pal-group ul { display: flex; flex-direction: column; align-items: center; padding-left: calc(4 * var(--u)); } /* pins pull ink left of the box: +2u optical shift */
+.pal-group li { height: calc(60 * var(--u)); display: grid; place-items: center; }
+.pal-group:first-child li:first-child .glyph { left: calc(-3 * var(--u)); width: calc(var(--gw) * .41 * 1.3 * var(--u)); height: calc(var(--gh) * .41 * 1.3 * var(--u)); }
+/* switch: knob sits right (optical centre); its square is only 68 tall vs the gates' 90, so it gets x1.3 to match their ink height */
+.pal-group + .pal-group { margin: calc(29 * var(--u)) auto 0; padding-top: calc(29 * var(--u)); border-top: var(--rule) solid var(--ink); width: calc(48 * var(--u)); }
+.pal-group + .pal-group ul { margin-inline: calc(-16 * var(--u)); }
+.pal-group li { width: 100%; height: max(calc(60 * var(--u)), 44px); }
+/* Hit target = the whole row (bar width x module), >= 44pt at every size (Apple HIG); the feedback outline stays on
+   the glyph, so nothing looks like a button at rest. */
+.pal-item { display: grid; place-items: center; width: 100%; height: 100%; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; cursor: grab; }
+.pal-item:hover .glyph, .pal-item:focus-visible .glyph { outline: var(--rule) solid var(--ink); outline-offset: calc(4 * var(--u)); }
+.pal-item:focus-visible { outline: none; }
+.pal-item:active { cursor: grabbing; }
+.pal-item[aria-disabled] { cursor: not-allowed; opacity: 1; }
+.pal-item[aria-disabled] .shape .body { stroke: var(--ink-2); }
+.glyph { position: relative; display: block; width: calc(var(--gw) * .41 * var(--u)); height: calc(var(--gh) * .41 * var(--u)); }
+.glyph .shape { width: 100%; height: 100%; }
+/* Palette stroke = the canvas 6 scaled with the glyph (6 x 0.41): same stroke-to-size ratio, so tray and canvas read
+   equally black (Pillow ink density tray/canvas 0.92; a flat 4px on both measured 2.19x darker in the tray, RUI p.48-51). */
+.glyph .shape .body { stroke-width: calc(6 * .41 * var(--u)); vector-effect: non-scaling-stroke; }
+
+/* Scroll cues: a 16x8u solid ink arrowhead centred in a 20u (one baseline) paper margin at the list edge. The next part
+   is cut off by that margin (overlap/peek, RUI p.170), which says "more below" by itself; the arrowhead confirms it.
+   No box, no fill band, no hover, default cursor: it must not read as a button (RUI p.52-53 pyramid). */
+.pal-more { position: absolute; left: 0; right: 0; height: calc(20 * var(--u)); background: transparent; display: none; place-items: center; cursor: default; }
+.pal-more.on { display: grid; }
+.pal-more.up { top: 0; } .pal-more.down { bottom: 0; }
+.pal-more svg { width: calc(16 * var(--u)); height: calc(8 * var(--u)); }
+.pal-more path { fill: var(--ink); }
+
+/* Onboarding bubble (once ever), matched to Tony's comic ref with Pillow: balloon 2:1 (ref 173x84), ~3.8u ink outline
+   (ref 3-4px), short curved tail from the lower left whose tip touches the tab's right edge. The balloon sits in the
+   gap between the demo's two switches (ellipse centre 15u above the tab's, tip 4.5u above the tab's bottom), never on a node.
+   Size from the ref's balloon : tab ratio (4.55 tab widths wide). Lettering = Anime Ace 3 BB outlines (src/hintLettering.js), the
+   face the ref imitates; shipped as paths, never as a font. SVG box 200x130 drawn at 1.052u per unit. */
+.pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 - 6.3 * var(--u)); top: calc(50% - 65.5 * var(--u));
+  width: calc(210.4 * var(--u)); height: calc(136.8 * var(--u)); pointer-events: none; }
+.pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 3.6; stroke-linejoin: round; }
+.pal-hint .lettering { position: absolute; left: calc(105.2 * var(--u)); top: calc(50.5 * var(--u)); inset-block-end: auto; inset-inline-end: auto;
+  width: calc(136 * var(--u)); height: auto; transform: translate(-50%, -50%); overflow: visible; } /* ref: text ~75% of the balloon width; scales with the balloon */
+.pal-hint .lettering path { fill: var(--ink); stroke: none; }
+.pal-hint .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; } /* +0.022em: Regular up to the ref's weight */
 .react-flow { background: transparent; }
 .react-flow__pane { cursor: default; }
 
 /* Components: one 6px ink outline, paper fill, lit = orange true-inset path. Outline never orange. */
 .shape { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .shape .body { fill: var(--paper); stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-miterlimit: 10; }
+.shape .line { fill: none; }
 .shape .lit { fill: var(--one); stroke: none; }
+.stubs { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.stubs line { stroke: var(--ink-2); stroke-width: 2; stroke-dasharray: 2 4; stroke-linecap: butt; }
+/* Hovering a wire previews its deletion in the stubs' language: it turns dotted (a click removes it). */
+/* Delete X: square ink tile + white X (Tony: square, not round). Hidden until its node or wire is hovered (or it has keyboard focus). */
+.remove { width: 24px; height: 24px; margin: 0; padding: 0; border: 0; border-radius: 0; background: var(--ink); cursor: pointer;
+  display: grid; place-items: center; pointer-events: all; z-index: 10; }
+/* X = half the tile (12 of 24, a 1:2 split); stroke 2.5 = 0.21 of the X, the header disk arrow's stroke:glyph ratio
+   (13 / 63.8 = 0.20). The header arrow spans 42% of its disk; the X takes the half, per Tony (a tad bigger). */
+.remove svg { width: 24px; height: 24px; }
+.remove path { stroke: var(--paper); stroke-width: 2.5; stroke-linecap: butt; fill: none; }
+.remove:hover, .remove:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.node .remove { display: none; border-radius: 50%; }
+/* The X borrows its host's geometry (Tony, pick 3): wires are right angles -> square X; parts are arcs and
+   bubbles -> round X. */
+.react-flow__node:hover .node .remove, .node .remove:focus-visible { display: grid; }
+/* Hovering the X previews the result: the wire goes dotted, like a free pin's stub. */
+.armed .react-flow__edge-path { stroke-dasharray: 2 6; }
 .node { position: relative; }
 .switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
 
@@ -178,8 +273,15 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth td { font: 760 max(calc(35.8 * var(--u)), calc(35.8 * var(--f)))/1 var(--font); font-stretch: 105%; height: 1.89944em; padding: 0; text-align: center; border-bottom: var(--hair) solid var(--ink); font-variant-numeric: tabular-nums; }
 .truth th:first-child, .truth td:first-child { text-align: left; padding-left: calc(8 * var(--u)); }
 /* Column widths set so column centres land on ref3's (A 1129, B 1248, OUT 1366 at 1440 wide). */
-.truth th:nth-child(1) { width: 22.25%; } .truth th:nth-child(2) { width: 23.62%; }
-.truth th:nth-child(3) { width: 30.73%; } .truth th:nth-child(4) { width: 23.40%; }
+.truth .classic th:nth-child(1) { width: 22.25%; } .truth .classic th:nth-child(2) { width: 23.62%; }
+.truth .classic th:nth-child(3) { width: 30.73%; } .truth .classic th:nth-child(4) { width: 23.40%; }
+/* Rows scroll inside the table box under a sticky header; a click on a row sets the switches. */
+.truth .tt { max-height: calc(360 * var(--u)); overflow-y: auto; scrollbar-width: thin; margin-top: calc(32 * var(--u)); }
+.truth .tt table { margin-top: 0; }
+.truth thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; border-bottom: 0; box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); } /* sticky cells drop collapsed borders: draw the rule as a shadow */
+.truth tbody tr:not(.pad) { cursor: pointer; scroll-snap-align: start; }
+.truth .tt { scroll-snap-type: y proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */
+.truth tbody tr:not(.live):not(.pad):hover td { background: var(--grid, #f2f2f2); }
 /* Per-glyph fit (Pillow vs ref3 at cap 23 / 26). Roboto Flex has no 'tnum' feature: its default figures are
    already tabular (GSUB lists only liga/locl/pnum/rvrn), so ink width is fitted per figure with wdth and XTRA
    (XTRA = counter/white width, Google Fonts Roboto Flex axis docs). */
@@ -188,6 +290,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
 .truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
 .truth tr.live td { background: var(--one); color: var(--paper); }
+.truth tr:not(.live) td { font-weight: 560; } /* 1c: non-live rows one weight step down, same ink */
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
@@ -197,14 +300,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--u)) 0 calc(8 * var(--u)); }
 .help p { margin: 0; white-space: nowrap; font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
 .help i { font-style: normal; margin: 0 .45em; }
-/* Mouse icon (Delta 7): 14x20 SVG at 1:1 (R9: sized in em of the help type, as is the chip, so the two scale together), 2px stroke = chip border. Bottom at baseline + 4px, so the
-   20px box is centred on the 12px cap band (baseline-12 .. baseline). */
-.help .mouse { display: inline-block; width: 0.8285em; height: 1.1835em; vertical-align: -0.2367em; margin-right: .5em; overflow: visible; }
-.help .mouse rect, .help .mouse path { fill: none; stroke: var(--ink); stroke-width: 2; }
-.help .mouse .q { fill: var(--ink); stroke: none; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-/* ref3's second TO is 4.8% wider than the other two (17.6 vs 16.8 px at cap 12); at 1px = 6% it needs its own wdth. */
-.help .to2 { font-variation-settings: 'wdth' 82, 'opsz' 36; }
 
 /* Small lines: hinted Linux text rounds every advance to whole px, so a 16.9u line drifts +-4.5% as --u changes.
    geometricPrecision keeps fractional advances (MDN: text-rendering); a 0.013em track restores the 1440 width. */
@@ -229,7 +325,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   .frame { width: 100%; height: auto; align-self: start; }
   .app { height: auto; --gut: max(calc(53 * var(--u)), calc(53 * var(--f)));
     grid-template-columns: var(--gut) minmax(0, 1fr) max(calc(477 * var(--u)), calc(477 * var(--f)));
-    grid-template-rows: calc(252 * var(--u)) auto max(calc(489 * var(--u)), calc(489 * var(--f))) auto max(calc(65 * var(--u)), calc(65 * var(--f))); }
+    grid-template-rows: calc(260 * var(--u)) auto max(calc(480 * var(--u)), calc(480 * var(--f))) auto max(calc(60 * var(--u)), calc(60 * var(--f))); }
   /* Field 01 splits: wordmark on its own full-width band, disk + lockup on a band below it (right-aligned, so the
      g's descender, which still breaks the rule, lands in the empty left of that band). */
   .c-margin.r1 { grid-area: 1 / 1 / 3 / 2; } .c-main.r1 { grid-area: 1 / 2 / 2 / 4; border-right: 0; }
@@ -244,3 +340,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   .c-margin.r3 { grid-area: 5 / 1; } .status { grid-area: 5 / 2; } .help { grid-area: 5 / 3; }
   .wordmark { left: calc(var(--gut) + 2 * var(--u)); }
 }
+.wire-hit { pointer-events: stroke; } /* wires are not selectable, so React Flow turns their events off; the hover band opts back in */
+
+/* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
+.guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
