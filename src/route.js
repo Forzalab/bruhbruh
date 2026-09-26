@@ -112,3 +112,12 @@ export function midpoint(pts) {
 export const SQUEEZE = 3;
 export const NUDGE = 'last';
 export const routeMetro = (s, t, o) => route(s, t, o) ?? route(s, t, { ...o, margin: SQUEEZE });
+
+// Jog rule (defaults round): a wire whose two pins sit 0 < |dy| < JOG apart draws a sub-cell step (a "jog"). After a
+// drop the part shifts by the smallest such dy so that pin pair lines up (a straight wire). dys = partnerY - myPinY for
+// each wire touching the part. Returns the shift (0 = nothing to fix).
+export const JOG = 20;
+export function jogShift(dys) {
+  const c = dys.filter((d) => d !== 0 && Math.abs(d) < JOG).sort((a, b) => Math.abs(a) - Math.abs(b));
+  return c.length ? c[0] : 0;
+}

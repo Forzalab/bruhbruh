@@ -505,3 +505,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .back-parts:hover, .back-parts:focus-visible { background: var(--ink); color: var(--paper); }
 /* Play test: drawer items span the whole bar (the second group was 80u of a 100u bar, so corner clicks missed). */
 .pal-group + .pal-group ul { margin-inline: calc(-26 * var(--u)); }
+
+/* Nudge cue: where the part was dropped, as the dot rule (--ink-2, dash w, gap 2w). Still; gone on next action or 3 s. */
+.nudge-ghost { position: absolute; overflow: visible; pointer-events: none; }
+.nudge-ghost rect { fill: none; stroke: var(--ink-2); stroke-width: 2; stroke-dasharray: 2 4; }

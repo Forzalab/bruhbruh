@@ -68,6 +68,7 @@ async function main() {
     await testFourteenthSwitchBlocked(page);
     await testWireDeleteUpdatesTable(page);
     await testRestored(page);
+    await testDragUndo(page);
   } finally {
     await browser.close();
     server.kill('SIGTERM');
@@ -381,6 +382,48 @@ async function testRestored(page) {
   const arcs = d ? [...d.d.matchAll(/Q\s*([-\d.]+),([-\d.]+)\s+([-\d.]+),([-\d.]+)/g)].filter((m) => m[1] !== m[3] || m[2] !== m[4]) : [1];
   ok('draft wire is a right-angle step (square corners)', arcs.length === 0, d?.d);
   await page.mouse.up();
+}
+
+// ---- 7. undo after any drag returns the part exactly to its pre-drag spot (snapped + nudged drops too) ----
+async function testDragUndo(page) {
+  log('\n== Drag then undo: exact pre-drag position, 20 random drops ==');
+  await load(page, { nodes: { s1: { id: 's1', kind: 'S', value: false }, s2: { id: 's2', kind: 'S', value: false }, g1: { id: 'g1', kind: 'G', type: 'AND' }, l1: { id: 'l1', kind: 'L' } },
+    wires: { w1: { id: 'w1', source: 's1', target: 'g1', pin: 0 }, w2: { id: 'w2', source: 's2', target: 'g1', pin: 1 }, w3: { id: 'w3', source: 'g1', target: 'l1', pin: 0 } } });
+  await page.waitForTimeout(400);
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const ids = ['g1', 'l1']; /* switches are grabbed by their toggle button (nodrag) */ let bad = 0, moved = 0; const off = [];
+  for (let i = 0; i < 20; i++) {
+    const id = ids[i % 2];
+    const before = (await state(page)).pos[id];
+    const b = await page.locator(`.react-flow__node[data-id="${id}"] .shape .body`).first().boundingBox();
+    const x = b.x + b.width * 0.4, y = b.y + b.height * 0.5;
+    await page.mouse.move(x, y); await page.mouse.down();
+    await page.mouse.move(x + (rnd() - 0.5) * 500, y + (rnd() - 0.5) * 300, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(120);
+    const mid = (await state(page)).pos[id];
+    if (mid.x === before.x && mid.y === before.y) continue;
+    moved++;
+    await page.keyboard.press('Control+z'); await page.waitForTimeout(120);
+    const after = (await state(page)).pos[id];
+    const d = Math.hypot(after.x - before.x, after.y - before.y); if (d > 0.01) { bad++; off.push(Math.round(d)); }
+  }
+  ok('undo after drag returns to the exact pre-drag spot (20 drops)', bad === 0, `${bad} off by ${off.join(',')}`);
+  ok(`drags actually moved parts (${moved}/20, nudges ${await page.evaluate(() => (window.__nudges ?? []).length)})`, moved >= 15);
+  // Fast chains: 4 quick drags (no settle wait), then 4 undos, must land on the positions from before the chain.
+  let chainBad = 0;
+  for (let r = 0; r < 5; r++) {
+    const start = (await state(page)).pos; let n = 0;
+    for (let k = 0; k < 4; k++) {
+      const id = ids[k % 2]; const b = await page.locator(`.react-flow__node[data-id="${id}"] .shape .body`).first().boundingBox();
+      const x = b.x + b.width * 0.4, y = b.y + b.height * 0.5; const p0 = (await state(page)).pos[id];
+      await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + (rnd() - 0.5) * 400, y + (rnd() - 0.5) * 300, { steps: 2 }); await page.mouse.up();
+      const p1 = (await state(page)).pos[id]; if (p1.x !== p0.x || p1.y !== p0.y) n++;
+    }
+    for (let k = 0; k < n; k++) await page.keyboard.press('Control+z');
+    await page.waitForTimeout(150);
+    const end = (await state(page)).pos;
+    if (Object.keys(start).some((id) => start[id].x !== end[id].x || start[id].y !== end[id].y)) chainBad++;
+  }
+  ok('fast drag chains undo step-for-step to the start (5 chains x 4 drags)', chainBad === 0, `${chainBad} chains off`);
 }
 
 function checkBuild() {

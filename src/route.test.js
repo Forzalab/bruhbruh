@@ -96,3 +96,12 @@ test('clearance covers the own source body: no fold back under the source', () =
   const p = route([86, 43], [106, 233], { src, dst });
   if (p) for (let i = 2; i < p.length - 1; i++) assert.ok(segRectDist(p[i - 1], p[i], body(src)) - STROKE >= GAP_PAPER);
 });
+
+test('jogShift: the smallest sub-cell pin offset is removed, aligned or far pins are left alone', async () => {
+  const { jogShift, JOG } = await import('./route.js');
+  assert.equal(jogShift([4]), 4);                 // the 4-input OUT jog: shift by 4 -> straight wire
+  assert.equal(jogShift([-7, 3, 60]), 3);         // smallest wins, 60 is a real step (>= one cell)
+  assert.equal(jogShift([0, 40]), 0);             // already straight / not a jog
+  assert.equal(jogShift([JOG]), 0);               // exactly one cell is a legal step
+  assert.equal(jogShift([]), 0);
+});

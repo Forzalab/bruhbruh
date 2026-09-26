@@ -3,7 +3,7 @@ import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/re
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs, portGeom } from './nodes/index.jsx';
 import { resolveZones } from './zones.js';
-import { routeMetro as route, bends, NUDGE } from './route.js';
+import { routeMetro as route, bends, NUDGE, jogShift } from './route.js';
 import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
@@ -204,7 +204,11 @@ export default function App() {
   // wire a legal route. `id` = the part being placed (skipped as an obstacle), `ok` = the extra wire test.
   const free = (at, kind, id, ok = () => true) => {
     const [w, h] = SIZE[kind];
-    const hit = (p) => view.some((n) => { if (n.id === id) return false; const [nw, nh] = SIZE[n.type] ?? [112, 108];
+    // LOCKED (Tony): the wordmark "g" hangs into the canvas on purpose; a part is never placed under it.
+    const gr = frame.current?.querySelector('.wordmark .wg')?.getBoundingClientRect();
+    const g0 = gr && rf?.screenToFlowPosition({ x: gr.left, y: gr.top }), g1 = gr && rf?.screenToFlowPosition({ x: gr.right, y: gr.bottom });
+    const underG = (p) => !!g0 && p.x < g1.x + 20 && p.x + w + 20 > g0.x && p.y < g1.y + 20 && p.y + h + 20 > g0.y;
+    const hit = (p) => underG(p) || view.some((n) => { if (n.id === id) return false; const [nw, nh] = SIZE[n.type] ?? [112, 108];
       return p.x < n.position.x + nw + 20 && p.x + w + 20 > n.position.x && p.y < n.position.y + nh + 20 && p.y + h + 20 > n.position.y; });
     for (let r = 0; r < 12; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
@@ -215,14 +219,30 @@ export default function App() {
   // Drop after a drag: if the part now leaves some wire with no legal route, nudge it to the nearest legal spot.
   // No animation, no refusal; the move and the nudge are one state change.
   // "Legal" = no wire stuck that was not already stuck before the drag (a wire that was already stuck elsewhere must not pin the part).
+  // Nudge cue: the spot the part was dropped on, as a dotted ghost (the dot rule), until the next action or 3 s. No motion.
+  const [ghost, setGhost] = useState(null);
+  useEffect(() => { if (!ghost) return; const off = () => setGhost(null), t = setTimeout(off, 3000);
+    const later = setTimeout(() => { addEventListener('pointerdown', off, true); addEventListener('keydown', off, true); }, 0);
+    return () => { clearTimeout(t); clearTimeout(later); removeEventListener('pointerdown', off, true); removeEventListener('keydown', off, true); }; }, [ghost]);
   const dragFrom0 = useRef(null);
   const settle = (_, node) => {
-    const me = view.find((n) => n.id === node.id), from = dragFrom0.current; dragFrom0.current = null; if (!me || !rf) return;
+    const me = view.find((n) => n.id === node.id), from = dragFrom0.current; dragFrom0.current = null; if (!me || !rf) return false;
     const base = from ? stuck(me.id, from) : [];
-    if (NUDGE === 'never' || !worse(stuck(me.id, node.position), base)) return;
-    const p = free(node.position, me.type, me.id, (q) => !worse(stuck(me.id, q), base));
+    const nudge = NUDGE !== 'never' && worse(stuck(me.id, node.position), base);
+    let p = nudge ? free(node.position, me.type, me.id, (q) => !worse(stuck(me.id, q), base)) : node.position;
+    // Jog rule: line a wired pin up with its partner when they sit < 20 apart (route.js jogShift), if that spot is legal.
+    const pinY = (n, at, hid) => pinAt(n, at, hid)?.[1];
+    const dys = Object.values(circuit.wires).flatMap((w) => {
+      if (w.source === me.id) { const o = view.find((n) => n.id === w.target); const a = o && pinY(o, o.position, `in${w.pin}`), b = pinY(me, p, 'out'); return a != null && b != null ? [a - b] : []; }
+      if (w.target === me.id) { const o = view.find((n) => n.id === w.source); const a = o && pinY(o, o.position, 'out'), b = pinY(me, p, `in${w.pin}`); return a != null && b != null ? [a - b] : []; }
+      return []; });
+    const dy = jogShift(dys);
+    if (dy) { const q = { x: p.x, y: p.y + dy }; if (free(q, me.type, me.id, () => true) === q && !worse(stuck(me.id, q), base)) p = q; }
+    if (p.x === node.position.x && p.y === node.position.y) return false;
+    if (nudge) setGhost({ ...boxAt(me, node.position) });
     if (import.meta.env.DEV) (window.__nudges ??= []).push(Math.hypot(p.x - node.position.x, p.y - node.position.y)); // harness probe
     setView((v) => v.map((n) => (n.id === me.id ? { ...n, position: p } : n)));
+    return true;
   };
   const addNode = (it, at) => {
     if (it.kind === 'S' && switchFull) return;
@@ -326,6 +346,7 @@ export default function App() {
   // `vite build`, so this whole block is dead-code-eliminated from dist (checked by scripts/e2e.mjs --check-build).
   const circuitRef = useRef(circuit); circuitRef.current = circuit;
   const valuesRef = useRef(values); valuesRef.current = values;
+  const viewRef = useRef(view); viewRef.current = view;
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     window.__gob = {
@@ -335,7 +356,7 @@ export default function App() {
           ?? (n.kind === 'S' ? { x: 120, y: (sy += 100) - 100 } : n.kind === 'L' ? { x: 760, y: (ly += 100) - 100 } : { x: 420, y: (gy += 100) - 100 }) }));
         restore({ circuit: next, view: v });
       },
-      state: () => ({ circuit: circuitRef.current, values: valuesRef.current }),
+      state: () => ({ circuit: circuitRef.current, values: valuesRef.current, pos: Object.fromEntries(viewRef.current.map((n) => [n.id, n.position])) }),
     };
     return () => { delete window.__gob; };
   }, []);
@@ -421,9 +442,14 @@ export default function App() {
           onConnectEnd={onConnectEnd}
           onPaneClick={() => { setPalOpen(false); setReject(null); }} // HIG: an overlay panel is transient; a click on the work closes it
           onNodeDragStart={(e, node) => { setTucked(true); dragSnap.current = snap(); dragFrom0.current = node.position; }}
-          onNodeDragStop={(e, node) => { setTucked(false); settle(e, node); // nudge (if any) lands inside the same undo step as the drag
+          onNodeDragStop={(e, node, dragged) => { setTucked(false); const from = dragFrom0.current; const nudged = settle(e, node); // nudge (if any) lands inside the same undo step as the drag
             const s = dragSnap.current; dragSnap.current = null;
-            if (s && view.some((n) => { const o = s.view.find((x) => x.id === n.id); return o && (o.position.x !== n.position.x || o.position.y !== n.position.y); })) commit(s); }}
+            // Defaults round: decide from the drop event itself (every dragged node, final position) plus the nudge, never
+            // from the render-time `view` (stale by one frame on a fast drop, which skipped the snapshot: undo then
+            // jumped to an older step). The snapshot holds the exact pre-drag positions, so one undo = one drag.
+            const moved = nudged || (dragged ?? [node]).some((d) => { const o = s?.view.find((x) => x.id === d.id); return o && (o.position.x !== d.position.x || o.position.y !== d.position.y); })
+              || (from && (from.x !== node.position.x || from.y !== node.position.y));
+            if (s && moved) commit(s); }}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
@@ -435,7 +461,9 @@ export default function App() {
           connectionLineComponent={Draft}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
-          <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
+          <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}
+            {ghost && <svg className="nudge-ghost" aria-hidden="true" style={{ left: ghost.x, top: ghost.y, width: ghost.w, height: ghost.h }}>
+              <rect x="1" y="1" width={ghost.w - 2} height={ghost.h - 2} /></svg>}</ViewportPortal>
         </ReactFlow>
         {lost && <button className="back-parts" onClick={() => { rf?.fitView({ padding: 0.15, minZoom: 0.75 * zoom, maxZoom: zoom, duration: 200 }); setLost(false); }}>Back to parts</button>}
         <Toasts list={toasts} />
