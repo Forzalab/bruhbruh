@@ -9,7 +9,7 @@ import Say from './Say.jsx';
 //   a  spotlight   : the page dims to ink 60%, the parts the step needs stay lit (Apple-style coach marks).
 //   b  panels      : the page washes to paper 82%, each lit part gets a 3px ink panel frame + numbered caption box.
 // The arrow keeps the site's dot rule: dash = w, gap = 2w, butt caps, w = the 2u rule; solid ink head.
-export const VARIANT = 'a';
+export const VARIANT = 'b';
 export const TOUR_KEY = 'gob.tour';
 export const TOUR_MS = 3000;
 const seen = () => { try { return localStorage.getItem(TOUR_KEY) === 'done'; } catch { return false; } };
