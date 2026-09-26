@@ -208,7 +208,11 @@ export default function App() {
     const gr = frame.current?.querySelector('.wordmark .wg')?.getBoundingClientRect();
     const g0 = gr && rf?.screenToFlowPosition({ x: gr.left, y: gr.top }), g1 = gr && rf?.screenToFlowPosition({ x: gr.right, y: gr.bottom });
     const underG = (p) => !!g0 && p.x < g1.x + 20 && p.x + w + 20 > g0.x && p.y < g1.y + 20 && p.y + h + 20 > g0.y;
-    const hit = (p) => underG(p) || view.some((n) => { if (n.id === id) return false; const [nw, nh] = SIZE[n.type] ?? [112, 108];
+    // A NEW part must land fully inside the visible canvas (20 margin); a dragged part may go where the user put it.
+    const vr = !id && frame.current?.querySelector('.react-flow')?.getBoundingClientRect();
+    const v0 = vr && rf?.screenToFlowPosition({ x: vr.left, y: vr.top }), v1 = vr && rf?.screenToFlowPosition({ x: vr.right, y: vr.bottom });
+    const outside = (p) => !!v0 && (p.x < v0.x + 20 || p.y < v0.y + 20 || p.x + w > v1.x - 20 || p.y + h > v1.y - 20);
+    const hit = (p) => underG(p) || outside(p) || view.some((n) => { if (n.id === id) return false; const [nw, nh] = SIZE[n.type] ?? [112, 108];
       return p.x < n.position.x + nw + 20 && p.x + w + 20 > n.position.x && p.y < n.position.y + nh + 20 && p.y + h + 20 > n.position.y; });
     for (let r = 0; r < 12; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
