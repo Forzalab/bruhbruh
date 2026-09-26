@@ -1,7 +1,13 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
-import { nodeTypes, pinYs } from './nodes/index.jsx';
+import { nodeTypes, pinYs, pinAt } from './nodes/index.jsx';
+import { route } from './route.js';
+
+// T2 draft: variant switch for A/B screenshots (?v=a|b|c). a = paper gap, b = hop, c = plain cross.
+const V = new URLSearchParams(location.search).get('v') ?? 'a';
+document.documentElement.dataset.v = V;
+const CROSS = { a: 'gap', b: 'hop', c: 'plain' }[V] ?? 'gap';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
@@ -27,7 +33,20 @@ const VIEW = [
   { id: 'l1', type: 'L', position: { x: 736, y: 181 }, data: {} },
 ];
 
-let nextWire = 1, nextNode = 1;
+// T2 mockup-only scene (?scene=bus): a 3-switch, 2-gate, 2-lamp board whose trunks all land on one x (the img2 bunch).
+// NOT part of any spec; delete before implementation.
+if (new URLSearchParams(location.search).get('scene') === 'bus') {
+  const N = (id, kind, extra) => [id, { id, kind, ...extra }];
+  START.nodes = Object.fromEntries([N('s1', 'S', { value: true }), N('s2', 'S', { value: false }), N('s3', 'S', { value: true }),
+    N('g1', 'G', { type: 'AND' }), N('g2', 'G', { type: 'OR' }), N('l1', 'L'), N('l2', 'L')]);
+  START.wires = Object.fromEntries([['w1', 's1', 'g1', 0], ['w2', 's1', 'g2', 0], ['w3', 's2', 'g1', 1], ['w4', 's3', 'g2', 1],
+    ['w5', 'g1', 'l1', 0], ['w6', 'g2', 'l2', 0]].map(([id, source, target, pin]) => [id, { id, source, target, pin }]));
+  VIEW.length = 0;
+  VIEW.push(...[['s1', 'S', 26, 50], ['s2', 'S', 26, 160], ['s3', 'S', 26, 320], ['g1', 'G', 400, 60], ['g2', 'G', 400, 280],
+    ['l1', 'L', 720, 57], ['l2', 'L', 720, 277]].map(([id, type, x, y]) => ({ id, type, position: { x, y }, data: {} })));
+}
+
+let nextWire = 100, nextNode = 1;
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
 // Glyph spans are aria-hidden; one visually hidden run carries the whole word ("01", not "0 1").
@@ -84,6 +103,12 @@ export default function App() {
       pending, onPort: (handle) => onPort(n.id, handle), onRemove: () => removeNodes([n.id]) },
   }));
 
+  const pos = Object.fromEntries(view.map((n) => [n.id, n.position]));
+  const abs = (id, handle) => { const c = circuit.nodes[id], p = pos[id], [x, y] = pinAt(c.kind, c.type, handle); return [p.x + x, p.y + y]; };
+  const routes = route(wires.filter((w) => pos[w.source] && pos[w.target]).map((w) => {
+    const [sx, sy] = abs(w.source, 'out'), [tx, ty] = abs(w.target, `in${w.pin}`);
+    return { id: w.id, source: w.source, sx, sy, tx, ty };
+  }));
   const edges = Object.values(circuit.wires).map((w) => ({
     id: w.id,
     source: w.source,
@@ -92,7 +117,7 @@ export default function App() {
     targetHandle: `in${w.pin}`,
     type: 'wire',
     selectable: false, focusable: false, // a click on a wire does nothing; only its X deletes
-    data: { onRemove: (id) => onEdgesChange([{ type: 'remove', id }]) },
+    data: { onRemove: (id) => onEdgesChange([{ type: 'remove', id }]), route: V === '0' ? null : routes.get(w.id), crossStyle: CROSS },
     className: values[w.source] ? 'on' : '',
     selected: edgeSel.has(w.id),
   }));
@@ -248,6 +273,8 @@ export default function App() {
           onNodeContextMenu={(e, n) => { e.preventDefault(); removeNodes([n.id]); }}
           onEdgeContextMenu={(e, w) => { e.preventDefault(); onEdgesChange([{ type: 'remove', id: w.id }]); }}
           connectionRadius={0}
+          elementsSelectable={false} // T2: nothing is ever "selected" by a click; no frame to explain
+          onKeyDown={(e) => { if ((e.key === 'Backspace' || e.key === 'Delete') && e.target.classList?.contains('react-flow__node')) removeNodes([e.target.dataset.id]); }}
           deleteKeyCode={['Backspace', 'Delete']}
           zoomOnDoubleClick={false}
           onEdgesChange={onEdgesChange}

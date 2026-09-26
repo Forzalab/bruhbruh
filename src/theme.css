@@ -226,7 +226,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .node .remove { display: none; border-radius: 50%; }
 /* The X borrows its host's geometry (Tony, pick 3): wires are right angles -> square X; parts are arcs and
    bubbles -> round X. */
-.react-flow__node:hover .node .remove, .node .remove:focus-visible { display: grid; }
+.node .remove.show, .node .remove:focus-visible { display: grid; }
+/* T2: the drawn ink + paper of a part is its own hover target (SVG hit test), so the X answers to the shape, not the box. */
+.shape .body.hit { pointer-events: visiblePainted; }
+/* T2: junction dot = connected (IEEE 315 / IEC 60617); Ø18 = 3x the wire = the knob radius (geom KNOB 9). Takes the net's colour. */
+.react-flow__edge .junction { fill: var(--ink); stroke: none; pointer-events: none; }
+.react-flow__edge.on .junction { fill: var(--one); }
 /* Hovering the X previews the result: the wire goes dotted, like a free pin's stub. */
 .armed .react-flow__edge-path { stroke-dasharray: 2 6; }
 .node { position: relative; }
@@ -241,8 +246,14 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .react-flow__handle.port::after { content: ''; position: absolute;
   left: var(--hit-left); top: var(--hit-top); width: var(--hit-w); height: var(--hit-h); }
 .debug-hitzones .react-flow__handle.port::after { outline: 1px dashed red; background: rgba(255, 0, 0, 0.08); }
-.react-flow__handle.port:hover, .react-flow__handle.port.connectingto { outline: 2px solid var(--ink); outline-offset: 1px; }
-.react-flow__handle.port.picked { outline: 3px solid var(--ink); outline-offset: 1px; }
+/* T2: no pin squares. Pin feedback per variant (html[data-v]):
+   a = the free pin's dotted stub goes full ink (the lead you are about to pull); b = a Ø12 ink dot in the knob mouth
+   (the junction dot's language: "a wire joins here"); c = nothing (the crosshair cursor alone). */
+[data-v='a'] .node:has(.port[data-handleid='out']:is(:hover, .connectingto, .picked)) .stubs .s-out,
+[data-v='a'] .node:has(.port[data-handleid='in0']:is(:hover, .connectingto)) .stubs .s-in0,
+[data-v='a'] .node:has(.port[data-handleid='in1']:is(:hover, .connectingto)) .stubs .s-in1 { stroke: var(--ink); stroke-width: 6; stroke-dasharray: 6 6; }
+[data-v='b'] .react-flow__handle.port::before { content: ''; position: absolute; left: 4px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); opacity: 0; }
+[data-v='b'] .react-flow__handle.port:is(:hover, .connectingto, .picked)::before { opacity: 1; }
 
 /* Wires: 6px, orthogonal, ink = 0, orange = 1. */
 .react-flow__edge-path { stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-linecap: butt; }
@@ -252,7 +263,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .react-flow__connection-path { stroke: var(--ink); stroke-width: 2px; stroke-dasharray: 6 4; }
 
 /* Selection + focus: ink only (WCAG 2.2 SC 2.4.7, 2.4.11; 18.9:1 on paper). */
-.react-flow .react-flow__node.selected { outline: 2px dashed var(--ink); outline-offset: -2px; }
+/* T2: no dashed selection frame (nothing is selectable by click). Pressing a part = the grabbing hand, nothing else. */
+.react-flow__node.dragging, .react-flow__node:active { cursor: grabbing; }
 .react-flow .react-flow__node:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
 .switch:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
 .react-flow__handle.port:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }

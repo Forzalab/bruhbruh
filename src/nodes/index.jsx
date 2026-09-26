@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { Handle as RFHandle, Position } from '@xyflow/react';
 import Remove from '../Remove.jsx';
 import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
@@ -52,12 +53,12 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // Outline = one path (body + knobs, one continuous stroke). Lit = second path: the true inset contour.
 // bubble (NAND/NOR/NOT) and extraCurve (XOR) are optional extra ink paths, same stroke system.
 // Inverting gates: the body shows the value before the NOT, the bubble shows the output.
-function Shape({ g, on, idle }) {
+function Shape({ g, on, idle, hit }) {
   return (
     <svg className="shape" width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true">
       {g.extraCurve && <path className="body line" d={g.extraCurve} />}
-      <path className="body" d={g.outline} />
-      {g.bubble && <path className="body" d={g.bubble} />}
+      <path className={hit ? 'body hit' : 'body'} d={g.outline} {...hit} />
+      {g.bubble && <path className={hit ? 'body hit' : 'body'} d={g.bubble} {...hit} />}
       {!idle && (g.bubble ? !on : on) && <path className="lit" d={g.inset} />}
       {!idle && g.bubble && on && <path className="lit" d={g.bubbleInset} />}
     </svg>
@@ -75,7 +76,7 @@ export function Glyph({ kind, type }) {
 // (RUI p.205: supporting UI only while it does something); --ink-2 dots at rule weight = a quiet, shape-coded cue.
 const TIP = KNOB + 3; // knob ink tip, measured from the pin's centreline
 function Stubs({ ins = [], out, wired }) {
-  const seg = (x0, x1, y, k) => <line key={k} x1={x0} y1={y} x2={x1} y2={y} />;
+  const seg = (x0, x1, y, k) => <line key={k} className={`s-${k === 'o' ? 'out' : 'in' + k}`} x1={x0} y1={y} x2={x1} y2={y} />;
   return (
     <svg className="stubs" aria-hidden="true">
       {ins.map(([x, y], i) => !wired.in[i] && seg(x - TIP, x - REACH, y, i))}
@@ -101,7 +102,17 @@ const mass = (() => {
 // Delete X on node hover, on the top edge at the shape's optical centre (Tony's sketch). Not inside the body (variant E):
 // the centre is where a node is grabbed, so an X there blocked dragging and turned a grab-click into a delete.
 // Right-click still deletes (testing).
-const X = ({ g, label, data }) => <Remove label={label} onRemove={data.onRemove}
+// T2: the X shows ONLY while the pointer is inside the drawn shape (outline + bubble fill, SVG hit test), never for
+// the node box, a pin zone or the gap around it. 150ms grace lets the pointer travel from the shape onto the X
+// (same idiom as Wire.jsx); the X's own hover keeps it up.
+function useShapeHover() {
+  const [on, set] = useState(false), t = useRef(0);
+  const enter = () => { clearTimeout(t.current); set(true); };
+  const leave = () => { t.current = setTimeout(() => set(false), 150); };
+  return [on, { onPointerEnter: enter, onPointerLeave: leave }, (v) => (v ? enter() : leave())];
+}
+const X = ({ g, label, data, show, onHover }) => <Remove label={label} onRemove={data.onRemove} onHover={onHover}
+  className={show ? 'show' : ''}
   style={{ position: 'absolute', left: mass(g)[0], top: PAD, transform: 'translate(-50%, -50%) scale(var(--rs))' }} />;
 
 // Pin heights in node-local coordinates, for snap guides: { ins: [y...], out: y | null }.
@@ -111,15 +122,25 @@ export function pinYs(kind, type) {
   const g = GATE_GEOM[type]; return { ins: g.in.map(([, y]) => y), out: g.out[1] };
 }
 
+// Wire end points in node-local px, exactly where React Flow puts them: the handle box is HB wide centred on the knob,
+// a source (Right) ends at the box's right edge, a target (Left) at its left edge. Used by route.js.
+export function pinAt(kind, type, handle) {
+  const g = kind === 'S' ? SWG : kind === 'L' ? LAMPG : GATE_GEOM[type];
+  if (handle === 'out') return [g.out[0] + HB / 2, g.out[1]];
+  const at = kind === 'L' ? g.in : g.in[+handle.slice(2)];
+  return [at[0] - HB / 2, at[1]];
+}
+
 const NAMES = { s1: 'A', s2: 'B' };
 
 export function SwitchNode({ id, data }) {
+  const [inside, hit, xHover] = useShapeHover();
   return (
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
-      <Shape g={SWG} on={data.on} />
+      <Shape g={SWG} on={data.on} hit={hit} />
       <Stubs out={SWG.out} wired={data.wired} />
-      <X g={SWG} label="Delete switch" data={data} />
-      <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
+      <X g={SWG} label="Delete switch" data={data} show={inside} onHover={xHover} />
+      <button {...hit} className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
     </div>
@@ -129,11 +150,12 @@ export function SwitchNode({ id, data }) {
 export function GateNode({ id, data }) {
   const g = GATE_GEOM[data.type], zones = GATE_ZONES[data.type];
   const rejectPin = data.reject && +data.reject.handle.slice(2);
+  const [inside, hit, xHover] = useShapeHover();
   return (
     <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
-      <Shape g={g} on={data.on} />
+      <Shape g={g} on={data.on} hit={hit} />
       <Stubs ins={g.in} out={g.out} wired={data.wired} />
-      <X g={g} label={`Delete ${data.type} gate`} data={data} />
+      <X g={g} label={`Delete ${data.type} gate`} data={data} show={inside} onHover={xHover} />
       {g.in.map((at, i) => (
         <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
       ))}
@@ -146,11 +168,12 @@ export function GateNode({ id, data }) {
 }
 
 export function LampNode({ id, data }) {
+  const [inside, hit, xHover] = useShapeHover();
   return (
     <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={data.on ? 'Lamp on' : 'Lamp off'}>
-      <Shape g={LAMPG} on={data.on} />
+      <Shape g={LAMPG} on={data.on} hit={hit} />
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
-      <X g={LAMPG} label="Delete lamp" data={data} />
+      <X g={LAMPG} label="Delete lamp" data={data} show={inside} onHover={xHover} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
       {data.reject && <p className="reject" role="alert" style={{ top: LAMPG.in[1] }}>{data.reject.text}</p>}
     </div>
