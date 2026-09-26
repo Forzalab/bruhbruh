@@ -11,8 +11,8 @@ export const GROUPS = [
 ];
 // The scroll cues, shared with the truth table so both scrollers say "more" the same way.
 export const ScrollCues = ({ more, onWheel }) => [
-  <span key="u" className={`pal-more up ${more.up ? 'on' : ''}`} aria-hidden="true" onWheel={onWheel}><svg viewBox="0 0 16 8"><path d="M0 8L8 0L16 8Z" /></svg></span>,
-  <span key="d" className={`pal-more down ${more.down ? 'on' : ''}`} aria-hidden="true" onWheel={onWheel}><svg viewBox="0 0 16 8"><path d="M0 0L8 8L16 0Z" /></svg></span>,
+  <span key="u" className={`pal-more up ${more.up ? 'on' : ''}`} aria-hidden="true" onWheel={onWheel}><svg viewBox="0 0 16 8"><path d="M0 8L8 0L16 8" /></svg></span>,
+  <span key="d" className={`pal-more down ${more.down ? 'on' : ''}`} aria-hidden="true" onWheel={onWheel}><svg viewBox="0 0 16 8"><path d="M0 0L8 8L16 0" /></svg></span>,
   ...(more.left !== undefined ? [
     <span key="l" className={`pal-more left ${more.left ? 'on' : ''}`} aria-hidden="true" onWheel={onWheel}><svg viewBox="0 0 8 16"><path d="M8 0L0 8L8 16Z" /></svg></span>,
     <span key="r" className={`pal-more right ${more.right ? 'on' : ''}`} aria-hidden="true" onWheel={onWheel}><svg viewBox="0 0 8 16"><path d="M0 0L8 8L0 16Z" /></svg></span>] : []),
