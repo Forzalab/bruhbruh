@@ -273,9 +273,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: calc(32 * var(--u)); }
 .truth th { font: 700 max(calc(32.4 * var(--u)), calc(32.4 * var(--f)))/0.70988 var(--font); font-stretch: 100%; padding: 0 0 0.52469em; text-align: center; border-bottom: var(--rule) solid var(--ink); }
 .truth td { font: 760 max(calc(35.8 * var(--u)), calc(35.8 * var(--f)))/1 var(--font); font-stretch: 105%; height: 1.89944em; padding: 0; text-align: center; border-bottom: var(--hair) solid var(--ink); font-variant-numeric: tabular-nums; }
-/* Column widths: ref3's A / B / OUT columns (23.62 / 30.73 / 23.40) rescaled to fill the width the # column left. */
-.truth .classic th:nth-child(1) { width: 30.38%; } .truth .classic th:nth-child(2) { width: 39.52%; }
-.truth .classic th:nth-child(3) { width: 30.10%; }
 /* Rows scroll inside the table box under a sticky header; a click on a row sets the switches. */
 .truth .tt { max-height: calc(360 * var(--u)); overflow-y: auto; scrollbar-width: thin; margin-top: calc(32 * var(--u)); }
 .truth .tt table { margin-top: 0; }
