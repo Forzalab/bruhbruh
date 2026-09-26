@@ -26,6 +26,7 @@ const markSeen = () => { try { localStorage.setItem(HINT_KEY, '1'); } catch { /*
 // open/setOpen and `tucked` (a drag is running: bar slides away, state restored after) come from App.
 export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onAdd }) {
   const list = useRef(null);
+  const bar = useRef(null);
   const tab = useRef(null);
   const byKey = useRef(false);
   const [more, setMore] = useState({ up: false, down: false });
@@ -36,6 +37,17 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
     const el = list.current;
     if (!el) return;
     setMore({ up: el.scrollTop > 1, down: el.scrollTop + el.clientHeight < el.scrollHeight - 1 });
+    if (bar.current) {
+      const pad = parseFloat(getComputedStyle(el).paddingTop) * 2;
+      const avail = bar.current.clientHeight - pad;
+      const items = [...el.querySelectorAll('.pal-item')];
+      let cut = 0;
+      for (const it of items) {
+        const bottom = it.parentElement.offsetTop + it.parentElement.offsetHeight;
+        if (bottom <= avail) cut = bottom; else break;
+      }
+      if (cut > 0) list.current.style.height = `${cut + pad}px`;
+    }
   };
   useEffect(() => {
     measure();
@@ -97,7 +109,7 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
         onClick={() => setOpen(!open)}>
         <svg viewBox="0 0 24 40" aria-hidden="true"><path d={open ? 'M16 8L6 20L16 32' : 'M8 8L18 20L8 32'} /></svg>
       </button>
-      <nav className="pal-bar" aria-label="Parts" aria-hidden={!open || undefined} inert={!open || undefined}>
+      <nav className="pal-bar" ref={bar} aria-label="Parts" aria-hidden={!open || undefined} inert={!open || undefined}>
         <ul ref={list} id="pal-list" className={`pal-list ${more.up ? 'fu' : ''} ${more.down ? 'fd' : ''}`} onScroll={measure}>
           {GROUPS.map((g, i) => <li key={i} className="pal-group"><ul>{g.map(item)}</ul></li>)}
         </ul>
