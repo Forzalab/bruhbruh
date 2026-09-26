@@ -366,3 +366,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .toast path { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(calc(8 * var(--u))); } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+/* Column kind, colour only: lamp (output) columns sit on the page's one field grey (--grid), switch (input) columns
+   stay paper. On the canvas the switch is the paper square you press; the lamp is where the result shows. */
+.truth td.k-L, .truth thead th.k-L { background: var(--grid); }
