@@ -1,0 +1,5 @@
+# t3r3 (on pit2/t3r2-v2): arbitrator must-fixes
+- Switch | lamp split names its sides: the heavy header rule (`--rule`) now runs over the lamp group only, the switch headers sit on the row hairline (`--hair`). With the existing vertical rule it forms one ink corner that closes the outputs, as the canvas lamps are the closed, heavy-outlined result parts. Smallest move: two existing weights re-assigned, no new device or value (NYCTA: rule weight carries hierarchy).
+- Left/right cues forward the wheel exactly like up/down (same handler): wheel scrolls rows (and deltaX sideways); shift+wheel scrolls columns. Measured on the right cue: wheel -> top 0->136, shift+wheel -> left 0->109.
+- Sideways scroll snaps to whole columns (`scroll-snap-type: both proximity`, td `scroll-snap-align: none start`, rows keep block snap). Chosen over fading: a fade is a new device, snapping only reuses the existing snap rule (Muller-Brockmann: the grid module is the unit of movement), so a cut header only ever appears mid-gesture.
+- Matrix rerun: 11/11 PASS (MATRIX.md). Sideways n=13 + 4 lamps: t3r3-n13l4-h-left/mid/right.png.

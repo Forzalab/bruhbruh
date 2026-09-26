@@ -289,8 +289,9 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth .pal-more.left svg, .truth .pal-more.right svg { width: calc(8 * var(--u)); height: calc(16 * var(--u)); }
 .truth .tt table { width: calc(max(4, var(--n)) * 25%); } /* never squeeze: a column keeps its n = 3 width (1/4 of the box); past 4 columns the table scrolls sideways */
 .truth thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; border-bottom: 0; box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); } /* sticky cells drop collapsed borders: draw the rule as a shadow */
-.truth tbody tr:not(.pad) { cursor: pointer; scroll-snap-align: start; }
-.truth .tt { scroll-snap-type: y proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */
+.truth tbody tr:not(.pad) { cursor: pointer; scroll-snap-align: start none; }
+.truth td { scroll-snap-align: none start; } /* sideways: snap to whole columns, so a cut header only ever means "scrolled" */
+.truth .tt { scroll-snap-type: both proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */
 .truth tbody tr:not(.live):not(.pad):hover td { background: var(--grid, #f2f2f2); }
 /* Per-glyph fit (Pillow vs ref3 at cap 23 / 26). Roboto Flex has no 'tnum' feature: its default figures are
    already tabular (GSUB lists only liga/locl/pnum/rvrn), so ink width is fitted per figure with wdth and XTRA
@@ -369,4 +370,5 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Column kind, rules only: one --rule ink rule stands between the switch (input) and lamp (output) columns,
    the same weight as the header rule; signal crosses it left to right, as it does on the canvas. */
 .truth td.k-S + td.k-L { border-left: var(--rule) solid var(--ink); }
+.truth thead th.k-S { box-shadow: inset 0 calc(-1 * var(--hair)) 0 var(--ink); } /* the heavy header rule runs over the lamp group only: with the vertical rule it makes one ink corner that closes the outputs; the switch side keeps the row hairline */
 .truth thead th.k-S + th.k-L { box-shadow: inset var(--rule) 0 0 var(--ink), inset 0 calc(-1 * var(--rule)) 0 var(--ink); }

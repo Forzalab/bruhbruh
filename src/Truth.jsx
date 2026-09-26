@@ -83,7 +83,7 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
           </tbody>
         </table>
       </div>
-      <ScrollCues more={more} onWheel={(e) => box.current?.scrollBy({ top: e.deltaY })} />
+      <ScrollCues more={more} onWheel={(e) => box.current?.scrollBy(e.shiftKey ? { left: e.deltaY || e.deltaX } : { top: e.deltaY, left: e.deltaX })} />
       </div>
     </aside>
   );
