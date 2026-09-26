@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
-import { nodeTypes, pinYs } from './nodes/index.jsx';
+import { nodeTypes, pinYs, portGeom } from './nodes/index.jsx';
+import { resolveZones } from './zones.js';
 import { route, bends } from './route.js';
 import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
@@ -140,12 +141,15 @@ export default function App() {
 
   const wires = Object.values(circuit.wires);
   const names = partNames(view, circuit);
+  // T4-tt: enlarged pin hit zones, clipped against every neighbour (src/zones.js).
+  const zones = useMemo(() => resolveZones(view.filter((n) => circuit.nodes[n.id]).map((n) => ({ id: n.id, x: n.position.x, y: n.position.y,
+    g: portGeom(circuit.nodes[n.id].kind, circuit.nodes[n.id].type) }))), [view, circuit.nodes]);
   const nodes = view.map((n) => ({
     ...n,
     data: { ...circuit.nodes[n.id], on: values[n.id], name: names[n.id],
       wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) },
       lit: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin && values[w.source])), out: !!values[n.id] && wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
-      reject: reject && reject.node === n.id ? reject : null,
+      reject: reject && reject.node === n.id ? reject : null, zones: zones[n.id],
       pending, onPort: (handle) => onPort(n.id, handle), onRemove: () => removeNodes([n.id]) },
   }));
 
