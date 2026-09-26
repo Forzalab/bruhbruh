@@ -94,7 +94,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Field numerals: bold, cap 12px, set in the gutter (Müller-Brockmann: numbered fields). */
 .rownum { position: absolute; left: calc(16 * var(--u)); font: 800 max(calc(18.3 * var(--u)), calc(18.3 * var(--f)))/1 var(--font); font-stretch: 118%; letter-spacing: 0; }
 .rownum .f1 { font-variation-settings: 'XTRA' 603; } /* ref3's 1 is a wider figure than Roboto Flex's; XTRA opens it */
-.r1 .rownum { bottom: calc(20 * var(--u)); }
+.r1 .rownum { bottom: calc(12 * var(--u)); }
 .r2 .rownum { top: calc(26 * var(--u)); }
 .r3 .rownum { top: 50%; transform: translateY(-50%); }
 
