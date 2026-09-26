@@ -1,6 +1,6 @@
 import { Handle as RFHandle, Position } from '@xyflow/react';
 import Remove from '../Remove.jsx';
-import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
+import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB, INSET, BUB } from './geom.js';
 
 const SWG = switchGeom(), LAMPG = lampGeom();
 const HB = 20; // handle box centred on the knob chord: the wire end lands 10px out, inside the knob ink ring (6..12)
@@ -52,33 +52,28 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // Outline = one path (body + knobs, one continuous stroke). Lit = second path: the true inset contour.
 // bubble (NAND/NOR/NOT) and extraCurve (XOR) are optional extra ink paths, same stroke system.
 // Inverting gates: the body shows the value before the NOT, the bubble shows the output.
-// Pin bleed: a pin whose wire carries 1 is coloured together with the wire's start, one orange piece.
-// The zone sits UNDER the re-stroked ink outline (outline never orange); only the wire-width bridge crosses the
-// knob ink, because that is the wire itself entering the pin. Variant picks the zone shape.
-export const BLEED = 'a';
-const KI = KNOB + 3; // knob ink tip from the pin centreline
-function zone(x, y, d, bubble) {
-  const r = (x0, x1, y0, y1) => `M${Math.min(x0, x1)} ${y0}H${Math.max(x0, x1)}V${y1}H${Math.min(x0, x1)}Z`;
-  const bridge = r(x, x + d * KI, y - 3, y + 3);
-  if (bubble) return { under: '', over: r(x, x + d * 6, y - 3, y + 3) };
-  const k = KNOB - 3; // knob interior radius (paper inside the knob ink)
-  const knobFill = `M${x} ${y - k}A${k} ${k} 0 0 ${d > 0 ? 1 : 0} ${x} ${y + k}Z`;
-  const inner = x - d * 3; // outline's inner ink edge: the zone never crosses into the body's paper gap
-  if (BLEED === 'a') return { under: knobFill + r(x, inner, y - k, y + k), over: bridge };
-  if (BLEED === 'b') return { under: '', over: r(inner, x + d * KI, y - k, y + k) };
-  return { under: knobFill + r(x, inner, y - k, y + k) + r(inner, x - d * 6, y - 12, y + 12), over: bridge };
-}
-function bleeds(g, lit) {
-  if (!lit) return [];
-  const z = [];
-  (Array.isArray(g.in?.[0]) ? g.in : []).forEach(([x, y], i) => lit.in?.[i] && z.push(zone(x, y, -1)));
-  if (Array.isArray(g.in) && typeof g.in[0] === 'number' && lit.in?.[0]) z.push(zone(g.in[0], g.in[1], -1)); // lamp
-  if (g.out && lit.out) z.push(zone(g.out[0], g.out[1], +1, !!g.bubble));
-  return z;
+// Pin bleed (Tony's sketch): the lit body fill flows OUT through the pin as a 6px neck and becomes the wire, one
+// orange piece. The neck is drawn over the ink, so the outline opens exactly where the orange passes and the knob's
+// ink wraps around the neck on both sides; everywhere else the outline stays ink. When the body behind a lit pin is
+// unlit (e.g. one input of an AND at 1), the neck stops at the outline's inner ink edge: the wire's 1 enters, nothing to join.
+const KI = KNOB + 3; // knob ink tip from the pin centreline (the wire end lands inside it)
+const DEEP = INSET + 3; // reaches 3px into the lit inset contour so the joint has no seam
+const neck = (x0, x1, y) => `M${Math.min(x0, x1)} ${y - 3}H${Math.max(x0, x1)}V${y + 3}H${Math.min(x0, x1)}Z`;
+function bleeds(g, lit, bodyLit, on) {
+  if (!lit) return '';
+  let d = '';
+  const ins = Array.isArray(g.in?.[0]) ? g.in : g.in ? [g.in] : [];
+  ins.forEach(([x, y], i) => { if (lit.in?.[i]) d += neck(x - KI, x + (bodyLit ? DEEP : 3), y); });
+  if (g.out && lit.out) {
+    const [x, y] = g.out;
+    d += g.bubble ? (on ? neck(x - BUB, x + 10, y) : '') : neck(x - (bodyLit ? DEEP : 3), x + KI, y);
+  }
+  return d;
 }
 
 function Shape({ g, on, idle, lit }) {
-  const z = idle ? [] : bleeds(g, lit);
+  const bodyLit = !idle && (g.bubble ? !on : on);
+  const z = idle ? '' : bleeds(g, lit, bodyLit, on);
   return (
     <svg className="shape" width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true">
       {g.extraCurve && <path className="body line" d={g.extraCurve} />}
@@ -86,9 +81,7 @@ function Shape({ g, on, idle, lit }) {
       {g.bubble && <path className="body" d={g.bubble} />}
       {!idle && (g.bubble ? !on : on) && <path className="lit" d={g.inset} />}
       {!idle && g.bubble && on && <path className="lit" d={g.bubbleInset} />}
-      {z.length > 0 && <path className="lit" d={z.map((q) => q.under).join('')} />}
-      {z.length > 0 && <path className="body line" d={g.outline} />}
-      {z.length > 0 && <path className="lit" d={z.map((q) => q.over).join('')} />}
+      {z && <path className="lit" d={z} />}
     </svg>
   );
 }
