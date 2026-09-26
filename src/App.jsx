@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
-import { route } from './route.js';
+import { route, bends } from './route.js';
 import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
@@ -170,14 +170,17 @@ export default function App() {
   const pinAt = (n, at, hid) => { const hb = rf?.getInternalNode(n.id)?.internals.handleBounds; const src = hid === 'out';
     const h = (src ? hb?.source : hb?.target)?.find((k) => k.id === hid); if (!h) return null;
     return [at.x + h.x + (src ? h.width : 0), at.y + h.y + h.height / 2]; };
-  const routable = (id, at, nodes = view, extra) => {
-    const pos = (n) => (n.id === id ? at : n.position), all = extra ? [...nodes, extra] : nodes;
-    return Object.values(circuit.wires).every((w) => {
-      const a = all.find((n) => n.id === w.source), b = all.find((n) => n.id === w.target); if (!a || !b) return true;
-      const s = pinAt(a, pos(a), 'out'), t = pinAt(b, pos(b), `in${w.pin}`); if (!s || !t) return true;
-      return !!route(s, t, { src: boxAt(a, pos(a)), dst: boxAt(b, pos(b)), others: all.filter((n) => n !== a && n !== b).map((n) => boxAt(n, pos(n))) });
-    });
+  // Ids of wires with no legal route (or a forward wire looping back) when node `id` sits at `at` (`extra` = a part not in the view yet).
+  const stuck = (id, at, extra) => {
+    const pos = (n) => (n.id === id ? at : n.position), all = extra ? [...view, extra] : view;
+    return Object.values(circuit.wires).filter((w) => {
+      const a = all.find((n) => n.id === w.source), b = all.find((n) => n.id === w.target); if (!a || !b) return false;
+      const s = pinAt(a, pos(a), 'out'), t = pinAt(b, pos(b), `in${w.pin}`); if (!s || !t) return false;
+      const r = route(s, t, { src: boxAt(a, pos(a)), dst: boxAt(b, pos(b)), others: all.filter((n) => n !== a && n !== b).map((n) => boxAt(n, pos(n))) });
+      return !r || (t[0] > s[0] && bends(r) > 2); // a forward wire forced into a 4-bend loop counts as stuck too
+    }).map((w) => w.id);
   };
+  const worse = (now, base) => now.some((w) => !base.includes(w)); // a wire stuck now that was not stuck before
   // One placement rule for add AND move: nearest grid spot (spiral outwards) that overlaps no part and leaves every
   // wire a legal route. `id` = the part being placed (skipped as an obstacle), `ok` = the extra wire test.
   const free = (at, kind, id, ok = () => true) => {
@@ -192,10 +195,13 @@ export default function App() {
   };
   // Drop after a drag: if the part now leaves some wire with no legal route, nudge it to the nearest legal spot.
   // No animation, no refusal; the move and the nudge are one state change.
+  // "Legal" = no wire stuck that was not already stuck before the drag (a wire that was already stuck elsewhere must not pin the part).
+  const dragFrom0 = useRef(null);
   const settle = (_, node) => {
-    const me = view.find((n) => n.id === node.id); if (!me || !rf) return;
-    if (routable(me.id, node.position)) return;
-    const p = free(node.position, me.type, me.id, (q) => routable(me.id, q));
+    const me = view.find((n) => n.id === node.id), from = dragFrom0.current; dragFrom0.current = null; if (!me || !rf) return;
+    const base = from ? stuck(me.id, from) : [];
+    if (!worse(stuck(me.id, node.position), base)) return;
+    const p = free(node.position, me.type, me.id, (q) => !worse(stuck(me.id, q), base));
     setView((v) => v.map((n) => (n.id === me.id ? { ...n, position: p } : n)));
   };
   const addNode = (it, at) => {
@@ -207,7 +213,7 @@ export default function App() {
       const c = rf.screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
       at = { x: c.x - 60, y: c.y - 54 };
     }
-    at = free(at, it.kind, undefined, (q) => routable(id, q, view, { id, type: it.kind, position: q }));
+    const base = stuck(); at = free(at, it.kind, undefined, (q) => !worse(stuck(id, q, { id, type: it.kind, position: q }), base));
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { id, kind: it.kind, ...(it.type && { type: it.type }), ...(it.kind === 'S' && { value: false }) } } }));
     setView((v) => [...v.map((n) => ({ ...n, selected: false })), { id, type: it.kind, position: at, data: {}, selected: true }]);
   };
@@ -375,7 +381,7 @@ export default function App() {
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onPaneClick={() => { setPalOpen(false); setReject(null); }} // HIG: an overlay panel is transient; a click on the work closes it
-          onNodeDragStart={() => { setTucked(true); dragSnap.current = snap(); }}
+          onNodeDragStart={(e, node) => { setTucked(true); dragSnap.current = snap(); dragFrom0.current = node.position; }}
           onNodeDragStop={(e, node) => { setTucked(false); settle(e, node); // nudge (if any) lands inside the same undo step as the drag
             const s = dragSnap.current; dragSnap.current = null;
             if (s && view.some((n) => { const o = s.view.find((x) => x.id === n.id); return o && (o.position.x !== n.position.x || o.position.y !== n.position.y); })) commit(s); }}
