@@ -449,11 +449,11 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   padding: 0 calc(6px * var(--zk, 1)); border: var(--stroke) solid var(--ink); border-radius: 0; background: var(--paper);
   font: 700 calc(23px * var(--zk, 1))/1 var(--font); font-stretch: 100%; letter-spacing: 0.02em; color: var(--ink);
   white-space: nowrap; pointer-events: none; user-select: none; z-index: 2; }
-.plate.on { background: var(--one); }                               /* part = 1: orange plate, ink glyph 6.06:1 */
+.plate.on { background: var(--one); color: var(--paper); }  /* part = 1: orange plate, WHITE glyph (Tony: ink was hard to read) */
 .plate.bare { border-color: transparent; background: none; color: var(--ink-2); } /* gate: name only, not a column */
 .plate.p-tab { margin-top: calc(var(--stroke) * -0.5); }             /* joined: plate top rule = the part's bottom outline */
 .plate.p-ink:not(.bare) { background: var(--ink); color: var(--paper); }
-.plate.p-ink.on { background: var(--one); color: var(--ink); }
+.plate.p-ink.on { background: var(--one); color: var(--paper); }
 /* T4-tt: empty truth table (no switch or no lamp): no rows, no live highlight; a placeholder box marks where art goes. */
 .tt-empty { position: relative; align-self: stretch; box-sizing: border-box; margin: calc(32 * var(--u)) calc(4 * var(--u)) 0; height: calc(260 * var(--u)); border: var(--rule) solid var(--ink); }
 .tt-empty svg { position: absolute; inset: 0; width: 100%; height: 100%; }
