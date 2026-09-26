@@ -5,6 +5,7 @@ import { nodeTypes, pinYs } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
+import { say } from './Say.jsx';
 
 const edgeTypes = { wire: Wire };
 
@@ -123,15 +124,16 @@ export default function App() {
   };
 
   // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
-  const REJECT_TEXT = { 'pin taken': 'That input already has a wire' };
+  // Every message is a comic balloon (Blambot, Comic Book Grammar & Tradition): caps, *bold* marks the stressed word.
+  const REJECT_TEXT = { 'pin taken': 'That input *already* has a wire!' };
 
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
     if (!check.ok) {
-      const text = REJECT_TEXT[check.reason] ?? `Can't connect: ${check.reason}`;
+      const text = REJECT_TEXT[check.reason] ?? `*Can't* connect: ${check.reason}`;
       setReject({ node: target, handle: targetHandle, text });
-      return setStatus({ text, bad: true });
+      return setStatus({ text: '', bad: false }); // the gate says it (role=alert); the logo stays quiet
     }
     setReject(null);
     const id = `w${nextWire++}`;
@@ -161,8 +163,8 @@ export default function App() {
 
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
   const onPort = (node, handle) => {
-    if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: pick an input`, bad: false }); }
-    if (!pending) return setStatus({ text: 'Pick an output first', bad: true });
+    if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: *pick an input!*`, bad: false }); }
+    if (!pending) return setStatus({ text: 'Pick an *output* first!', bad: true });
     setPending(null);
     onConnect({ source: pending, target: node, targetHandle: handle });
   };
@@ -235,6 +237,8 @@ export default function App() {
         <p className="lockup">Circuit<br /> editor</p>
       </div>
       <h1 className="wordmark" lang="sv" aria-label="Figur"><span className="sr">Figur</span><span aria-hidden="true"><span className="wF">F</span><span className="wi">i</span><span className="wg">g</span><span className="wu">u</span><span className="wr">r</span></span></h1>
+      {/* Status lines are spoken by the logo: a balloon whose tail points at the wordmark. */}
+      <p className={`say say-logo ${status.bad ? 'bad' : ''}`} role="status">{say(status.text)}</p>
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
@@ -278,7 +282,6 @@ export default function App() {
 
       <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">
-        <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
       <div className="cell c-side r3 help" />
     </div>

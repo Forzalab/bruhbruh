@@ -200,7 +200,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   width: calc(210.4 * var(--u)); height: calc(136.8 * var(--u)); pointer-events: none; }
 .pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 3.6; stroke-linejoin: round; }
-.pal-hint .lettering { position: absolute; left: calc(105.2 * var(--u)); top: calc(50.5 * var(--u)); inset-block-end: auto; inset-inline-end: auto;
+.pal-hint .lettering { position: absolute; left: calc(105.2 * var(--u)); top: calc(35.8 * var(--u)); inset-block-end: auto; inset-inline-end: auto;
   width: calc(136 * var(--u)); height: auto; transform: translate(-50%, -50%); overflow: visible; } /* ref: text ~75% of the balloon width; scales with the balloon */
 .pal-hint .lettering path { fill: var(--ink); stroke: none; }
 .pal-hint .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; } /* +0.022em: Regular up to the ref's weight */
@@ -259,11 +259,14 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .disk:focus-visible { outline: max(2px, calc(3 * var(--u))) solid var(--ink); outline-offset: calc(5 * var(--u)); }
 .react-flow__node { cursor: grab; }
 
-/* Inline rejection beside the failed port (GOV.UK Design System: error message next to the field).
-   22px clear of the node box so neither the knob nor its hover ring is covered (R6 defect 8). */
-.reject { position: absolute; right: calc(100% + 22px); transform: translateY(-50%); margin: 0; white-space: nowrap; z-index: 10;
-  padding: 3px 0 3px 10px; border-left: 4px solid var(--ink); background: var(--paper);
-  font: 700 14px/1.2 var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; color: var(--ink); }
+/* Speech balloons (pit2 bub): every message is said by a part or by the logo, never by a box. Comic lettering
+   conventions (Blambot, "Comic Book Grammar & Tradition"): caps, bold for the stressed word, the tail aims at the
+   speaker's mouth and stops short of it. Placement here; the balloon style (one school per branch) sits at the end. */
+.say { position: absolute; margin: 0; z-index: 10; pointer-events: none; width: max-content; text-transform: uppercase; color: var(--ink); text-wrap: balance; }
+.say:empty { display: none; }
+.say-part { bottom: calc(100% + 30px); left: 50%; transform: translateX(-50%); max-width: 190px; } /* above the part, clear of its X */
+.say-logo { left: calc(786 * var(--u)); top: calc(30 * var(--u)); max-width: calc(158 * var(--u)); z-index: 6; } /* right of the wordmark's r */
+.say::before, .say::after { content: ''; position: absolute; }
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }
@@ -294,8 +297,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
-.status .msg { font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
-.status .msg.bad { font-weight: 700; border-left: 0.2367em solid var(--ink); padding-left: 0.59172em; }
 
 .help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--u)) 0 calc(8 * var(--u)); }
 .help p { margin: 0; white-space: nowrap; font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
