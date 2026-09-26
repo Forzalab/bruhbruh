@@ -101,7 +101,7 @@ async function setSwitchesUI(page, bits /* { id: bool } */) {
 
 async function lampOn(page, id) {
   const label = await page.getAttribute(lampSel(id), 'aria-label');
-  return label === 'Lamp on';
+  return / on$/.test(label ?? ''); // 'Lamp on' or, with Swedish names (t3), 'Lamp <name> on'
 }
 
 async function liveRowOut(page, outCount) {
