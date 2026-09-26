@@ -257,7 +257,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .react-flow__edge.on .react-flow__edge-path { stroke: var(--one); }
 .react-flow__edge.selected .react-flow__edge-path, .react-flow__edge:focus .react-flow__edge-path { stroke: var(--ink); stroke-dasharray: 12 6; }
 .react-flow__edge.on.selected .react-flow__edge-path, .react-flow__edge.on:focus .react-flow__edge-path { stroke: var(--one); }
-.react-flow__connection-path { stroke: var(--ink); stroke-width: 2px; stroke-dasharray: 6 4; }
 
 /* Selection + focus: ink only (WCAG 2.2 SC 2.4.7, 2.4.11; 18.9:1 on paper). */
 .react-flow .react-flow__node.selected { outline: 2px dashed var(--ink); outline-offset: -2px; }

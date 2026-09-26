@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useStore, useStoreApi } from '@xyflow/react';
 import { toPath, midpoint } from './route.js';
 import { routeAll, shares, JN, DOT_R } from './junction.js';
+import { crossings, hopPath } from './hop.js';
+import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Remove from './Remove.jsx';
 
 // All wires are routed together (junction.js): fan-out siblings share a trunk, and shared runs / junction dots need
@@ -20,7 +22,7 @@ function compute(s) {
     nets[e.id] = { source: e.source, on: e.className === 'on' };
   }
   const routes = routeAll(list);
-  return { routes, ends: Object.fromEntries(list.map((w) => [w.id, [w.s, w.t]])), share: shares(routes, nets) };
+  return { routes, src: Object.fromEntries(list.map((w) => [w.id, w.source])), ends: Object.fromEntries(list.map((w) => [w.id, [w.s, w.t]])), share: shares(routes, nets) };
 }
 const keyOf = (s) => {
   let k = '';
@@ -42,8 +44,16 @@ const line = ([a, b], cls, key) => <path key={key} className={cls} d={`M${a[0]} 
 export default function Wire({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data }) {
   const all = useRoutes();
   const pts = all.routes[id], sh = all.share[id] ?? { runs: [], dots: [] };
+  const sw = useStore((s) => STROKE * (s.transform[2] / (s.width / 906)) ** (ZOOM_EXP - 1));
   let path, mx, my;
-  if (pts) { path = toPath(pts); [mx, my] = midpoint(pts); }
+  if (pts) {
+    // combo-1 ownership: hops only over FOREIGN nets (a same-net overlap is a junction trunk, not a crossing), and never
+    // within one hop footprint (5sw) + DOT_R of any junction dot: the dot owns that spot.
+    const lines = Object.entries(all.routes).filter(([k, r]) => r && k !== id && all.src[k] !== all.src[id]).map(([, r]) => r);
+    const dots = Object.values(all.share).flatMap((v) => v.dots ?? []);
+    const cx = crossings(pts, lines, sw).map((c) => ({ ...c, ok: c.ok && !dots.some(([x, y]) => Math.hypot(x - c.x, y - c.y) < 5 * sw + DOT_R) }));
+    path = hopPath(pts, cx, sw); [mx, my] = midpoint(pts);
+  }
   else [path, mx, my] = getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 0 });
   const [hover, setHover] = useState(false), [arm, setArm] = useState(false);
   const t = useRef(0);
