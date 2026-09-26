@@ -56,8 +56,10 @@
   --dpr: 1;
   --f: min(1rem / 16, var(--u) * var(--dpr));
   /* Rules snap to whole CSS px (CSS Values 4 round()); Chromium floors fractional border widths otherwise (1.78 -> 1px). */
-  /* max(1px, ...) keeps a rule from rounding to 0 on a tiny frame; within 1 CSS px of 2u everywhere. */
-  --rule: max(1px, round(nearest, calc(2 * var(--u)), 1px));
+  /* max(1px, ...) keeps a rule from rounding to 0 on a tiny frame; within 1 CSS px of 4u everywhere. */
+  /* pit2/t1w-b: rule doubles 2u -> 4u (4px at 1440, was 2px) so the grid border reads closer to the parts'
+     6px stroke; parts:grid is now a clean 3:2 (was 3:1), still a legible hierarchy, not equal weight. */
+  --rule: max(1px, round(nearest, calc(4 * var(--u)), 1px));
   --hair: max(1px, round(nearest, var(--u), 1px));
   /* Gutter: 53u, but in the zoom reflow it must still hold the rem-floored field numerals. */
   --gut: calc(53 * var(--u));
