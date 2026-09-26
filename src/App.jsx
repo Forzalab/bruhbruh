@@ -6,6 +6,10 @@ import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
+import Controls from './Controls.jsx';
+
+const HISTORY = 10; // linear undo stack depth (Tony)
+const BAR = new URLSearchParams(location.search).get('bar') || 'h1'; // T4 hybrids h1|h2|h3 (prototype switch)
 import Say from './Say.jsx';
 import Toasts, { TOAST_MS } from './Toasts.jsx';
 
@@ -92,8 +96,39 @@ export default function App() {
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
 
-  const toggle = (id) =>
+  // Undo/redo (T4): one linear stack of whole snapshots {circuit, view}; 10 deep; any new edit clears redo.
+  // `v` keeps the live view array's identity: two commits from ONE event (node delete, then its wires) collapse to one step.
+  const [armed, setArmed] = useState(false); // wipe: first click arms, second confirms
+  const [hist, setHist] = useState({ past: [], future: [] });
+  const snap = () => ({ circuit, v: view, view: view.map(({ id, type, position }) => ({ id, type, position, data: {} })) });
+  const commit = (s = snap()) => setHist((h) => {
+    const top = h.past[h.past.length - 1];
+    if (top && top.circuit === s.circuit && top.v === s.v) return h;
+    return { past: [...h.past, s].slice(-HISTORY), future: [] };
+  });
+  const restore = (s) => { setCircuit(s.circuit); setView(s.view); setReject(null); setPending(null); setEdgeSel(new Set()); setArmed(false); };
+  const undo = () => { if (!hist.past.length) return; const prev = hist.past[hist.past.length - 1];
+    setHist({ past: hist.past.slice(0, -1), future: [snap(), ...hist.future].slice(0, HISTORY) }); restore(prev); };
+  const redo = () => { if (!hist.future.length) return; const next = hist.future[0];
+    setHist({ past: [...hist.past, snap()].slice(-HISTORY), future: hist.future.slice(1) }); restore(next); };
+  const keys = useRef(); keys.current = { undo, redo };
+  useEffect(() => {
+    const k = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      if (e.target.closest?.('input, textarea, [contenteditable="true"]')) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z') { e.preventDefault(); e.shiftKey ? keys.current.redo() : keys.current.undo(); }
+      else if (key === 'y' && !e.metaKey) { e.preventDefault(); keys.current.redo(); } // Windows convention
+    };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, []);
+  const dragSnap = useRef(null); // snapshot at node-drag start; pushed on drop only if something moved
+
+  const toggle = (id) => {
+    commit();
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { ...c.nodes[id], value: !c.nodes[id].value } } }));
+  };
 
   const wires = Object.values(circuit.wires);
   const nodes = view.map((n) => ({
@@ -134,6 +169,7 @@ export default function App() {
   };
   const addNode = (it, at) => {
     if (it.kind === 'S' && switchFull) return;
+    commit();
     const id = `${it.kind.toLowerCase()}${it.type ? it.type.toLowerCase() : ''}_${nextNode++}`; // "_" keeps added parts clear of the demo ids (s1, s2, g1, l1)
     if (!at) {
       const box = frame.current.querySelector('.canvas').getBoundingClientRect();
@@ -166,6 +202,7 @@ export default function App() {
       return setStatus({ phrase: null, text: '' }); // the gate says it (role=alert); the logo stays quiet
     }
     setReject(null);
+    commit();
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
     setStatus({ phrase: null, text: '' }); // silent success: ref3 leaves row 03 empty
@@ -183,9 +220,17 @@ export default function App() {
     dragFrom.current = null;
     if (!from || (cs.toHandle && cs.isValid)) return; // React Flow already connected it
     const pt = e.changedTouches ? e.changedTouches[0] : e;
-    const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__handle');
+    // React Flow turns pointer events off on same-kind handles during a drag, so hit-test the port zones by geometry
+    // (each handle's --hit-* vars are flow px; its 20 px box gives the zoom) to find a same-kind drop too.
+    const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__handle') ?? [...document.querySelectorAll('.react-flow__handle.port')].find((h) => {
+      const r = h.getBoundingClientRect(), k = r.width / 20, v = (n) => parseFloat(h.style.getPropertyValue(n)) * k;
+      const x = r.left + v('--hit-left'), y = r.top + v('--hit-top');
+      return pt.clientX >= x && pt.clientX <= x + v('--hit-w') && pt.clientY >= y && pt.clientY <= y + v('--hit-h');
+    });
     const node = el?.closest('.react-flow__node')?.dataset.id;
-    if (!node || el.classList.contains(from.type)) return; // nothing there, or same-kind port
+    if (!node) return; // dropped on nothing
+    // Same-kind port (input->input, output->output): no silent refusal; mark the port it was dropped on (T4).
+    if (el.classList.contains(from.type)) return setReject({ node, handle: el.dataset.handleid, phrase: null });
     const to = { node, handle: el.dataset.handleid };
     const [src, dst] = from.type === 'source' ? [from, to] : [to, from];
     onConnect({ source: src.node, target: dst.node, targetHandle: dst.handle });
@@ -201,10 +246,11 @@ export default function App() {
 
   // Wipe the canvas: every part and wire goes, then a caption toast says so. No key yet: the parked T4 wipe button calls it.
   // eslint-disable-next-line no-unused-vars
-  const wipe = () => { removeNodes(view.map((n) => n.id)); toast('wiped'); };
+  const wipe = () => { removeNodes(view.map((n) => n.id)); toast('wiped'); }; // removeNodes commits: one undo brings it all back
   // Node delete (double-click, or select + Backspace/Delete): drop the node and every wire touching it.
   const removeNodes = (ids) => {
     if (!ids.length) return;
+    commit();
     setView((v) => v.filter((n) => !ids.includes(n.id)));
     setCircuit((c) => ({
       nodes: Object.fromEntries(Object.entries(c.nodes).filter(([id]) => !ids.includes(id))),
@@ -250,12 +296,13 @@ export default function App() {
     if (sel.length) setEdgeSel((prev) => { const next = new Set(prev); sel.forEach((ch) => (ch.selected ? next.add(ch.id) : next.delete(ch.id))); return next; });
     const gone = changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id);
     if (!gone.length) return;
+    commit();
     setCircuit((c) => ({ ...c, wires: Object.fromEntries(Object.entries(c.wires).filter(([id]) => !gone.includes(id))) }));
   };
 
   // A truth-table row click sets every input switch to that row's bits.
-  const setSwitches = (ids, bits) => setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
-    ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } }));
+  const setSwitches = (ids, bits) => (commit(), setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
+    ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } })));
 
   return (
     <div className="frame" ref={frame}>
@@ -297,8 +344,9 @@ export default function App() {
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onPaneClick={() => { setPalOpen(false); setReject(null); }} // HIG: an overlay panel is transient; a click on the work closes it
-          onNodeDragStart={() => setTucked(true)}
-          onNodeDragStop={() => setTucked(false)}
+          onNodeDragStart={() => { setTucked(true); dragSnap.current = snap(); }}
+          onNodeDragStop={() => { setTucked(false); const s = dragSnap.current; dragSnap.current = null;
+            if (s && view.some((n) => { const o = s.view.find((x) => x.id === n.id); return o && (o.position.x !== n.position.x || o.position.y !== n.position.y); })) commit(s); }}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
@@ -317,6 +365,8 @@ export default function App() {
 
       <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">
+        <Controls variant={BAR} canUndo={hist.past.length > 0} canRedo={hist.future.length > 0} canWipe={view.length > 0}
+          armed={armed} setArmed={setArmed} onUndo={undo} onRedo={redo} onWipe={wipe} />
       </footer>
       <div className="cell c-side r3 help" />
     </div>

@@ -169,12 +169,25 @@ export function pinYs(kind, type) {
 
 const NAMES = { s1: 'A', s2: 'B' };
 
+// T4 error mark: the one non-text signal on a refused port (words belong to the comic balloon). One shape (a ring
+// round the knob), one weight (--stroke, the wire weight), its own dash = T1 dot rule (dash w, gap 2w). Circumference
+// 117 = 13 whole 9-unit periods, so the dash closes without a stub. Never the 12/6 selection dash or the 2/6 armed dash.
+const MARK_R = 117 / (2 * Math.PI);
+function Mark({ data, at }) {
+  const r = data.reject;
+  if (!r) return null;
+  const p = at[r.handle];
+  if (!p) return null;
+  return <svg className="mark" aria-hidden="true"><circle cx={p[0]} cy={p[1]} r={MARK_R} /></svg>;
+}
+
 export function SwitchNode({ id, data }) {
   return (
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
       <Shape g={SWG} on={data.on} lit={data.lit} />
       <Stubs out={SWG.out} wired={data.wired} />
       <X g={SWG} label="Delete switch" data={data} />
+      <Mark data={data} at={{ out: SWG.out }} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
@@ -189,6 +202,7 @@ export function GateNode({ id, data }) {
       <Shape g={g} on={data.on} lit={data.lit} />
       <Stubs ins={g.in} out={g.out} wired={data.wired} />
       <X g={g} label={`Delete ${data.type} gate`} data={data} />
+      <Mark data={data} at={{ ...Object.fromEntries(g.in.map((p, i) => [`in${i}`, p])), out: g.out }} />
       {g.in.map((at, i) => (
         <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
       ))}
@@ -206,6 +220,7 @@ export function LampNode({ id, data }) {
       <Shape g={LAMPG} on={data.on} lit={data.lit} />
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
       <X g={LAMPG} label="Delete lamp" data={data} />
+      <Mark data={data} at={{ in0: LAMPG.in }} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
       {data.reject && <Say phrase={data.reject.phrase} text={data.reject.text} className="say-part" role="alert" />}
     </div>
