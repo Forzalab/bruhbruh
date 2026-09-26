@@ -77,7 +77,24 @@ export function route(s, t, { src, dst, others = [] } = {}, maxBends = MAX_BENDS
   return best;
 }
 
-export const toPath = (pts) => 'M' + pts.map((p) => `${p[0]} ${p[1]}`).join('L');
+// Deny-the-drop check. parts = { id: { x, y, w, h, out: y|null, ins: [y...] } } (pin heights local to the part),
+// wires = [{ source, target, pin }]. Returns null when the layout is fine, else { reason, node } naming a culprit.
+export function placementProblem(parts, wires, moved) {
+  const ids = Object.keys(parts), box = (id) => parts[id];
+  const over = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  for (const a of ids) for (const b of ids) if (a < b && over(box(a), box(b))) return { reason: 'overlap', node: moved ?? a };
+  for (const w of wires) {
+    const S = box(w.source), T = box(w.target); if (!S || !T || S.out == null) continue;
+    const s = [S.x + S.w, S.y + S.out], t = [T.x, T.y + T.ins[w.pin]];
+    const culprit = moved ?? w.target;
+    if (t[0] < s[0] + 2 * STUB) return { reason: 'backwards', node: culprit };
+    const others = ids.filter((id) => id !== w.source && id !== w.target).map(box);
+    if (!clear(stepPoints(s, t), others)) return { reason: 'blocked', node: culprit };
+  }
+  return null;
+}
+
+export const toPath =(pts) => 'M' + pts.map((p) => `${p[0]} ${p[1]}`).join('L');
 // Label point = middle of the longest segment (where the delete X sits).
 export function midpoint(pts) {
   let bi = 1, bl = -1;

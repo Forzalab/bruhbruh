@@ -1,6 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { route, bends, clear, segHitsBox, stepPoints, MAX_BENDS } from './route.js';
+import { route, bends, clear, segHitsBox, stepPoints, MAX_BENDS, placementProblem } from './route.js';
+
+const part = (x, y, extra = {}) => ({ x, y, w: 100, h: 100, out: 50, ins: [50], ...extra });
+test('placementProblem: clean layout is fine', () => {
+  assert.equal(placementProblem({ a: part(0, 0), b: part(300, 0) }, [{ source: 'a', target: 'b', pin: 0 }]), null);
+});
+test('placementProblem: overlapping parts', () => {
+  assert.equal(placementProblem({ a: part(0, 0), b: part(50, 50) }, [], 'b').reason, 'overlap');
+});
+test('placementProblem: target left of source', () => {
+  assert.deepEqual(placementProblem({ a: part(300, 0), b: part(0, 200) }, [{ source: 'a', target: 'b', pin: 0 }], 'b'), { reason: 'backwards', node: 'b' });
+});
+test('placementProblem: part dropped on a wire', () => {
+  assert.equal(placementProblem({ a: part(0, 0), b: part(400, 0), c: part(200, 0, { w: 60 }) }, [{ source: 'a', target: 'b', pin: 0 }], 'c').reason, 'blocked');
+});
 
 const box = (x, y, w, h) => ({ x, y, w, h });
 

@@ -111,6 +111,9 @@ export function pinYs(kind, type) {
   const g = GATE_GEOM[type]; return { ins: g.in.map(([, y]) => y), out: g.out[1] };
 }
 
+// Part box size (flow units), for placement checks before React Flow has measured a part.
+export function nodeSize(kind, type) { const g = kind === 'S' ? SWG : kind === 'L' ? LAMPG : GATE_GEOM[type]; return { w: g.w, h: g.h }; }
+
 const NAMES = { s1: 'A', s2: 'B' };
 
 export function SwitchNode({ id, data }) {
@@ -122,6 +125,7 @@ export function SwitchNode({ id, data }) {
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
+      {data.reject && <p className="reject" role="alert" style={{ top: SWG.out[1], right: 'auto', left: 'calc(100% + 22px)' }}>{data.reject.text}</p>}
     </div>
   );
 }

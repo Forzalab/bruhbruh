@@ -1,7 +1,8 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
-import { nodeTypes, pinYs } from './nodes/index.jsx';
+import { nodeTypes, pinYs, nodeSize } from './nodes/index.jsx';
+import { placementProblem } from './route.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
@@ -111,6 +112,8 @@ export default function App() {
       const c = rf.screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
       at = { x: c.x - 60 + ((nextNode % 5) * 20), y: c.y - 54 + ((nextNode % 5) * 20) };
     }
+    // Deny the drop: a part landing on another part or across a wire is not added.
+    if (denied(view, circuit.nodes, { id, kind: it.kind, type: it.type, position: at })) return;
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { id, kind: it.kind, ...(it.type && { type: it.type }), ...(it.kind === 'S' && { value: false }) } } }));
     setView((v) => [...v, { id, type: it.kind, position: at, data: {} }]);
   };
@@ -196,7 +199,34 @@ export default function App() {
     setGuides(best ? [best.y] : []);
     return best ? { ...ch, position: { ...ch.position, y: ch.position.y + best.d } } : ch;
   };
+  // Deny-the-drop (T2b): a move or drop that makes a part overlap another, sends a wire backwards (input left of
+  // its output) or puts a part across a wire's step path is refused. Moves snap back to where the drag started.
+  const DENY_TEXT = { overlap: 'Parts can\'t overlap', backwards: 'A wire can\'t run backwards', blocked: 'That covers a wire' };
+  const denied = (nodesView, cNodes, extra, moved) => {
+    const parts = {};
+    for (const n of [...nodesView.filter((n) => !extra || n.id !== extra.id), ...(extra ? [extra] : [])]) {
+      const c = extra && n.id === extra.id ? extra : cNodes[n.id]; if (!c) continue;
+      const sz = n.measured ? { w: n.measured.width, h: n.measured.height } : nodeSize(c.kind, c.type), p = pinYs(c.kind, c.type);
+      parts[n.id] = { x: n.position.x, y: n.position.y, ...sz, out: p.out, ins: p.ins };
+    }
+    const bad = placementProblem(parts, Object.values(circuit.wires), extra?.id ?? moved);
+    if (!bad) return false;
+    const text = DENY_TEXT[bad.reason];
+    const shown = cNodes[bad.node] ?? extra; // a refused new part never exists; the message goes to the status row only
+    setReject(cNodes[bad.node] ? { node: bad.node, handle: shown.kind === 'S' ? 'out' : 'in0', text } : null);
+    setStatus({ text, bad: true });
+    return true;
+  };
+  const dragStart = useRef({});
   const onNodesChange = (changes) => {
+    const drop = changes.filter((ch) => ch.type === 'position' && ch.dragging === false && ch.position);
+    if (drop.length) {
+      const next = view.map((n) => { const ch = drop.find((c) => c.id === n.id); return ch ? { ...n, position: ch.position } : n; });
+      if (denied(next, circuit.nodes, null, drop[0].id)) {
+        setGuides([]);
+        return onViewChange(drop.map((ch) => ({ ...ch, position: dragStart.current[ch.id] ?? ch.position })));
+      }
+    }
     removeNodes(changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id));
     // The release also carries a (grid-snapped) position: snap it too, or it undoes the alignment by up to 1px.
     onViewChange(changes.filter((ch) => ch.type !== 'remove').map((ch) => (ch.type === 'position' && ch.position ? snapNode(ch) : ch)));
@@ -258,7 +288,7 @@ export default function App() {
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onPaneClick={() => setPalOpen(false)} // HIG: an overlay panel is transient; a click on the work closes it
-          onNodeDragStart={() => setTucked(true)}
+          onNodeDragStart={(_, n, ns) => { setTucked(true); setReject(null); dragStart.current = Object.fromEntries((ns ?? [n]).map((m) => [m.id, { ...m.position }])); }}
           onNodeDragStop={() => setTucked(false)}
           snapToGrid
           snapGrid={[20, 20]}
