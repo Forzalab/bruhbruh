@@ -276,7 +276,7 @@ export default function App() {
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
           (nodes like the switch button would otherwise swallow it). */}
-      <main style={{ '--stroke': `${STROKE * userZoom ** (ZOOM_EXP - 1)}px` }} className="cell c-main r2 canvas"
+      <main style={{ '--stroke': `${STROKE * userZoom ** (ZOOM_EXP - 1)}px` }} className="cell c-main r2 canvas" aria-label="Circuit canvas"
         onDragOverCapture={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
         onDropCapture={onDrop} onPointerMove={wireGuides}>
         <ReactFlow
