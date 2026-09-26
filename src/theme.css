@@ -268,7 +268,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .say-logo { --k: var(--u); --ax: calc(771 * var(--u)); --ay: calc(112 * var(--u)); z-index: 6; } /* tip at the r's shoulder */
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
-.truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }
+.truth { display: flex; flex-direction: column; justify-content: flex-start; padding: calc(56 * var(--u)) calc(20 * var(--u)) 0; }
 .truth .label { margin: 0 0 0 calc(4 * var(--u)); font: 760 max(calc(43.7 * var(--u)), calc(43.7 * var(--f)))/0.68650 var(--font-label); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--u)); }
 .truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: calc(32 * var(--u)); }
 .truth th { font: 700 max(calc(32.4 * var(--u)), calc(32.4 * var(--f)))/0.70988 var(--font); font-stretch: 100%; padding: 0 0 0.52469em; text-align: center; border-bottom: var(--rule) solid var(--ink); }
@@ -348,7 +348,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   .lockup br { display: none; } /* one line: keeps the band short so the canvas stays in the first screen */
   .c-margin.r2 { grid-area: 3 / 1 / 5 / 2; }
   .canvas { grid-area: 3 / 2 / 4 / 4; border-right: 0; }
-  .truth { grid-area: 4 / 2 / 5 / 4; padding-block: 1.5rem; align-items: end; }
+  .truth { grid-area: 4 / 2 / 5 / 4; padding-block: 1.5rem; align-items: end; padding-top: 1.5rem; }
   .truth .label, .truth table { width: calc(23.5rem - 40 * var(--u)); }
   .c-margin.r3 { grid-area: 5 / 1; } .status { grid-area: 5 / 2; } .help { grid-area: 5 / 3; }
   .wordmark { left: calc(var(--gut) + 2 * var(--u)); }
