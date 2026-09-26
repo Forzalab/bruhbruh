@@ -7,7 +7,13 @@
 // on a 20u grid; there we fall back to a plain step path and accept the overlap.
 export const MAX_BENDS = 4;
 export const STUB = 20;   // straight run out of / into a pin before the first corner (one grid cell)
-export const MARGIN = 14; // clearance kept from other node boxes
+// Clearance rule (img8 arbitration, invariant I2): >= GAP_PAPER px of paper between wire ink and the ink of ANY part
+// body, the wire's own source and target included; the only exemption is the straight run out of / into a pin.
+// A node box carries PAD (12) of svg padding around the 3px outline centreline, so centreline-to-box clearance =
+// paper + half the wire stroke + half the outline stroke - PAD = 20 + 1.5 + 1.5 - 12 = 11. Rounded up to 14 (the
+// previous margin) so knobs and the orange inset never come closer than that either.
+export const GAP_PAPER = 20;
+export const MARGIN = Math.max(14, GAP_PAPER + 3 - 12);
 
 const inflate = (b, m) => ({ x: b.x - m, y: b.y - m, w: b.w + 2 * m, h: b.h + 2 * m });
 
@@ -44,6 +50,19 @@ export function clear(pts, obstacles) {
   for (let i = 1; i < pts.length; i++) for (const b of obstacles) if (segHitsBox(pts[i - 1], pts[i], b)) return false;
   return true;
 }
+// Full clearance: inner segments keep MARGIN from every box (own ones too); the first and last segment (pin runs)
+// keep MARGIN from foreign boxes and only stay outside the open interior of their own box.
+export function legal(pts, { src, dst, others = [] }, own) {
+  const far = others.map((b) => inflate(b, MARGIN)), mine = [src, dst].filter(Boolean).map((b) => inflate(b, MARGIN));
+  const n = pts.length; // pin runs are horizontal: out of the output going right, into the input going right
+  if (n < 2 || pts[1][1] !== pts[0][1] || pts[1][0] <= pts[0][0] || pts[n - 2][1] !== pts[n - 1][1] || pts[n - 2][0] >= pts[n - 1][0]) return false;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], end = i === 1 || i === pts.length - 1;
+    for (const o of far) if (segHitsBox(a, b, o)) return false;
+    for (const o of end ? own : mine) if (segHitsBox(a, b, o)) return false;
+  }
+  return true;
+}
 
 // Plain step path (what getSmoothStepPath draws for a forward wire): corners at the midpoint x.
 export function stepPoints(s, t) {
@@ -56,7 +75,7 @@ export function stepPoints(s, t) {
 export function route(s, t, { src, dst, others = [] } = {}, maxBends = MAX_BENDS) {
   // Pins can sit inside their own box (knobs, padding): trim the source box at the pin's x, and the target box too.
   const own = [src && { ...src, w: Math.min(src.w, s[0] - src.x) }, dst && { ...dst, x: Math.max(dst.x, t[0]), w: dst.x + dst.w - Math.max(dst.x, t[0]) }];
-  const obs = [...others.map((b) => inflate(b, MARGIN)), ...own.filter((b) => b && b.w > 0)];
+  const ownObs = own.filter((b) => b && b.w > 0);
   const all = [...others, src, dst].filter(Boolean).map((b) => inflate(b, MARGIN));
   const xs1 = new Set([s[0] + STUB]), xs2 = new Set([t[0] - STUB]), ys = new Set([s[1], t[1]]);
   for (const b of all) { xs1.add(b.x + b.w); xs2.add(b.x); ys.add(b.y); ys.add(b.y + b.h); }
@@ -70,7 +89,7 @@ export function route(s, t, { src, dst, others = [] } = {}, maxBends = MAX_BENDS
     for (const y of ys) cands.push(clean([s, [x1, s[1]], [x1, y], [x2, y], [x2, t[1]], t]));
   let best = null, bestCost = Infinity;
   for (const p of cands) {
-    const n = bends(p); if (n > maxBends || !clear(p, obs)) continue;
+    const n = bends(p); if (n > maxBends || !legal(p, { src, dst, others }, ownObs)) continue;
     const cost = length(p) + 40 * n; // a corner costs two grid cells of length
     if (cost < bestCost) { best = p; bestCost = cost; }
   }

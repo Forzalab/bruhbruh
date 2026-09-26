@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
+import { route } from './route.js';
 import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
@@ -163,15 +164,39 @@ export default function App() {
   // nudged per add so repeated adds don't stack exactly.
   const switchFull = !canAddSwitch(circuit).ok;
   const SIZE = { S: [86, 86], L: [114, 114], G: [112, 108] };   // flow units, as measured at zoom 1
-  const free = (at, kind) => {
+  // Can every wire still find a legal route (route.js clearance rule) with node `id` at `at`?
+  const boxAt = (n, at) => { const m = rf?.getInternalNode(n.id); const [w, h] = m?.measured?.width ? [m.measured.width, m.measured.height] : SIZE[n.type] ?? [112, 108];
+    return { x: at.x, y: at.y, w, h }; };
+  const pinAt = (n, at, hid) => { const hb = rf?.getInternalNode(n.id)?.internals.handleBounds; const src = hid === 'out';
+    const h = (src ? hb?.source : hb?.target)?.find((k) => k.id === hid); if (!h) return null;
+    return [at.x + h.x + (src ? h.width : 0), at.y + h.y + h.height / 2]; };
+  const routable = (id, at, nodes = view, extra) => {
+    const pos = (n) => (n.id === id ? at : n.position), all = extra ? [...nodes, extra] : nodes;
+    return Object.values(circuit.wires).every((w) => {
+      const a = all.find((n) => n.id === w.source), b = all.find((n) => n.id === w.target); if (!a || !b) return true;
+      const s = pinAt(a, pos(a), 'out'), t = pinAt(b, pos(b), `in${w.pin}`); if (!s || !t) return true;
+      return !!route(s, t, { src: boxAt(a, pos(a)), dst: boxAt(b, pos(b)), others: all.filter((n) => n !== a && n !== b).map((n) => boxAt(n, pos(n))) });
+    });
+  };
+  // One placement rule for add AND move: nearest grid spot (spiral outwards) that overlaps no part and leaves every
+  // wire a legal route. `id` = the part being placed (skipped as an obstacle), `ok` = the extra wire test.
+  const free = (at, kind, id, ok = () => true) => {
     const [w, h] = SIZE[kind];
-    const hit = (p) => view.some((n) => { const [nw, nh] = SIZE[n.type] ?? [112, 108];
+    const hit = (p) => view.some((n) => { if (n.id === id) return false; const [nw, nh] = SIZE[n.type] ?? [112, 108];
       return p.x < n.position.x + nw + 20 && p.x + w + 20 > n.position.x && p.y < n.position.y + nh + 20 && p.y + h + 20 > n.position.y; });
     for (let r = 0; r < 12; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
-      const p = { x: Math.round((at.x + dx * 40) / 20) * 20, y: Math.round((at.y + dy * 40) / 20) * 20 };
-      if (!hit(p)) return p; }
+      const p = r === 0 && id ? at : { x: Math.round((at.x + dx * 40) / 20) * 20, y: Math.round((at.y + dy * 40) / 20) * 20 };
+      if (!hit(p) && ok(p)) return p; }
     return at;
+  };
+  // Drop after a drag: if the part now leaves some wire with no legal route, nudge it to the nearest legal spot.
+  // No animation, no refusal; the move and the nudge are one state change.
+  const settle = (_, node) => {
+    const me = view.find((n) => n.id === node.id); if (!me || !rf) return;
+    if (routable(me.id, node.position)) return;
+    const p = free(node.position, me.type, me.id, (q) => routable(me.id, q));
+    setView((v) => v.map((n) => (n.id === me.id ? { ...n, position: p } : n)));
   };
   const addNode = (it, at) => {
     if (it.kind === 'S' && switchFull) return;
@@ -182,7 +207,7 @@ export default function App() {
       const c = rf.screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
       at = { x: c.x - 60, y: c.y - 54 };
     }
-    at = free(at, it.kind);
+    at = free(at, it.kind, undefined, (q) => routable(id, q, view, { id, type: it.kind, position: q }));
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { id, kind: it.kind, ...(it.type && { type: it.type }), ...(it.kind === 'S' && { value: false }) } } }));
     setView((v) => [...v.map((n) => ({ ...n, selected: false })), { id, type: it.kind, position: at, data: {}, selected: true }]);
   };
@@ -351,7 +376,8 @@ export default function App() {
           onConnectEnd={onConnectEnd}
           onPaneClick={() => { setPalOpen(false); setReject(null); }} // HIG: an overlay panel is transient; a click on the work closes it
           onNodeDragStart={() => { setTucked(true); dragSnap.current = snap(); }}
-          onNodeDragStop={() => { setTucked(false); const s = dragSnap.current; dragSnap.current = null;
+          onNodeDragStop={(e, node) => { setTucked(false); settle(e, node); // nudge (if any) lands inside the same undo step as the drag
+            const s = dragSnap.current; dragSnap.current = null;
             if (s && view.some((n) => { const o = s.view.find((x) => x.id === n.id); return o && (o.position.x !== n.position.x || o.position.y !== n.position.y); })) commit(s); }}
           snapToGrid
           snapGrid={[20, 20]}
