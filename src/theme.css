@@ -318,7 +318,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth th .hO { letter-spacing: -0.061728em; } .truth th .hU { font-stretch: 115%; letter-spacing: -0.030864em; }
 .truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
 .truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
-.truth tr.live td { background: var(--one); color: var(--ink); }
+.truth tr.live td { background: var(--one); color: var(--paper); } /* Tony: white on orange */
 .truth tr:not(.live) td { font-weight: 560; } /* 1c: non-live rows one weight step down, same ink */
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
@@ -387,6 +387,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } .pal-bar, .palette.open .pal-bar, .palette.open.tucked .pal-bar, .pal-tab { transition: none; } }
 /* Column kind, rules only: one --rule ink rule stands between the switch (input) and lamp (output) columns,
    the same weight as the header rule; signal crosses it left to right, as it does on the canvas. */
-.truth td.k-S + td.k-L { border-left: var(--rule) solid var(--ink); }
-.truth thead th.k-S { box-shadow: inset 0 calc(-1 * var(--hair)) 0 var(--ink); } /* the heavy header rule runs over the lamp group only: with the vertical rule it makes one ink corner that closes the outputs; the switch side keeps the row hairline */
+.truth td.k-S + td.k-L { box-shadow: inset var(--rule) 0 0 var(--ink); } /* inset like the header, so both rules sit on the same x */
+.truth thead th.k-S { box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); } /* one header rule weight across all columns */ /* the heavy header rule runs over the lamp group only: with the vertical rule it makes one ink corner that closes the outputs; the switch side keeps the row hairline */
 .truth thead th.k-S + th.k-L { box-shadow: inset var(--rule) 0 0 var(--ink), inset 0 calc(-1 * var(--rule)) 0 var(--ink); }
