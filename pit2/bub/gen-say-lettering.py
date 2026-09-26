@@ -66,8 +66,8 @@ def balloon(w, h, tail):
         a, b = pt(100), pt(122); tip = (-0.28 * rx, ry + 1.6 * CAP)
         c1 = (a[0] - 0.05 * rx, ry + 0.55 * CAP); c2 = (b[0] + 0.12 * rx, ry + 0.9 * CAP)
     elif tail == 'lowleft':  # palette hint: speaker (the tab) below-left; balloon sits high, long curved tail
-        a, b = pt(138), pt(158); tip = (-1.2 * rx, ry + 2.0 * CAP)
-        c1 = (a[0] - 0.12 * rx, ry + 0.8 * CAP); c2 = (b[0] - 0.10 * rx, ry + 0.4 * CAP)
+        a, b = pt(148), pt(166); tip = (-1.22 * rx, 0.62 * ry)
+        c1 = (a[0] - 0.10 * rx, 0.66 * ry); c2 = (b[0] - 0.08 * rx, 0.36 * ry)
     else:                # 'left': speaker to the lower left
         a, b = pt(152), pt(172); tip = (-rx - 1.4 * CAP, ry * 0.95)
         c1 = (a[0] - 0.25 * CAP, ry * 0.75); c2 = (b[0] - 0.5 * CAP, ry * 0.55)

@@ -38,6 +38,7 @@
   --ink-2: #767676;        /* de-emphasis ink, 4.54:1 on paper (disabled palette item) */
   --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
   --grid: #e2e2e2;
+  --caption: #fbf5d2;      /* toast caption fill only: Blambot caption cream, muted toward paper */
   --font: 'Roboto Flex Variable', 'Roboto Flex Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-help: 'Roboto Flex Variable', 'Help Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-label: 'Roboto Flex Variable', 'Label Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -262,7 +263,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .say .emph { fill: var(--ink); stroke: var(--ink); stroke-width: 0.5; stroke-linejoin: round; } /* Bold Italic held above the thickened Regular */
 .say .rest { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; } /* +0.022em, as the hint */
 .say-part { --ax: 42%; --ay: -9px; } /* tip just above the part's top edge, short of it */
-.pal-hint { --k: var(--u); --ax: calc(var(--tw) / 2); --ay: calc(50% + 35.515 * var(--u)); z-index: 6; } /* same balloon; tail tip kept at the tab's right edge (77.00, 540.24 at 1440) */
+.pal-hint { --k: var(--u); --ax: calc(var(--tw) / 2); --ay: 50%; z-index: 6; } /* same balloon; tail tip at the tab arrow's centre y (Tony), x on the tab's right edge */
 .say-logo { --k: var(--u); --ax: calc(771 * var(--u)); --ay: calc(112 * var(--u)); z-index: 6; } /* tip at the r's shoulder */
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
@@ -342,3 +343,17 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* Toasts (pit2 bub-f): comic CAPTION boxes for system news with no speaker (Blambot grammar_caps.jpg, first style:
+   the flat "MEANWHILE..." box). Flat rectangle, thin ink rule (0.14 cap, as measured), Italic caps, 0.45 x 0.5 cap
+   padding, one line (e1 layout). Fill = --caption, the ref's cream muted toward paper (e2 colouring; --one stays
+   logic 1 only). Stack: newest at the bottom,
+   gap 20u = one canvas grid line. */
+.toasts { position: absolute; left: calc(40 * var(--u)); bottom: calc(20 * var(--u)); z-index: 7; pointer-events: none;
+  display: flex; flex-direction: column; align-items: flex-start; gap: calc(20 * var(--u)); }
+.toast { margin: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); animation: toast-in 160ms ease-out; }
+.toast svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.toast .box { fill: var(--caption); stroke: var(--ink); stroke-width: 1.7; }
+.toast path { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(calc(8 * var(--u))); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }

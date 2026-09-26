@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
@@ -6,6 +6,7 @@ import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
 import Say from './Say.jsx';
+import Toasts, { TOAST_MS } from './Toasts.jsx';
 
 const edgeTypes = { wire: Wire };
 
@@ -28,7 +29,7 @@ const VIEW = [
   { id: 'l1', type: 'L', position: { x: 736, y: 181 }, data: {} },
 ];
 
-let nextWire = 1, nextNode = 1;
+let nextWire = 1, nextNode = 1, nextToast = 1;
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
 // Glyph spans are aria-hidden; one visually hidden run carries the whole word ("01", not "0 1").
@@ -42,6 +43,13 @@ export default function App() {
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
+  // Toasts (caption boxes): newest last; each removes itself after TOAST_MS.
+  const [toasts, setToasts] = useState([]);
+  const toast = (phrase) => {
+    const id = nextToast++;
+    setToasts((l) => [...l, { id, phrase }]);
+    setTimeout(() => setToasts((l) => l.filter((t) => t.id !== id)), TOAST_MS);
+  };
   const [status, setStatus] = useState({ phrase: null, text: '' }); // phrase = a key of sayLettering.js
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
@@ -169,6 +177,14 @@ export default function App() {
     onConnect({ source: pending, target: node, targetHandle: handle });
   };
 
+  // Wipe the canvas: Shift+Backspace or Shift+Delete removes every part and wire, then a toast says so.
+  const wipe = () => { removeNodes(view.map((n) => n.id)); toast('wiped'); };
+  const wipeRef = useRef(wipe); wipeRef.current = wipe;
+  useEffect(() => {
+    const k = (e) => { if (e.shiftKey && (e.key === 'Backspace' || e.key === 'Delete')) { e.preventDefault(); wipeRef.current(); } };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, []);
   // Node delete (double-click, or select + Backspace/Delete): drop the node and every wire touching it.
   const removeNodes = (ids) => {
     if (!ids.length) return;
@@ -231,7 +247,7 @@ export default function App() {
       <div className="cell c-main r1" />
       <div className="cell c-side r1">
         <button className="disk" aria-pressed={showGrid} aria-label={showGrid ? 'Hide grid' : 'Show grid'} title={showGrid ? 'Hide grid' : 'Show grid'}
-          onClick={() => setShowGrid((g) => !g)}>
+          onClick={() => { setShowGrid(!showGrid); toast(showGrid ? 'gridOff' : 'gridOn'); }}>
           <svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="M-36.5 0H26M-0.6 -27.9L27.3 0L-0.6 27.9" /></svg>
         </button>
         <p className="lockup">Circuit<br /> editor</p>
@@ -276,6 +292,7 @@ export default function App() {
           {showGrid && <Background gap={20} color="var(--grid)" />}
           <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
         </ReactFlow>
+        <Toasts list={toasts} />
         <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
       </main>
       <Truth circuit={circuit} view={view} fig={fig} setSwitches={setSwitches} />
