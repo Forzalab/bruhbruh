@@ -1,13 +1,21 @@
-// Component geometry. One stroke system: 4px ink outline (pit2/t1w-a, Tony: parts read bolder than
-// the --rule grid border at 6px; 4px = exactly 2 * --rule (2px at 1440), so the parts:grid ratio is a
-// clean 2:1 instead of 3:1, IBM Carbon / Müller-Brockmann: a single line weight), knobs as semicircles
-// appended INTO the outline path (one continuous stroke), and the lit state as a TRUE inset contour:
-// the outline offset inward by (stroke/2 + gap).
+// Component geometry. One stroke system: 3px ink outline at rest (pit2/t1w-d, Tony's T1 verdict: parts
+// drop to 3px, --rule stays 2u), knobs as semicircles appended INTO the outline path (one continuous
+// stroke), and the lit state as a TRUE inset contour: the outline offset inward by (stroke/2 + gap).
+// STROKE is the flow-space (userZoom-independent) base used for every derived geometry constant below;
+// App.jsx's --stroke CSS var is the actual on-screen line weight and now grows slightly with zoom
+// (screen px = STROKE * userZoom^0.3), so STROKE here is the userZoom=1 value, screen px == STROKE.
 
-export const STROKE = 4;         // outline + wire weight (was 6; see above)
+export const STROKE = 3;         // outline + wire weight at userZoom 1 (was 4 on pit2/t1w-a, 6 on base)
+// Tony's T1 verdict: lines no longer hold perfectly constant screen px as the user zooms; they grow
+// SLIGHTLY thicker zooming in. screen px = STROKE * userZoom^ZOOM_EXP. 0.3 is well under 1 (sublinear):
+// a 2x zoom range (0.75-1.5) only moves screen px by ~1.23x (2.75 -> 3.4 at STROKE 3), enough to read as
+// "a bit bolder up close" without the line competing with zoomed-in detail the way a linear (1.0) or
+// zoom-locked (0) grow rate would. App.jsx turns this into the CSS --stroke value it sets per frame:
+// cssStroke = STROKE * userZoom^(ZOOM_EXP - 1), so React Flow's viewport-zoom multiply lands on target.
+export const ZOOM_EXP = 0.3;
 export const GAP = 6;            // paper gap between outline and orange inset
-export const INSET = STROKE / 2 + GAP; // centreline -> inset contour distance (recomputed: 8, was 9)
-export const KNOB = 12 - STROKE / 2; // knob centreline radius: ink reaches a fixed 12 from the outline centreline (recomputed: 10, was 9)
+export const INSET = STROKE / 2 + GAP; // centreline -> inset contour distance (recomputed: 7.5)
+export const KNOB = 12 - STROKE / 2; // knob centreline radius: ink reaches a fixed 12 from the outline centreline (recomputed: 10.5)
 export const PAD = 12;           // svg padding around the outline centreline
 
 const f = (n) => +n.toFixed(3);
