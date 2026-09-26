@@ -157,7 +157,7 @@ const mass = (() => {
 // Delete X on node hover, on the top edge at the shape's optical centre (Tony's sketch). Not inside the body (variant E):
 // the centre is where a node is grabbed, so an X there blocked dragging and turned a grab-click into a delete.
 // Right-click still deletes (testing).
-const X = ({ g, label, data }) => <Remove label={label} onRemove={data.onRemove}
+const X = ({ g, label, data }) => !data.reject && <Remove label={label} onRemove={data.onRemove}
   style={{ position: 'absolute', left: mass(g)[0], top: PAD, transform: 'translate(-50%, -50%) scale(var(--rs))' }} />;
 
 // Pin heights in node-local coordinates, for snap guides: { ins: [y...], out: y | null }.
