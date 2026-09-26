@@ -97,6 +97,8 @@ export default function Coach({ circuit, palOpen, parts, slot, variant: v0 = VAR
   const swSig = Object.values(circuit.nodes).filter((n) => n.kind === 'S').map((n) => `${n.id}${+!!n.value}`).join();
   const nWires = Object.keys(circuit.wires).length;
   const end = () => { setStep(-1); markSeen(); };
+  // Tony: a refresh mid-tour must not restart it. Mark it seen the moment it first starts; "Show me how" replays.
+  useEffect(() => { if (step === 0) markSeen(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const replay = () => { base.current = { parts, wires: nWires, sw: swSig }; setStep(0); }; // row 03 help button
   // Advance on the person's own action.
   useEffect(() => {
