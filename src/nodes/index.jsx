@@ -170,7 +170,7 @@ export function pinYs(kind, type) {
 // Name plate (T3 Swedish "skylt"). Switch + lamp: a keyline plate = "this is a table column"; lit orange when the
 // part is 1 (orange = logic 1 only). Gate: bare name, no plate (gates are not table columns). Hung under the outline,
 // pointer-events none, so it never widens the node's hover (the delete X keeps its own hit rule).
-export const PLATE = (import.meta.env.DEV && new URLSearchParams(location.search).get('plate')) || 'hang'; // 'hang' (8u gap) | 'tab' (joined to the outline) | 'ink' (inverted plate)
+export const PLATE = (import.meta.env.DEV && new URLSearchParams(location.search).get('plate')) || 'ink'; // 'hang' (8u gap) | 'tab' (joined to the outline) | 'ink' (inverted plate)
 function Plate({ g, x, name, on, bare }) {
   if (!name) return null;
   return <span className={`plate p-${PLATE} ${bare ? 'bare' : ''} ${on && !bare ? 'on' : ''}`} aria-hidden="true"
