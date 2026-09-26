@@ -4,6 +4,7 @@ import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
+import Truth from './Truth.jsx';
 
 const edgeTypes = { wire: Wire };
 
@@ -214,9 +215,9 @@ export default function App() {
     setCircuit((c) => ({ ...c, wires: Object.fromEntries(Object.entries(c.wires).filter(([id]) => !gone.includes(id))) }));
   };
 
-  // Truth table for the 2-switch AND demo; live row = current switch state.
-  const a = !!circuit.nodes.s1?.value, b = !!circuit.nodes.s2?.value; // switch state itself, never a derived value
-  const rows = [[0, 0], [0, 1], [1, 0], [1, 1]];
+  // A truth-table row click sets every input switch to that row's bits.
+  const setSwitches = (ids, bits) => setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
+    ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } }));
 
   return (
     <div className="frame" ref={frame}>
@@ -269,19 +270,7 @@ export default function App() {
         </ReactFlow>
         <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
       </main>
-      <aside className="cell c-side r2 truth" aria-label="Truth table">
-        <h2 className="label">Truth table</h2>
-        <table>
-          <thead><tr><th scope="col"><span className="hN">#</span></th><th scope="col"><span className="hA">A</span></th><th scope="col"><span className="hB">B</span></th><th scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th></tr></thead>
-          <tbody>
-            {rows.map(([x, y], i) => (
-              <tr key={i} className={x === +a && y === +b ? 'live' : ''}>
-                <td>{fig(String(i + 1).padStart(2, '0'))}</td><td>{fig(x)}</td><td>{fig(y)}</td><td>{fig(x & y)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </aside>
+      <Truth circuit={circuit} view={view} fig={fig} setSwitches={setSwitches} />
 
       <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">
