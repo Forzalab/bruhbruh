@@ -266,6 +266,12 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .say .emph { fill: var(--ink); stroke: var(--ink); stroke-width: 0.5; stroke-linejoin: round; } /* Bold Italic held above the thickened Regular */
 .say .rest { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; } /* +0.022em, as the hint */
 .say-part { --ax: 42%; --ay: -9px; } /* tip just above the part's top edge, short of it */
+.say-part.flip-y { --ay: calc(100% + 9px); }
+.say.flip-y svg { transform: scaleY(-1); }
+.say.flip-y .emph, .say.flip-y .rest { transform: scaleY(-1); transform-box: fill-box; transform-origin: center; }
+.say.flip-x svg { transform: scaleX(-1); }
+.say.flip-x .emph, .say.flip-x .rest { transform: scaleX(-1); transform-box: fill-box; transform-origin: center; }
+.say.flip-y.flip-x svg { transform: scale(-1, -1); }
 .pal-hint { --k: var(--u); --ax: calc(var(--tw) / 2); --ay: 50%; z-index: 6; } /* same balloon; tail tip at the tab arrow's centre y (Tony), x on the tab's right edge */
 .say-logo { --k: var(--u); --ax: calc(771 * var(--u)); --ay: calc(112 * var(--u)); z-index: 6; } /* tip at the r's shoulder */
 
