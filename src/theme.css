@@ -218,7 +218,9 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Delete X: square ink tile + white X (Tony: square, not round). Hidden until its node or wire is hovered (or it has keyboard focus). */
 .remove { width: 24px; height: 24px; margin: 0; padding: 0; border: 0; border-radius: 0; background: var(--ink); cursor: pointer;
   display: grid; place-items: center; pointer-events: all; z-index: 10; }
-.remove svg { width: 20px; height: 20px; }
+/* X = half the tile (12 of 24, a 1:2 split); stroke 2.5 = 0.21 of the X, the header disk arrow's stroke:glyph ratio
+   (13 / 63.8 = 0.20). The header arrow spans 42% of its disk; the X takes the half, per Tony (a tad bigger). */
+.remove svg { width: 24px; height: 24px; }
 .remove path { stroke: var(--paper); stroke-width: 2.5; stroke-linecap: butt; fill: none; }
 .remove:hover, .remove:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .node .remove { display: none; }
