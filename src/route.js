@@ -110,5 +110,5 @@ export function midpoint(pts) {
 // corridor as a lane instead of the part being moved. SQUEEZE = 3 from the box = 3 + 12 (PAD) - 1.5 - 1.5 = 12px of
 // paper, never inside an outline. NUDGE = 'last' moves the part only if even that fails; 'never' never moves it.
 export const SQUEEZE = 3;
-export const NUDGE = 'last';
+export const NUDGE = 'never';
 export const routeMetro = (s, t, o) => route(s, t, o) ?? route(s, t, { ...o, margin: SQUEEZE });
