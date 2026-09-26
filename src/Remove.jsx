@@ -1,6 +1,6 @@
 import { useStore } from '@xyflow/react';
 
-// Delete control (Tony, Sep 25): the header's ink disk with a white X, shown on hover of a wire or node.
+// Delete control (Tony, Sep 25): a square ink tile with a white X, shown on hover of a wire or node.
 // Lives in flow space, so it zooms with the canvas, but counter-scaled by 1/sqrt(zoom): 4x zoom -> 2x size, 0.25x -> 0.5x.
 export default function Remove({ label, onRemove, onHover, style }) {
   const z = useStore((s) => s.transform[2]);
