@@ -4,7 +4,7 @@ import { CAPTION } from './captionLettering.js';
 // Stack at the canvas's lower right (clear of the demo switches), newest at the bottom next to the frame edge (M3 snackbar: bottom of the window,
 // content enters from there); older ones rise. Each leaves after 4s (M3 snackbar: 4-10s; short, since none carries
 // an action). Gap = 20u, one canvas grid line (snapGrid 20): the stack keeps the canvas rhythm.
-export const TOAST_MS = 4000;
+export const TOAST_MS = 3000; // Tony: 3 s max
 
 export default function Toasts({ list }) {
   return (

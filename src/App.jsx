@@ -61,6 +61,13 @@ export default function App() {
   const [status, setStatus] = useState({ phrase: null, text: '' }); // phrase = a key of sayLettering.js
   useEffect(() => { if (!reject) return; const t = setTimeout(() => setReject(null), TOAST_MS); return () => clearTimeout(t); }, [reject]);
   useEffect(() => { if (!status.phrase) return; const t = setTimeout(() => setStatus({ phrase: null, text: '' }), TOAST_MS); return () => clearTimeout(t); }, [status.phrase]);
+  // Tony: a balloon goes after TOAST_MS or at the person's next action, whichever comes first. Capture phase runs
+  // before the action's own handler, so a balloon the action itself raises survives.
+  useEffect(() => {
+    const drop = () => { setReject(null); setStatus((s) => (s.phrase ? { phrase: null, text: '' } : s)); setToasts((l) => (l.length ? [] : l)); };
+    addEventListener('pointerdown', drop, true); addEventListener('keydown', drop, true);
+    return () => { removeEventListener('pointerdown', drop, true); removeEventListener('keydown', drop, true); };
+  }, []);
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
   const [tucked, setTucked] = useState(false);

@@ -1,3 +1,4 @@
+import { TOAST_MS } from './Toasts.jsx';
 import { useEffect, useRef } from 'react';
 import { WIPE_VIEWBOX, WIPE_EMPH, WIPE_REST } from './t4Lettering.js';
 
@@ -26,10 +27,11 @@ export default function Controls({ canUndo, canRedo, canWipe, armed, setArmed, o
   useEffect(() => {
     if (!armed) return;
     const down = (e) => { if (!wipeRef.current?.contains(e.target)) setArmed(false); };
-    const key = (e) => { if (e.key === 'Escape') setArmed(false); };
+    const key = () => setArmed(false); // any key is a new action (Tony), Escape included
+    const t = setTimeout(() => setArmed(false), TOAST_MS); // and 3 s max, like every balloon
     window.addEventListener('pointerdown', down, true);
     window.addEventListener('keydown', key);
-    return () => { window.removeEventListener('pointerdown', down, true); window.removeEventListener('keydown', key); };
+    return () => { clearTimeout(t); window.removeEventListener('pointerdown', down, true); window.removeEventListener('keydown', key); };
   }, [armed, setArmed]);
   return (
     <div className="ctl" role="toolbar" aria-label="History">
