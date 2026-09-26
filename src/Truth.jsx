@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { evaluate } from './sim.js';
+import { ScrollCues } from './Palette.jsx';
 
 // Truth table built from the circuit (Kerney req. 2). Inputs = switches ordered top-to-bottom on the canvas (then
 // left-to-right), outputs = lamps in the same order. 2^n rows, MSB = the top switch. Rows are computed once per circuit
@@ -31,10 +32,13 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
   // Windowing: fixed row height measured from the first rendered row.
   const box = useRef(null);
   const [rowH, setRowH] = useState(40), [top, setTop] = useState(0), [boxH, setBoxH] = useState(400);
+  const [more, setMore] = useState({ up: false, down: false }); // palette's scroll cues: only where rows remain
   useEffect(() => {
     const el = box.current; if (!el) return;
     const tr = el.querySelector('tbody tr:not(.pad)'); if (tr) setRowH(tr.getBoundingClientRect().height || 40);
     setBoxH(el.clientHeight);
+    const m = { up: el.scrollTop > 1, down: el.scrollTop + el.clientHeight < el.scrollHeight - 1 };
+    if (m.up !== more.up || m.down !== more.down) setMore(m);
   });
   const first = Math.max(0, Math.floor(top / rowH) - 2), last = Math.min(rows.length, first + Math.ceil(boxH / rowH) + 5);
   // Keep the live row in view when the switches change.
@@ -53,6 +57,7 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
   return (
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
+      <div className="tt-wrap">
       <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
         <table>
           <thead><tr>
@@ -73,6 +78,8 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
             {last < rows.length && <tr className="pad" style={{ height: (rows.length - last) * rowH }} aria-hidden="true" />}
           </tbody>
         </table>
+      </div>
+      <ScrollCues more={more} onWheel={(e) => box.current?.scrollBy({ top: e.deltaY })} />
       </div>
     </aside>
   );

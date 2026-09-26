@@ -9,6 +9,11 @@ export const GROUPS = [
   [{ kind: 'G', type: 'AND' }, { kind: 'G', type: 'OR' }, { kind: 'G', type: 'XOR' }],
   [{ kind: 'G', type: 'NAND' }, { kind: 'G', type: 'NOR' }, { kind: 'G', type: 'NOT' }],
 ];
+// The scroll cues, shared with the truth table so both scrollers say "more" the same way.
+export const ScrollCues = ({ more, onWheel }) => [
+  <span key="u" className={`pal-more up ${more.up ? 'on' : ''}`} aria-hidden="true" onWheel={onWheel}><svg viewBox="0 0 16 8"><path d="M0 8L8 0L16 8Z" /></svg></span>,
+  <span key="d" className={`pal-more down ${more.down ? 'on' : ''}`} aria-hidden="true" onWheel={onWheel}><svg viewBox="0 0 16 8"><path d="M0 0L8 8L16 0Z" /></svg></span>,
+];
 export const DND = 'application/x-gob-node';
 const HINT_KEY = 'gob.paletteHint';
 
@@ -76,8 +81,7 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
         {/* Scroll cues: a bare ink arrowhead in a one-baseline paper margin, no box and no fill behind it (a solid block
             reads as a button, Refactoring UI p.52-53). It swallows clicks (so the half-hidden part under it can't be grabbed
             by accident) and hands the wheel to the list. */}
-        <span className={`pal-more up ${more.up ? 'on' : ''}`} aria-hidden="true" onWheel={wheel}><svg viewBox="0 0 16 8"><path d="M0 8L8 0L16 8Z" /></svg></span>
-        <span className={`pal-more down ${more.down ? 'on' : ''}`} aria-hidden="true" onWheel={wheel}><svg viewBox="0 0 16 8"><path d="M0 0L8 8L16 0Z" /></svg></span>
+        <ScrollCues more={more} onWheel={wheel} />
       </nav>
       <button className="pal-tab" aria-expanded={open} aria-label={open ? 'Close parts' : 'Open parts'} onClick={() => setOpen(!open)}>
         <svg viewBox="0 0 24 40" aria-hidden="true"><path d={open ? 'M16 8L6 20L16 32' : 'M8 8L18 20L8 32'} /></svg>
