@@ -52,7 +52,33 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // Outline = one path (body + knobs, one continuous stroke). Lit = second path: the true inset contour.
 // bubble (NAND/NOR/NOT) and extraCurve (XOR) are optional extra ink paths, same stroke system.
 // Inverting gates: the body shows the value before the NOT, the bubble shows the output.
-function Shape({ g, on, idle }) {
+// Pin bleed: a pin whose wire carries 1 is coloured together with the wire's start, one orange piece.
+// The zone sits UNDER the re-stroked ink outline (outline never orange); only the wire-width bridge crosses the
+// knob ink, because that is the wire itself entering the pin. Variant picks the zone shape.
+export const BLEED = 'a';
+const KI = KNOB + 3; // knob ink tip from the pin centreline
+function zone(x, y, d, bubble) {
+  const r = (x0, x1, y0, y1) => `M${Math.min(x0, x1)} ${y0}H${Math.max(x0, x1)}V${y1}H${Math.min(x0, x1)}Z`;
+  const bridge = r(x, x + d * KI, y - 3, y + 3);
+  if (bubble) return { under: '', over: r(x, x + d * 6, y - 3, y + 3) };
+  const k = KNOB - 3; // knob interior radius (paper inside the knob ink)
+  const knobFill = `M${x} ${y - k}A${k} ${k} 0 0 ${d > 0 ? 1 : 0} ${x} ${y + k}Z`;
+  const inner = x - d * 3; // outline's inner ink edge: the zone never crosses into the body's paper gap
+  if (BLEED === 'a') return { under: knobFill + r(x, inner, y - k, y + k), over: bridge };
+  if (BLEED === 'b') return { under: '', over: r(inner, x + d * KI, y - k, y + k) };
+  return { under: knobFill + r(x, inner, y - k, y + k) + r(inner, x - d * 6, y - 12, y + 12), over: bridge };
+}
+function bleeds(g, lit) {
+  if (!lit) return [];
+  const z = [];
+  (Array.isArray(g.in?.[0]) ? g.in : []).forEach(([x, y], i) => lit.in?.[i] && z.push(zone(x, y, -1)));
+  if (Array.isArray(g.in) && typeof g.in[0] === 'number' && lit.in?.[0]) z.push(zone(g.in[0], g.in[1], -1)); // lamp
+  if (g.out && lit.out) z.push(zone(g.out[0], g.out[1], +1, !!g.bubble));
+  return z;
+}
+
+function Shape({ g, on, idle, lit }) {
+  const z = idle ? [] : bleeds(g, lit);
   return (
     <svg className="shape" width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true">
       {g.extraCurve && <path className="body line" d={g.extraCurve} />}
@@ -60,6 +86,9 @@ function Shape({ g, on, idle }) {
       {g.bubble && <path className="body" d={g.bubble} />}
       {!idle && (g.bubble ? !on : on) && <path className="lit" d={g.inset} />}
       {!idle && g.bubble && on && <path className="lit" d={g.bubbleInset} />}
+      {z.length > 0 && <path className="lit" d={z.map((q) => q.under).join('')} />}
+      {z.length > 0 && <path className="body line" d={g.outline} />}
+      {z.length > 0 && <path className="lit" d={z.map((q) => q.over).join('')} />}
     </svg>
   );
 }
@@ -116,7 +145,7 @@ const NAMES = { s1: 'A', s2: 'B' };
 export function SwitchNode({ id, data }) {
   return (
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
-      <Shape g={SWG} on={data.on} />
+      <Shape g={SWG} on={data.on} lit={data.lit} />
       <Stubs out={SWG.out} wired={data.wired} />
       <X g={SWG} label="Delete switch" data={data} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
@@ -131,7 +160,7 @@ export function GateNode({ id, data }) {
   const rejectPin = data.reject && +data.reject.handle.slice(2);
   return (
     <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
-      <Shape g={g} on={data.on} />
+      <Shape g={g} on={data.on} lit={data.lit} />
       <Stubs ins={g.in} out={g.out} wired={data.wired} />
       <X g={g} label={`Delete ${data.type} gate`} data={data} />
       {g.in.map((at, i) => (
@@ -148,7 +177,7 @@ export function GateNode({ id, data }) {
 export function LampNode({ id, data }) {
   return (
     <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={data.on ? 'Lamp on' : 'Lamp off'}>
-      <Shape g={LAMPG} on={data.on} />
+      <Shape g={LAMPG} on={data.on} lit={data.lit} />
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
       <X g={LAMPG} label="Delete lamp" data={data} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
