@@ -38,6 +38,7 @@
   --ink-2: #767676;        /* de-emphasis ink, 4.54:1 on paper (disabled palette item) */
   --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
   --grid: #e2e2e2;
+  --caption: #fbf5d2;      /* toast caption fill only: Blambot caption cream, muted toward paper */
   --font: 'Roboto Flex Variable', 'Roboto Flex Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-help: 'Roboto Flex Variable', 'Help Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-label: 'Roboto Flex Variable', 'Label Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -342,3 +343,17 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* Toasts (pit2 bub-e2): comic CAPTION boxes for system news with no speaker (Blambot grammar_caps.jpg, second style:
+   the stacked, centred "INSIDE THE EIGHTH DIMENSION..." box, drawn WITHOUT its red drop shadow). Thin ink rule
+   (0.14 cap), Italic caps on two centred lines, 0.65 cap padding (as measured). Fill = ONE new token, --caption: the
+   ref's cream, muted toward paper so it sits in the ink/paper palette (ink on it 17.6:1); --grid read as disabled grey
+   next to the white balloons. Stack: newest at the bottom, gap 20u = one canvas grid line. */
+.toasts { position: absolute; left: calc(40 * var(--u)); bottom: calc(20 * var(--u)); z-index: 7; pointer-events: none;
+  display: flex; flex-direction: column; align-items: flex-start; gap: calc(20 * var(--u)); }
+.toast { margin: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); animation: toast-in 160ms ease-out; }
+.toast svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.toast .box { fill: var(--caption); stroke: var(--ink); stroke-width: 1.7; }
+.toast path { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(calc(8 * var(--u))); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
