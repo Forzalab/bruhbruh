@@ -245,7 +245,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* T4-tt pin glow: a soft grey halo (ink at low alpha), never orange (orange = logic 1). Shown while the pointer is
    anywhere in the pin's hit zone, while a wire drag hovers it, and on the picked (keyboard) pin. */
 .react-flow__handle.port:hover, .react-flow__handle.port.connectingto, .react-flow__handle.port.picked {
-  outline: none; box-shadow: 0 0 0 5px rgb(17 17 17 / 0.10), 0 0 12px 8px rgb(17 17 17 / 0.14); }
+  outline: none; box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--ink-2); } /* variant ring: paper gap + 2px grey ring */
 .react-flow__handle.port.picked { background: transparent; }
 .react-flow__handle.port.picked:focus-visible { outline-offset: 4px; }
 

@@ -72,7 +72,6 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
       <div className="tt-empty" role="img" aria-label="Empty: add a switch and a lamp">
-        <svg aria-hidden="true" preserveAspectRatio="none" viewBox="0 0 100 100"><line x1="0" y1="0" x2="100" y2="100" /><line x1="100" y1="0" x2="0" y2="100" /></svg>
         <p className="tag" aria-hidden="true">[x]</p>
       </div>
     </aside>
