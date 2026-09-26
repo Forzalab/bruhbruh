@@ -26,7 +26,7 @@ export function switchGeom() {
   // True inset of a square: every edge moved inward by INSET, corners stay mitred.
   const d = INSET;
   const inset = `M${x0 + d} ${y0 + d}H${x1 - d}V${y1 - d}H${x0 + d}Z`;
-  return { w: x1 + PAD, h: y1 + PAD, outline, inset, out: [x1, cy] };
+  return { w: x1 + PAD, h: y1 + PAD, outline, inset, out: [x1, cy], cy: [x0 + s / 2, cy] };
 }
 
 /* ---------- Inversion bubble (IEEE Std 91 negation): a ring that IS the output ---------- */
@@ -141,5 +141,5 @@ export function lampGeom() {
   const outline = `M${f(kx)} ${f(cy + KNOB)}${k.arc}A${R} ${R} 0 1 1 ${f(kx)} ${f(cy + KNOB)}Z`;
   const r = R - INSET;
   const inset = `M${cx - r} ${cy}A${r} ${r} 0 1 1 ${cx + r} ${cy}A${r} ${r} 0 1 1 ${cx - r} ${cy}Z`;
-  return { w: cx + R + PAD, h: cy + R + PAD, outline, inset, in: [kx, cy] };
+  return { w: cx + R + PAD, h: cy + R + PAD, outline, inset, in: [kx, cy], cy: [cx, cy] };
 }

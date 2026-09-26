@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { evaluate } from './sim.js';
+import Tag, { VIA } from './Tag.jsx';
 
-// Truth table built from the circuit (Kerney req. 2). Inputs = switches ordered top-to-bottom on the canvas (then
-// left-to-right), outputs = lamps in the same order. 2^n rows, MSB = the top switch. Rows are computed once per circuit
-// SHAPE (wires, parts, order), not per toggle; only a window of rows is rendered, so 13 switches (8,192 rows) stay cheap.
+// Truth table built from the circuit (Kerney req. 2). Columns = switches A, B, C... then lamps 1, 2... in NAME order
+// (names are stable per part, so dragging a part never re-letters a column). 2^n rows, MSB = A. Rows are computed once
+// per circuit SHAPE, not per toggle; only a window of rows is rendered, so 13 switches (8,192 rows) stay cheap.
 // The live row = the switches' current values. Clicking a row sets the switches to it.
-const letter = (i) => String.fromCharCode(65 + i);
-
-export default function Truth({ circuit, view, fig, setSwitches }) {
-  const byPos = (kind) => view.filter((n) => circuit.nodes[n.id]?.kind === kind)
-    .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x).map((n) => n.id);
-  const ins = byPos('S'), outs = byPos('L');
+// T3: the header row lives OUTSIDE the scroller (thead and tbody are separate blocks), so no row can ever slide under it;
+// the scroller is exactly N whole rows tall and every scroll comes to rest on a whole-row boundary.
+export default function Truth({ circuit, names, fig, setSwitches }) {
+  const byName = (kind) => Object.values(circuit.nodes).filter((n) => n.kind === kind).map((n) => n.id)
+    .sort((a, b) => names[a].localeCompare(names[b], 'en', { numeric: true }));
+  const ins = byName('S'), outs = byName('L');
   const shape = JSON.stringify([ins, outs, circuit.wires, Object.values(circuit.nodes).map((n) => [n.id, n.kind, n.type])]);
   const rows = useMemo(() => {
     const n = ins.length, all = [];
@@ -25,50 +26,53 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
   }, [shape]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const live = ins.reduce((acc, id) => acc * 2 + (circuit.nodes[id].value ? 1 : 0), 0);
-  const heads = [...ins.map((_, i) => letter(i)), ...outs.map((_, i) => (outs.length === 1 ? 'OUT' : `Q${i + 1}`))];
-  const classic = ins.length === 2 && outs.length === 1; // the fitted A / B / OUT header glyphs apply only here
-  const digits = Math.max(2, String(rows.length).length);
+  const cols = ins.length + outs.length;
+  // "via" line under an output head: the name of the part that drives that lamp (gate codename or switch letter).
+  const via = (id) => { const w = Object.values(circuit.wires).find((x) => x.target === id); return w ? names[w.source] : ''; };
 
-  // Windowing: fixed row height measured from the first rendered row.
+  // Windowing: fixed row height, read from CSS (--rh is a whole px, so scrollTop = k * rowH is exact).
   const box = useRef(null);
-  const [rowH, setRowH] = useState(40), [top, setTop] = useState(0), [boxH, setBoxH] = useState(400);
+  const [rowH, setRowH] = useState(60), [top, setTop] = useState(0), [boxH, setBoxH] = useState(300);
   useEffect(() => {
     const el = box.current; if (!el) return;
-    const tr = el.querySelector('tbody tr:not(.pad)'); if (tr) setRowH(tr.getBoundingClientRect().height || 40);
+    const tr = el.querySelector('tr:not(.pad)'); if (tr) setRowH(tr.getBoundingClientRect().height || 60);
     setBoxH(el.clientHeight);
   });
   const first = Math.max(0, Math.floor(top / rowH) - 2), last = Math.min(rows.length, first + Math.ceil(boxH / rowH) + 5);
-  // Keep the live row in view when the switches change.
+  // Keep the live row in view when the switches change (header is outside the scroller: no offset needed).
   useEffect(() => {
     const el = box.current; if (!el) return;
-    const head = el.querySelector('thead')?.getBoundingClientRect().height || 0;
-    el.style.scrollPaddingTop = `${head}px`; // manual scrolling snaps rows under the sticky header, never half a row
-    const y = live * rowH, fit = Math.floor((el.clientHeight - head) / rowH); // whole rows that fit
-    const firstShown = Math.round(el.scrollTop / rowH);
-    if (live < firstShown) el.scrollTop = y;
-    else if (live >= firstShown + fit) el.scrollTop = (live - fit + 1) * rowH; // always a whole-row boundary
+    const fit = Math.round(el.clientHeight / rowH), firstShown = Math.round(el.scrollTop / rowH);
+    if (live < firstShown) el.scrollTop = live * rowH;
+    else if (live >= firstShown + fit) el.scrollTop = (live - fit + 1) * rowH;
   }, [live, rowH]);
+  // Whole-row rest: when a scroll ends (wheel, drag, keys, arrows), round to the nearest row. No animation.
+  const settle = useRef(0);
+  const onScroll = (e) => {
+    const el = e.currentTarget; setTop(el.scrollTop);
+    clearTimeout(settle.current);
+    settle.current = setTimeout(() => { const k = Math.round(el.scrollTop / rowH) * rowH; if (Math.abs(k - el.scrollTop) > 0.5) el.scrollTop = k; }, 120);
+  };
 
-  const cls = (h) => ({ A: 'hA', B: 'hB' })[h];
+  const head = (id, i) => (
+    <th key={id} scope="col" role="columnheader" aria-label={i < ins.length ? `Switch ${names[id]}` : `Lamp ${names[id]}`}>
+      <Tag text={names[id]} className="th-tag" />
+      {VIA && i >= ins.length && <span className="via" aria-hidden="true">{via(id)}</span>}
+    </th>
+  );
   return (
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
-      <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
-        <table>
-          <thead><tr>
-            <th scope="col"><span className="hN">#</span></th>
-            {heads.map((h) => h === 'OUT' && classic
-              ? <th key={h} scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th>
-              : <th key={h} scope="col"><span className={classic ? cls(h) : undefined}>{h}</span></th>)}
-          </tr></thead>
-          <tbody>
+      <div className={`tt ${VIA ? 'has-via' : ''}`} style={{ '--cols': cols }}>
+        <table role="table">
+          <thead role="rowgroup"><tr role="row">{[...ins, ...outs].map(head)}</tr></thead>
+          <tbody role="rowgroup" ref={box} onScroll={onScroll} tabIndex={0} aria-label="Rows">
             {first > 0 && <tr className="pad" style={{ height: first * rowH }} aria-hidden="true" />}
             {rows.slice(first, last).map((row, k) => {
               const i = first + k;
               return (
-                <tr key={i} className={i === live ? 'live' : ''} onClick={() => setSwitches(ins, row.slice(0, ins.length))}>
-                  <td>{fig(String(i + 1).padStart(digits, '0'))}</td>
-                  {row.map((b, j) => <td key={j}>{fig(b)}</td>)}
+                <tr key={i} role="row" className={i === live ? 'live' : ''} onClick={() => setSwitches(ins, row.slice(0, ins.length))}>
+                  {row.map((b, j) => <td key={j} role="cell">{fig(b)}</td>)}
                 </tr>
               );
             })}

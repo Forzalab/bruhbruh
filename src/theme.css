@@ -199,6 +199,9 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 - 6.3 * var(--u)); top: calc(50% - 65.5 * var(--u));
   width: calc(210.4 * var(--u)); height: calc(136.8 * var(--u)); pointer-events: none; }
 .pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pal-hint.h2 { top: calc(50% - 98.5 * var(--u)); } /* T3 H2 "aim": same balloon, lifted 33u so the tail tip meets the arrow line */
+.pal-hint.h1 { top: calc(50% - 50.5 * var(--u)); width: calc(225.2 * var(--u)); height: calc(101 * var(--u)); } /* T3 H1 "level" */
+.pal-hint.h1 .lettering { left: calc(133.4 * var(--u)); top: calc(50.5 * var(--u)); }
 .pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 3.6; stroke-linejoin: round; }
 .pal-hint .lettering { position: absolute; left: calc(105.2 * var(--u)); top: calc(50.5 * var(--u)); inset-block-end: auto; inset-inline-end: auto;
   width: calc(136 * var(--u)); height: auto; transform: translate(-50%, -50%); overflow: visible; } /* ref: text ~75% of the balloon width; scales with the balloon */
@@ -268,29 +271,46 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }
 .truth .label { margin: 0 0 0 calc(4 * var(--u)); font: 760 max(calc(43.7 * var(--u)), calc(43.7 * var(--f)))/0.68650 var(--font-label); font-stretch: 88%; text-transform: uppercase; letter-spacing: 0; word-spacing: calc(-1 * var(--u)); }
-.truth table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: calc(32 * var(--u)); }
-.truth th { font: 700 max(calc(32.4 * var(--u)), calc(32.4 * var(--f)))/0.70988 var(--font); font-stretch: 100%; padding: 0 0 0.52469em; text-align: center; border-bottom: var(--rule) solid var(--ink); }
-.truth td { font: 760 max(calc(35.8 * var(--u)), calc(35.8 * var(--f)))/1 var(--font); font-stretch: 105%; height: 1.89944em; padding: 0; text-align: center; border-bottom: var(--hair) solid var(--ink); font-variant-numeric: tabular-nums; }
-.truth th:first-child, .truth td:first-child { text-align: left; padding-left: calc(8 * var(--u)); }
-/* Column widths set so column centres land on ref3's (A 1129, B 1248, OUT 1366 at 1440 wide). */
-.truth .classic th:nth-child(1) { width: 22.25%; } .truth .classic th:nth-child(2) { width: 23.62%; }
-.truth .classic th:nth-child(3) { width: 30.73%; } .truth .classic th:nth-child(4) { width: 23.40%; }
-/* Rows scroll inside the table box under a sticky header; a click on a row sets the switches. */
-.truth .tt { max-height: calc(360 * var(--u)); overflow-y: auto; scrollbar-width: thin; margin-top: calc(32 * var(--u)); }
-.truth .tt table { margin-top: 0; }
-.truth thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; border-bottom: 0; box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); } /* sticky cells drop collapsed borders: draw the rule as a shadow */
-.truth tbody tr:not(.pad) { cursor: pointer; scroll-snap-align: start; }
-.truth .tt { scroll-snap-type: y proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */
+/* T3 truth table. --tu = the table unit (layout unit, floored for zoom like the type). --rh / --hh are WHOLE px, so a
+   scroll offset of k rows is exact and no sliver of a neighbour row can show. Header = its own block outside the
+   scroller (cannot be overlapped); scroller = exactly --vis whole rows; columns = equal fr tracks (never wider than the
+   box, so no horizontal scroll can exist); type shrinks only when a column gets narrower than the glyphs. */
+.truth { --tu: max(var(--u), var(--f)); --rh: max(44px, round(nearest, calc(60 * var(--tu)), 1px)); /* row = click target: never under 44px (WCAG 2.5.5 / HIG) */ --hh: round(nearest, calc(60 * var(--tu)), 1px); --vis: 5; }
+.truth .tt { margin-top: calc(32 * var(--u)); --tw: calc(427 * var(--u)); } /* 437u box - 10u scrollbar gutter */
+.truth .tt.has-via { --hh: round(nearest, calc(80 * var(--tu)), 1px); }
+.truth table { display: block; width: 100%; border-collapse: separate; border-spacing: 0; }
+.truth thead, .truth tbody { display: block; scrollbar-gutter: stable; scrollbar-width: thin; } /* same gutter width on both, or header columns drift left */
+.truth thead { overflow: hidden; border-bottom: var(--rule) solid var(--ink); }
+.truth tbody { overflow: hidden auto; max-height: calc(var(--vis) * var(--rh)); scrollbar-width: thin; outline-offset: 2px; }
+.truth tr { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+.truth thead tr { height: var(--hh); }
+.truth tbody tr:not(.pad) { height: var(--rh); cursor: pointer; }
+.truth tbody tr.pad { display: block; }
+.truth th, .truth td { display: grid; place-items: center; min-width: 0; padding: 0; overflow: hidden; }
+/* column width = --tw / cols; type never wider than its column */
+.truth th { --cw: calc(var(--tw) / var(--cols)); font: 700 min(calc(32.4 * var(--tu)), calc(var(--cw) * 0.62))/1 var(--font); align-content: end; padding-bottom: calc(10 * var(--tu)); }
+.truth td { font: 760 min(calc(35.8 * var(--tu)), calc(var(--tw) / var(--cols) * 0.9))/1 var(--font); font-stretch: 105%; border-bottom: var(--hair) solid var(--ink); font-variant-numeric: tabular-nums; }
 .truth tbody tr:not(.live):not(.pad):hover td { background: var(--grid, #f2f2f2); }
-/* Per-glyph fit (Pillow vs ref3 at cap 23 / 26). Roboto Flex has no 'tnum' feature: its default figures are
-   already tabular (GSUB lists only liga/locl/pnum/rvrn), so ink width is fitted per figure with wdth and XTRA
-   (XTRA = counter/white width, Google Fonts Roboto Flex axis docs). */
-.truth th .hN { font-stretch: 55%; } .truth th .hA { font-stretch: 115%; } .truth th .hB { font-stretch: 130%; }
-.truth th .hO { letter-spacing: -0.061728em; } .truth th .hU { font-stretch: 115%; letter-spacing: -0.030864em; }
+.truth .via { font: 700 calc(14 * var(--tu))/1 var(--font); letter-spacing: 0.06em; color: var(--ink-2); margin-top: calc(6 * var(--tu)); }
+/* Per-glyph fit (Pillow vs ref3). Roboto Flex figures are tabular by default; ink width fitted per figure. */
 .truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
 .truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
 .truth tr.live td { background: var(--one); color: var(--paper); }
 .truth tr:not(.live) td { font-weight: 560; } /* 1c: non-live rows one weight step down, same ink */
+
+/* ---- T3 part tags: same element on the part and in the table head ---- */
+.tag { display: inline-grid; place-items: center; box-sizing: border-box; font-weight: 760; font-stretch: 100%; line-height: 1; color: var(--ink); white-space: nowrap; user-select: none; }
+.tag-nyc { width: 1.4em; height: 1.4em; border-radius: 50%; background: var(--ink); color: var(--paper); font-weight: 700; }
+.tag-nyc.wide { width: auto; min-width: 1.4em; padding: 0 0.3em; border-radius: 0.7em; }
+.tag-swiss { font-weight: 760; }
+.tag-swe { height: 1.45em; min-width: 1.45em; padding: 0 0.3em; border: var(--tag-line, 2px) solid var(--ink); border-radius: 0.32em; background: var(--paper); font-weight: 700; }
+.tag-swe.lit { background: var(--one); }
+.truth .tag { --tag-line: var(--rule); }
+.truth th .tag-nyc { font-size: min(calc(25 * var(--tu)), calc(var(--cw) * 0.5)); } .truth th .tag-swe { font-size: min(calc(24 * var(--tu)), calc(var(--cw) * 0.5)); }
+/* on the canvas (flow px; React Flow zoom scales them with the part) */
+.ptag { position: absolute; transform: translate(-50%, -50%); pointer-events: none; z-index: 2; }
+.ptag .tag-nyc { font-size: 22px; } .ptag .tag-swiss { font-size: 34px; } .ptag .tag-swe { font-size: 19px; }
+.pname { position: absolute; transform: translateX(-50%); pointer-events: none; margin: 0; font: 700 14px/1 var(--font); letter-spacing: 0.06em; color: var(--ink-2); white-space: nowrap; user-select: none; }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
@@ -311,7 +331,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .rownum .f1 { font-variation-settings: 'opsz' 18.3, 'XTRA' 603; }
 .lockup { font-variation-settings: 'opsz' 57.9; }
 .truth .label { font-variation-settings: 'opsz' 43.7; }
-.truth th { font-variation-settings: 'opsz' 32.4; }
 .truth td { font-variation-settings: 'opsz' 35.8; }
 .truth td .f1 { font-variation-settings: 'opsz' 35.8, 'XTRA' 520; }
 
@@ -336,7 +355,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   .c-margin.r2 { grid-area: 3 / 1 / 5 / 2; }
   .canvas { grid-area: 3 / 2 / 4 / 4; border-right: 0; }
   .truth { grid-area: 4 / 2 / 5 / 4; padding-block: 1.5rem; align-items: end; }
-  .truth .label, .truth table { width: calc(23.5rem - 40 * var(--u)); }
+  .truth .label, .truth .tt { width: calc(23.5rem - 40 * var(--u)); }
+  .truth .tt { --tw: calc(23.5rem - 50 * var(--u)); }
   .c-margin.r3 { grid-area: 5 / 1; } .status { grid-area: 5 / 2; } .help { grid-area: 5 / 3; }
   .wordmark { left: calc(var(--gut) + 2 * var(--u)); }
 }

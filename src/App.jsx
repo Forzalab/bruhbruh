@@ -5,6 +5,7 @@ import { nodeTypes, pinYs } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
+import { nameParts } from './Tag.jsx';
 
 const edgeTypes = { wire: Wire };
 
@@ -28,6 +29,31 @@ const VIEW = [
 ];
 
 let nextWire = 1, nextNode = 1;
+
+// T3 MOCKUP HARNESS ONLY (not for implementation): ?demo=3x2&live=4 loads img1's circuit (3 switches, 2 lamps).
+const Q = new URLSearchParams(location.search);
+if (Q.get('demo') === 'big') { // 13 switches + 3 lamps: horizontal-fit stress test
+  const n = 13; START.nodes = {}; START.wires = {}; VIEW.length = 0;
+  for (let i = 0; i < n; i++) { START.nodes['s' + i] = { id: 's' + i, kind: 'S', value: i % 3 === 0 }; VIEW.push({ id: 's' + i, type: 'S', position: { x: 20 + (i % 2) * 110, y: 10 + i * 34 }, data: {} }); }
+  START.nodes.g1 = { id: 'g1', kind: 'G', type: 'AND' }; VIEW.push({ id: 'g1', type: 'G', position: { x: 400, y: 180 }, data: {} });
+  START.wires = { a: { id: 'a', source: 's0', target: 'g1', pin: 0 }, b: { id: 'b', source: 's1', target: 'g1', pin: 1 } };
+  for (let i = 1; i <= 3; i++) { START.nodes['l' + i] = { id: 'l' + i, kind: 'L' }; VIEW.push({ id: 'l' + i, type: 'L', position: { x: 700, y: i * 120 - 100 }, data: {} }); }
+  START.wires.c = { id: 'c', source: 'g1', target: 'l1', pin: 0 };
+}
+if (Q.get('demo') === '3x2') {
+  const live = +(Q.get('live') ?? 0);
+  START.nodes = {
+    s1: { id: 's1', kind: 'S', value: !!(live & 4) }, s2: { id: 's2', kind: 'S', value: !!(live & 2) }, s3: { id: 's3', kind: 'S', value: !!(live & 1) },
+    g1: { id: 'g1', kind: 'G', type: 'AND' }, g2: { id: 'g2', kind: 'G', type: 'AND' }, l1: { id: 'l1', kind: 'L' }, l2: { id: 'l2', kind: 'L' } };
+  START.wires = { w1: { id: 'w1', source: 's1', target: 'g1', pin: 0 }, w2: { id: 'w2', source: 's2', target: 'g1', pin: 1 },
+    w3: { id: 'w3', source: 's2', target: 'g2', pin: 0 }, w4: { id: 'w4', source: 's3', target: 'g2', pin: 1 },
+    w5: { id: 'w5', source: 'g1', target: 'l1', pin: 0 }, w6: { id: 'w6', source: 'g2', target: 'l2', pin: 0 } };
+  VIEW.length = 0;
+  VIEW.push({ id: 's1', type: 'S', position: { x: 100, y: 50 }, data: {} }, { id: 's2', type: 'S', position: { x: 100, y: 190 }, data: {} },
+    { id: 's3', type: 'S', position: { x: 100, y: 332 }, data: {} }, { id: 'g1', type: 'G', position: { x: 400, y: 60 }, data: {} },
+    { id: 'g2', type: 'G', position: { x: 400, y: 300 }, data: {} }, { id: 'l1', type: 'L', position: { x: 680, y: 57 }, data: {} },
+    { id: 'l2', type: 'L', position: { x: 680, y: 297 }, data: {} });
+}
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
 // Glyph spans are aria-hidden; one visually hidden run carries the whole word ("01", not "0 1").
@@ -71,6 +97,7 @@ export default function App() {
 
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
+  const names = useMemo(() => nameParts(circuit.nodes), [circuit.nodes]);
 
   const toggle = (id) =>
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { ...c.nodes[id], value: !c.nodes[id].value } } }));
@@ -78,7 +105,7 @@ export default function App() {
   const wires = Object.values(circuit.wires);
   const nodes = view.map((n) => ({
     ...n,
-    data: { ...circuit.nodes[n.id], on: values[n.id],
+    data: { ...circuit.nodes[n.id], on: values[n.id], name: names[n.id],
       wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
       reject: reject && reject.node === n.id ? reject : null,
       pending, onPort: (handle) => onPort(n.id, handle), onRemove: () => removeNodes([n.id]) },
@@ -270,7 +297,7 @@ export default function App() {
         </ReactFlow>
         <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
       </main>
-      <Truth circuit={circuit} view={view} fig={fig} setSwitches={setSwitches} />
+      <Truth circuit={circuit} names={names} fig={fig} setSwitches={setSwitches} />
 
       <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">

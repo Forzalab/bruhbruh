@@ -11,6 +11,7 @@ export const GROUPS = [
 ];
 export const DND = 'application/x-gob-node';
 const HINT_KEY = 'gob.paletteHint';
+const HV = new URLSearchParams(location.search).get('hint') || ''; // T3 harness: '' (as is) | h1 (level) | h2 (aim)
 
 const seen = () => { try { return localStorage.getItem(HINT_KEY) === '1'; } catch { return false; } };
 const markSeen = () => { try { localStorage.setItem(HINT_KEY, '1'); } catch { /* private mode: hint may show again */ } };
@@ -83,12 +84,13 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
         <svg viewBox="0 0 24 40" aria-hidden="true"><path d={open ? 'M16 8L6 20L16 32' : 'M8 8L18 20L8 32'} /></svg>
       </button>
       {hint && !open && !tucked && (
-        <p className="pal-hint" role="status">
+        <p className={`pal-hint ${HV}`} role="status">
+          {HV === 'h1' ? <svg viewBox="0 0 214 96" aria-hidden="true"><path d="M48 61.8A84 40 0 1 0 48 34.2L6 48Z" /></svg> :
           <svg viewBox="0 0 200 130" aria-hidden="true">
             {/* one outline: a 2:1 ellipse (the ref balloon, 173x84) opened at its lower left into a short curved tail
                 whose tip (6, 96) touches the tab's right edge */}
             <path d="M55.5 81.9A84 40 0 1 0 30.4 70.4Q14 90 6 96Q34 90 55.5 81.9Z" />
-          </svg>
+          </svg>}
           <span className="sr">Gates are in here.</span>
           <svg className="lettering" viewBox={HINT_VIEWBOX} aria-hidden="true"><path d={HINT_EMPH} /><path className="rest" d={HINT_REST} /></svg>
         </p>

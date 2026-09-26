@@ -1,5 +1,6 @@
 import { Handle as RFHandle, Position } from '@xyflow/react';
 import Remove from '../Remove.jsx';
+import Tag, { LOOK } from '../Tag.jsx';
 import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
 
 const SWG = switchGeom(), LAMPG = lampGeom();
@@ -111,7 +112,13 @@ export function pinYs(kind, type) {
   const g = GATE_GEOM[type]; return { ins: g.in.map(([, y]) => y), out: g.out[1] };
 }
 
-const NAMES = { s1: 'A', s2: 'B' };
+// T3: table-link tag. nyc + swiss sit INSIDE the part at its centre; swe hangs a plate 8px below the outline.
+function PartTag({ g, at, text, lit }) {
+  if (!text) return null;
+  const x = at[0];
+  const style = LOOK === 'swe' ? { left: x, top: g.h - PAD + 3 + 8, transform: 'translateX(-50%)' } : { left: at[0], top: at[1] };
+  return <span className="ptag" style={style}><Tag text={text} lit={LOOK === 'swe' && lit} /></span>;
+}
 
 export function SwitchNode({ id, data }) {
   return (
@@ -119,8 +126,9 @@ export function SwitchNode({ id, data }) {
       <Shape g={SWG} on={data.on} />
       <Stubs out={SWG.out} wired={data.wired} />
       <X g={SWG} label="Delete switch" data={data} />
+      <PartTag g={SWG} at={SWG.cy} text={data.name} lit={!!data.on} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
-        aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
+        aria-label={`Switch ${data.name ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
     </div>
   );
@@ -134,6 +142,7 @@ export function GateNode({ id, data }) {
       <Shape g={g} on={data.on} />
       <Stubs ins={g.in} out={g.out} wired={data.wired} />
       <X g={g} label={`Delete ${data.type} gate`} data={data} />
+      <p className="pname" style={{ left: mass(g)[0], top: g.h - PAD + 3 + 8 }} aria-hidden="true">{data.name}</p>
       {g.in.map((at, i) => (
         <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
       ))}
@@ -151,6 +160,7 @@ export function LampNode({ id, data }) {
       <Shape g={LAMPG} on={data.on} />
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
       <X g={LAMPG} label="Delete lamp" data={data} />
+      <PartTag g={LAMPG} at={LAMPG.cy} text={data.name} lit={!!data.on} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
       {data.reject && <p className="reject" role="alert" style={{ top: LAMPG.in[1] }}>{data.reject.text}</p>}
     </div>
