@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { evaluate } from './sim.js';
 import { ScrollCues } from './Palette.jsx';
-import { byPos as order, partNames } from './names.js';
+import { partNames } from './names.js';
 
 // Truth table built from the circuit (Kerney req. 2). Inputs = switches ordered top-to-bottom on the canvas (then
 // left-to-right), outputs = lamps in the same order. 2^n rows, MSB = the top switch. Rows are computed once per circuit
@@ -9,7 +9,8 @@ import { byPos as order, partNames } from './names.js';
 // The live row = the switches' current values. Clicking a row sets the switches to it.
 
 export default function Truth({ circuit, view, fig, setSwitches }) {
-  const byPos = (kind) => order(view, circuit, kind);
+  const byPos = (kind) => view.filter((n) => circuit.nodes[n.id]?.kind === kind)
+    .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x).map((n) => n.id);
   const ins = byPos('S'), outs = byPos('L');
   const shape = JSON.stringify([ins, outs, circuit.wires, Object.values(circuit.nodes).map((n) => [n.id, n.kind, n.type])]);
   const rows = useMemo(() => {
