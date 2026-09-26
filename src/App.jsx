@@ -51,7 +51,8 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const toast = (phrase) => {
     const id = nextToast++;
-    setToasts((l) => [...l, { id, phrase }]);
+    const topic = (p) => p.replace(/(On|Off)$/, '');
+    setToasts((l) => [...l.filter((t) => topic(t.phrase) !== topic(phrase)), { id, phrase }]);
     setTimeout(() => setToasts((l) => l.filter((t) => t.id !== id)), TOAST_MS);
   };
   const [status, setStatus] = useState({ phrase: null, text: '' }); // phrase = a key of sayLettering.js
