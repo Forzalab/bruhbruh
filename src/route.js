@@ -72,7 +72,7 @@ export function stepPoints(s, t) {
 
 // Capped router. Returns points with <= MAX_BENDS corners that clear all boxes, or null (caller falls back).
 // ends = { src, dst } boxes of the wire's own nodes; others = every other node box.
-export function route(s, t, { src, dst, others = [] } = {}, maxBends = MAX_BENDS) {
+export function route(s, t, { src, dst, others = [], prefer } = {}, maxBends = MAX_BENDS) {
   // Pins can sit inside their own box (knobs, padding): trim the source box at the pin's x, and the target box too.
   const own = [src && { ...src, w: Math.min(src.w, s[0] - src.x) }, dst && { ...dst, x: Math.max(dst.x, t[0]), w: dst.x + dst.w - Math.max(dst.x, t[0]) }];
   const ownObs = own.filter((b) => b && b.w > 0);
@@ -80,6 +80,7 @@ export function route(s, t, { src, dst, others = [] } = {}, maxBends = MAX_BENDS
   const xs1 = new Set([s[0] + STUB]), xs2 = new Set([t[0] - STUB]), ys = new Set([s[1], t[1]]);
   for (const b of all) { xs1.add(b.x + b.w); xs2.add(b.x); ys.add(b.y); ys.add(b.y + b.h); }
   const mids = new Set([(s[0] + t[0]) / 2, ...xs1, ...xs2]);
+  if (prefer != null) { mids.add(prefer); xs1.add(prefer); }
   const cands = [];
   if (s[1] === t[1] && t[0] >= s[0]) cands.push([s, t]);
   // 2 bends: s -> (x, s.y) -> (x, t.y) -> t
@@ -90,7 +91,8 @@ export function route(s, t, { src, dst, others = [] } = {}, maxBends = MAX_BENDS
   let best = null, bestCost = Infinity;
   for (const p of cands) {
     const n = bends(p); if (n > maxBends || !legal(p, { src, dst, others }, ownObs)) continue;
-    const cost = length(p) + 40 * n; // a corner costs two grid cells of length
+    let cost = length(p) + 40 * n; // a corner costs two grid cells of length
+    if (prefer != null && p.length > 2 && p[1][0] === prefer) cost -= 80; // fan-out: share the sibling's trunk
     if (cost < bestCost) { best = p; bestCost = cost; }
   }
   return best;

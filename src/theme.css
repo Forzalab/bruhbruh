@@ -76,7 +76,9 @@ html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none
 input, textarea, [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
 /* #root is the page container (queried below for the zoom reflow) and the only scroller. */
 #root { display: grid; place-items: center; background: var(--paper); container: page / size; overflow: hidden auto; }
-.frame { container-type: inline-size; width: min(100vw, 100vh * 16 / 9); height: min(100vh, 100vw * 9 / 16); }
+/* Taller than 16:9 (1024x768, 1440x1080): no letterbox. The frame keeps the full height and row 02 (canvas + truth
+   table) takes the spare height; rows 01/03 keep their 16:9 size (Tony, jn round). Wider than 16:9 still pillarboxes. */
+.frame { container-type: inline-size; width: min(100vw, 100vh * 16 / 9); height: 100vh; }
 body { background: var(--paper); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased;
   font-optical-sizing: auto; font-kerning: normal; font-feature-settings: 'kern' 1; }
 /* Composited, non-opaque layer => greyscale text AA in Chromium: no coloured LCD fringes on ink type (colour discipline). */
@@ -87,7 +89,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   position: relative; height: 100%; overflow: hidden;
   display: grid;
   grid-template-columns: 53fr 906fr 477fr;
-  grid-template-rows: 260fr 480fr 60fr;
+  /* 01/03 = their share of a 16:9 frame's content box (810u minus the two outer rules); 02 takes the rest. */
+  grid-template-rows: calc((810 * var(--u) - 2 * var(--rule)) * 260 / 800) 1fr calc((810 * var(--u) - 2 * var(--rule)) * 60 / 800);
   border: var(--rule) solid var(--ink);
 }
 .cell { position: relative; min-width: 0; min-height: 0; border-right: var(--rule) solid var(--ink); border-bottom: var(--rule) solid var(--ink); }
@@ -427,3 +430,16 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .wipe-bubble .lettering { inset: auto; left: calc(132 * var(--bu)); top: calc(40 * var(--bu)); width: calc(174 * var(--bu)); height: auto; transform: translate(-50%, -50%); }
 .wipe-bubble .lettering path { fill: var(--ink); stroke: none; }
 .wipe-bubble .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; }
+
+/* Junctions (jn round, Tony's sketch). A: a shared same-net run doubles in weight (2 strokes) between its dots.
+   B: twin lines = a 3-stroke band with a 1-stroke paper core (two 3px lines, 3px apart). Dots = 9px at 3px wire.
+   Mixed nets on one run: one weight, alternating ink / orange dashes (both states show). Orange stays logic 1. */
+.jn path { fill: none; stroke-linecap: butt; }
+.jn .trunk { stroke: var(--ink); stroke-width: calc(var(--stroke) * 2); }
+.jn .twin { stroke: var(--ink); stroke-width: calc(var(--stroke) * 3); }
+.jn .twin-gap { stroke: var(--paper); stroke-width: var(--stroke); }
+.jn .mix0 { stroke: var(--ink); stroke-width: var(--stroke); }
+.jn .mix1 { stroke: var(--one); stroke-width: var(--stroke); stroke-dasharray: 10 10; }
+.jn .dot { fill: var(--ink); stroke: none; }
+.react-flow__edge.on .jn .trunk, .react-flow__edge.on .jn .twin, .react-flow__edge.on .jn .dot { stroke: var(--one); fill: var(--one); }
+.react-flow__edge.on .jn .trunk, .react-flow__edge.on .jn .twin { fill: none; }
