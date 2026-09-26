@@ -29,6 +29,9 @@ const VIEW = [
   { id: 'l1', type: 'L', position: { x: 736, y: 181 }, data: {} },
 ];
 
+// Dev-only test hook (stripped from the build): a harness may preset window.__GOB = { circuit, view }.
+const BOOT = import.meta.env.DEV ? window.__GOB : null;
+
 let nextWire = 1, nextNode = 1, nextToast = 1;
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
@@ -37,8 +40,8 @@ const fig = (v) => [<span key="t" className="sr">{String(v)}</span>,
   <span key="g" aria-hidden="true">{[...String(v)].map((c, k) => <span key={k} className={'f' + c}>{c}</span>)}</span>];
 
 export default function App() {
-  const [circuit, setCircuit] = useState(START);
-  const [view, setView, onViewChange] = useNodesState(VIEW);
+  const [circuit, setCircuit] = useState(BOOT?.circuit ?? START);
+  const [view, setView, onViewChange] = useNodesState(BOOT?.view ?? VIEW);
   const [showGrid, setShowGrid] = useState(false);
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire

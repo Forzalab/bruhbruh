@@ -49,15 +49,16 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
   }, [live, rowH]);
 
   const cls = (h) => ({ A: 'hA', B: 'hB' })[h];
+  const kind = (j) => (j < ins.length ? 'k-S' : 'k-L'); // column kind: switch (input) or lamp (output)
   return (
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
       <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
         <table>
           <thead><tr>
-            {heads.map((h) => h === 'OUT' && classic
-              ? <th key={h} scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th>
-              : <th key={h} scope="col"><span className={classic ? cls(h) : undefined}>{h}</span></th>)}
+            {heads.map((h, j) => h === 'OUT' && classic
+              ? <th key={h} className={kind(j)} scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th>
+              : <th key={h} className={kind(j)} scope="col"><span className={classic ? cls(h) : undefined}>{h}</span></th>)}
           </tr></thead>
           <tbody>
             {first > 0 && <tr className="pad" style={{ height: first * rowH }} aria-hidden="true" />}
@@ -65,7 +66,7 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
               const i = first + k;
               return (
                 <tr key={i} className={i === live ? 'live' : ''} onClick={() => setSwitches(ins, row.slice(0, ins.length))}>
-                  {row.map((b, j) => <td key={j}>{fig(b)}</td>)}
+                  {row.map((b, j) => <td key={j} className={kind(j)}>{fig(b)}</td>)}
                 </tr>
               );
             })}

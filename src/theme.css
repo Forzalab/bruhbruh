@@ -279,6 +279,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* Rows scroll inside the table box under a sticky header; a click on a row sets the switches. */
 .truth .tt { max-height: calc(360 * var(--u)); overflow-y: auto; scrollbar-width: thin; margin-top: calc(32 * var(--u)); }
 .truth .tt table { margin-top: 0; }
+.truth .tt:not(.classic) table { table-layout: auto; } /* matrix fix: 13 switches + lamps overflowed equal fixed columns; auto gives the Q / OUT heads their width */
+.truth .tt:not(.classic) tr:has(> th:nth-child(15)) th { font-stretch: 55%; } /* 15+ columns: heads take the 55% wdth already fitted for the old # glyph */
 .truth thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; border-bottom: 0; box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); } /* sticky cells drop collapsed borders: draw the rule as a shadow */
 .truth tbody tr:not(.pad) { cursor: pointer; scroll-snap-align: start; }
 .truth .tt { scroll-snap-type: y proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */
