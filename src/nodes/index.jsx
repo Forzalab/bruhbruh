@@ -74,28 +74,48 @@ export const MIDV = 'f2';
 const KI = KNOB + 5; // 2px past // knob ink tip from the pin centreline (the wire end lands inside it)
 const HALF = STROKE / 2; // half the outline/wire weight: the neck's half-width, so it butts the ink flush
 const DEEP = INSET + HALF; // reaches half a stroke into the lit inset contour so the joint has no seam
-const neck = (x0, x1, y) => `M${Math.min(x0, x1)} ${y - HALF}H${Math.max(x0, x1)}V${y + HALF}H${Math.min(x0, x1)}Z`;
+const band = (x0, x1, y, h) => `M${Math.min(x0, x1)} ${y - h}H${Math.max(x0, x1)}V${y + h}H${Math.min(x0, x1)}Z`;
+const neck = (x0, x1, y) => band(x0, x1, y, HALF);
+// Lit pins (Tony's bulb sketch, jn round): a pin at 1 fills its knob solid orange and the wire flows into it as ONE
+// tapered shape: the 3px wire widens (tangent hull of two circles) into a disk that fills the knob inside its ink ring.
+// The knob ink stays, opened only a wire's width where the orange passes (the neck). Same for inversion bubbles:
+// the bubble's disk fills and the wire tapers out of it. When the body behind the pin is lit, the disk also joins
+// the body's inset fill (one orange piece, as before). Unlit pins are unchanged.
+const BULB = KNOB - HALF - 2; // disk radius: 2px of paper inside the knob ink ring
+function bulb(cx, cy, r0, tx, r1) { // hull of circle (cx,cy,r0) and circle (tx,cy,r1), sampled as a polygon
+  const d = Math.abs(tx - cx), u = Math.sign(tx - cx), phi = Math.acos(Math.min(1, (r0 - r1) / d)), pts = [];
+  const arc = (x, r, a0, a1) => { for (let i = 0; i <= 12; i++) { const a = a0 + (a1 - a0) * i / 12; pts.push([x + u * r * Math.cos(a), cy + r * Math.sin(a)]); } };
+  arc(tx, r1, -phi, phi);                 // round tip, around the far side of the small circle
+  arc(cx, r0, phi, 2 * Math.PI - phi);    // around the back of the disk
+  return 'M' + pts.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L') + 'Z';
+}
 function bleeds(g, lit, bodyLit, on) {
-  if (!lit) return '';
-  let d = '';
+  if (!lit) return { fill: '', neck: '' };
+  let fill = '', nk = '';
   const ins = Array.isArray(g.in?.[0]) ? g.in : g.in ? [g.in] : [];
-  // Unlit body on a multi-input gate (Tony's sketch): the lit input fills ITS half of the inset (see Shape), so the
-  // neck still runs DEEP and joins that half-wedge.
   const multi = ins.length > 1;
-  // XOR: its knob tips touch the extra back curve. XORV picks how the orange meets it (Tony decides):
-  // e1 = the extra curve opens at the neck, e2 = the curve stays ink over the neck (wire hops it), e3 = no neck.
-  const xo = g.extraCurve ? { e1: 6, e2: 0, e3: null }[XORV] : 0;
-  ins.forEach(([x, y], i) => { if (lit.in?.[i] && xo !== null) d += neck(x - KI - xo, x + (bodyLit || multi ? DEEP : HALF), y); });
+  // XOR: its knob tips touch the extra back curve; the extra curve stays ink over the neck (e2, the wire hops it).
+  ins.forEach(([x, y], i) => {
+    if (!lit.in?.[i]) return;
+    fill += bulb(x, y, BULB, x - KI, HALF);
+    if (bodyLit || multi) fill += band(x, x + DEEP, y, BULB);
+    nk += neck(x - KI, x - KNOB + 2 * HALF + 2, y);
+  });
   if (g.out && lit.out) {
     const [x, y] = g.out;
-    d += g.bubble ? (on ? neck(x - BUB, x + 10, y) : '') : neck(x - DEEP, x + KI, y);
+    if (g.bubble) { if (on) { const cx = x - BUB; fill += bulb(cx, y, BUB - HALF - 2, x + 6, HALF); nk += neck(x - 2 * HALF - 2, x + 10, y); } }
+    else {
+      fill += bulb(x, y, BULB, x + KI, HALF);
+      if (bodyLit) fill += band(x - DEEP, x, y, BULB);
+      nk += neck(x + KNOB - 2 * HALF - 2, x + KI, y);
+    }
   }
-  return d;
+  return { fill, neck: nk };
 }
 
 function Shape({ g, on, idle, lit }) {
   const bodyLit = !idle && (g.bubble ? !on : on);
-  const z = idle ? '' : bleeds(g, lit, bodyLit, on);
+  const z = idle ? { fill: '', neck: '' } : bleeds(g, lit, bodyLit, on);
   // Half fills: body unlit, some inputs lit -> the inset clipped to the lit inputs' halves (split at the midline).
   const cid = useId();
   const halves = !idle && !bodyLit && lit && Array.isArray(g.in?.[0]) && g.in.length > 1
@@ -111,8 +131,11 @@ function Shape({ g, on, idle, lit }) {
         <clipPath id={cid}>{halves.map(([y0, y1], i) => <rect key={i} x={0} y={y0} width={g.w} height={y1 - y0} />)}</clipPath>
         <path className="lit" d={g.inset} clipPath={`url(#${cid})`} />
       </>}
-      {z && <path className="lit" d={z} />}
-      {g.extraCurve && XORV === 'e2' && z && <path className="body line" d={g.extraCurve} />}
+      {z.fill && z.fill.split('Z').filter(Boolean).map((d, i) => <path key={i} className="lit" d={d + 'Z'} />)}
+      {z.fill && <path className="body line" d={g.outline} />}
+      {z.fill && g.bubble && <path className="body line" d={g.bubble} />}
+      {z.neck && <path className="lit" d={z.neck} />}
+      {g.extraCurve && XORV === 'e2' && z.fill && <path className="body line" d={g.extraCurve} />}
       {halves.length === 1 && (() => {
         // Tony's sketch: the unlit half = a dotted outline of its empty wedge, and the unlit pin's stub dots into it.
         // Same dots as the free-pin stubs (.stubs line): --ink-2, 2px, 2 4, butt.

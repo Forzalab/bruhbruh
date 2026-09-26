@@ -3,7 +3,7 @@ import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/re
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs, portGeom } from './nodes/index.jsx';
 import { resolveZones } from './zones.js';
-import { route, bends } from './route.js';
+import { routeMetro as route, bends, NUDGE } from './route.js';
 import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
@@ -206,8 +206,9 @@ export default function App() {
   const settle = (_, node) => {
     const me = view.find((n) => n.id === node.id), from = dragFrom0.current; dragFrom0.current = null; if (!me || !rf) return;
     const base = from ? stuck(me.id, from) : [];
-    if (!worse(stuck(me.id, node.position), base)) return;
+    if (NUDGE === 'never' || !worse(stuck(me.id, node.position), base)) return;
     const p = free(node.position, me.type, me.id, (q) => !worse(stuck(me.id, q), base));
+    if (import.meta.env.DEV) (window.__nudges ??= []).push(Math.hypot(p.x - node.position.x, p.y - node.position.y)); // harness probe
     setView((v) => v.map((n) => (n.id === me.id ? { ...n, position: p } : n)));
   };
   const addNode = (it, at) => {
