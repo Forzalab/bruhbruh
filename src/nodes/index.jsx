@@ -59,7 +59,7 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // unlit (e.g. one input of an AND at 1), the neck stops at the outline's inner ink edge: the wire's 1 enters, nothing to join.
 export const XORV = 'e2';
 // Midline where the dotted empty half meets the orange half: f1 = orange dots, f2 = no midline, f3 = grey dots; f1/f3 sit 4px into the paper, off the orange edge.
-export const MIDV = 'f1';
+export const MIDV = 'f3';
 const KI = KNOB + 5; // 2px past // knob ink tip from the pin centreline (the wire end lands inside it)
 const DEEP = INSET + 3; // reaches 3px into the lit inset contour so the joint has no seam
 const neck = (x0, x1, y) => `M${Math.min(x0, x1)} ${y - 3}H${Math.max(x0, x1)}V${y + 3}H${Math.min(x0, x1)}Z`;
