@@ -213,7 +213,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .shape .line { fill: none; }
 .shape .lit { fill: var(--one); stroke: none; }
 .stubs { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.stubs line { stroke: var(--ink-2); stroke-width: 2; stroke-dasharray: 2 4; stroke-linecap: butt; }
+.stubs line, .shape .dots path, .shape .dots line { fill: none;  stroke: var(--ink-2); stroke-width: 2; stroke-dasharray: 2 4; stroke-linecap: butt; }
 /* Hovering a wire previews its deletion in the stubs' language: it turns dotted (a click removes it). */
 /* Delete X: square ink tile + white X (Tony: square, not round). Hidden until its node or wire is hovered (or it has keyboard focus). */
 .remove { width: 24px; height: 24px; margin: 0; padding: 0; border: 0; border-radius: 0; background: var(--ink); cursor: pointer;
