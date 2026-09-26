@@ -9,7 +9,7 @@ import Truth from './Truth.jsx';
 import Controls from './Controls.jsx';
 
 const HISTORY = 10; // linear undo stack depth (Tony)
-const BAR = new URLSearchParams(location.search).get('bar') || 'h1'; // T4 hybrids h1|h2|h3 (prototype switch)
+const BAR = new URLSearchParams(location.search).get('bar') || 'h3'; // T4 hybrids h1|h2|h3 (prototype switch)
 import Say from './Say.jsx';
 import Toasts, { TOAST_MS } from './Toasts.jsx';
 
