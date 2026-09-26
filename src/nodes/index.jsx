@@ -58,6 +58,8 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // ink wraps around the neck on both sides; everywhere else the outline stays ink. When the body behind a lit pin is
 // unlit (e.g. one input of an AND at 1), the neck stops at the outline's inner ink edge: the wire's 1 enters, nothing to join.
 export const XORV = 'e2';
+// Midline where the dotted empty half meets the orange half: f1 = orange dots, f2 = no midline, f3 = grey dots; f1/f3 sit 4px into the paper, off the orange edge.
+export const MIDV = 'f1';
 const KI = KNOB + 5; // 2px past // knob ink tip from the pin centreline (the wire end lands inside it)
 const DEEP = INSET + 3; // reaches 3px into the lit inset contour so the joint has no seam
 const neck = (x0, x1, y) => `M${Math.min(x0, x1)} ${y - 3}H${Math.max(x0, x1)}V${y + 3}H${Math.min(x0, x1)}Z`;
@@ -102,12 +104,13 @@ function Shape({ g, on, idle, lit }) {
       {halves.length === 1 && (() => {
         // Tony's sketch: the unlit half = a dotted outline of its empty wedge, and the unlit pin's stub dots into it.
         // Same dots as the free-pin stubs (.stubs line): --ink-2, 2px, 2 4, butt.
-        const j = halves[0][0] === 0 ? 1 : 0, [px, py] = g.in[j];
+        const j = halves[0][0] === 0 ? 1 : 0, [px, py] = g.in[j], off = MIDV === 'f2' ? 0 : 4;
         return <g className="dots">
-          <clipPath id={cid + 'o'}><rect x={0} y={j ? g.h / 2 : 0} width={g.w} height={g.h / 2} /></clipPath>
+          <clipPath id={cid + 'o'}><rect x={0} y={j ? g.h / 2 + off : 0} width={g.w} height={g.h / 2 - off} /></clipPath>
           <clipPath id={cid + 'i'}><path d={g.inset} /></clipPath>
           <path d={g.inset} clipPath={`url(#${cid}o)`} />
-          <line x1={0} x2={g.w} y1={g.h / 2} y2={g.h / 2} clipPath={`url(#${cid}i)`} />
+          {MIDV !== 'f2' && <line className={MIDV === 'f1' ? 'one' : ''} x1={0} x2={g.w} clipPath={`url(#${cid}i)`}
+            y1={g.h / 2 + (j ? off : -off)} y2={g.h / 2 + (j ? off : -off)} />}
           <line x1={px - KNOB + 3} x2={px + INSET} y1={py} y2={py} />
         </g>;
       })()}
