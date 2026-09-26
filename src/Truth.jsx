@@ -71,7 +71,7 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
       <div className="tt-wrap">
-      <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => { setTop(e.currentTarget.scrollTop); cues(e.currentTarget); }}>
+      <div className={`tt ${classic ? 'classic' : ''} ${more.down ? 'fd' : ''}`} ref={box} onScroll={(e) => { setTop(e.currentTarget.scrollTop); cues(e.currentTarget); }}>
         <table style={{ '--n': heads.length }} role="grid" aria-label="Truth table rows; arrow keys set the switches">
           <thead><tr>
             {heads.map((h, j) => h === 'OUT' && classic
@@ -101,7 +101,7 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
           </tbody>
         </table>
       </div>
-      <ScrollCues more={more} onWheel={(e) => box.current?.scrollBy(e.shiftKey ? { left: e.deltaY || e.deltaX } : { top: e.deltaY, left: e.deltaX })} />
+      <ScrollCues more={{ ...more, up: false }} onWheel={(e) => box.current?.scrollBy(e.shiftKey ? { left: e.deltaY || e.deltaX } : { top: e.deltaY, left: e.deltaX })} />
       </div>
     </aside>
   );
