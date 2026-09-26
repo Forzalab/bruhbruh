@@ -345,3 +345,14 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* Variant C: Material 3. The balloon as an inverse-surface container (M3 plain tooltip / snackbar): ink fill, paper
+   type, extra-large corner shape, a soft level-2 shadow, and a rounded tail. The stressed word takes the orange accent. */
+.say { padding: 8px 14px 9px; background: var(--ink); color: var(--paper); border-radius: 16px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.18), 0 1px 2px rgb(0 0 0 / 0.24);
+  font: 600 12.5px/1.3 var(--font); font-stretch: 100%; letter-spacing: 0.04em; text-align: center; }
+.say b { font-weight: 850; color: var(--one); }
+.say::after { display: none; }
+.say::before { background: var(--ink); }
+.say-part::before { width: 16px; height: 12px; bottom: -11px; left: calc(50% - 4px); clip-path: path('M0 0H16C12 2 6 6 2 12C3 7 2 3 0 0Z'); }
+.say-logo::before { width: 14px; height: 16px; left: -12px; top: calc(50% - 2px); clip-path: path('M14 0V16C10 12 5 9 0 9C5 7 11 4 14 0Z'); }
