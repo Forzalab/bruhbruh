@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# serve.sh: run ON csci4x from the root of a deploy/gob-site clone.
-# Serves ONLY ./site on $PORT (default 6677). Safe to re-run: it restarts
-# the server it started last time (tracked in .server.pid) and nothing else.
-#   first time:  git clone -b deploy/gob-site <url> ~/gob && cd ~/gob && ./serve.sh
-#   update:      cd ~/gob && git pull && ./serve.sh
+# deploy.sh: one shot. Run ON csci4x from anywhere inside the repo clone.
+# Pulls main, builds with npm, serves ./dist on $PORT (default 6677).
+# Safe to re-run: it restarts the server it started last time and nothing else.
+#   first time:  git clone <url> ~/gates_of_babylon
+#   every time:  ~/gates_of_babylon/scripts/deploy.sh
 set -euo pipefail
 
 PORT="${PORT:-6677}"
 PUBLIC_HOST="${PUBLIC_HOST:-csci4x.com}"
-ROOT="$(cd "$(dirname "$0")" && pwd -P)"
-SITE="$ROOT/site"
+ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+SITE="$ROOT/dist"
 PID_FILE="$ROOT/.server.pid"
 LOG_FILE="$ROOT/.server.log"
 SESSION="gob-site-$PORT"
@@ -19,16 +19,26 @@ info() { echo "==> $*"; }
 
 command -v python3 >/dev/null || die "python3 not found"
 command -v curl >/dev/null    || die "curl not found"
+command -v npm >/dev/null     || die "npm not found. Install Node.js (nvm works without root)"
 case "$PORT" in ''|*[!0-9]*) die "PORT must be a number, got '$PORT'";; esac
 
-# --- safety: only ever serve ./site, never $HOME or anything with .ssh ---
-[ -d "$SITE" ] || die "$SITE is missing. Are you in a deploy/gob-site clone? Try: git pull"
+# --- pull + build ---
+cd "$ROOT"
+info "Pulling main"
+git switch --quiet main || die "could not switch to main (uncommitted changes? run: git status)"
+git pull --ff-only --quiet || die "git pull failed (auth? local commits? run: git status)"
+info "Building $(git rev-parse --short HEAD)"
+npm ci --no-audit --no-fund --loglevel=error || die "npm ci failed"
+npm run build --silent || die "build failed"
+
+# --- safety: only ever serve ./dist, never $HOME or anything with .ssh ---
+[ -d "$SITE" ] || die "$SITE is missing. The build did not run"
 SITE="$(cd "$SITE" && pwd -P)"
 REAL_HOME="$(cd "$HOME" && pwd -P)"
 [ "$SITE" != "$REAL_HOME" ] || die "refusing to serve \$HOME ($REAL_HOME)"
 [ "$SITE" != "/" ]          || die "refusing to serve /"
 [ ! -e "$SITE/.ssh" ]       || die "refusing to serve $SITE: it contains .ssh"
-[ -f "$SITE/index.html" ]   || die "$SITE/index.html missing; the build was not published correctly"
+[ -f "$SITE/index.html" ]   || die "$SITE/index.html missing; the build is broken"
 
 # keep pid/log out of git status so 'git pull' stays clean
 if [ -d "$ROOT/.git" ] && ! grep -qx '.server.*' "$ROOT/.git/info/exclude" 2>/dev/null; then
@@ -53,7 +63,7 @@ fi
 
 # --- is the port free? ---
 if curl -s -o /dev/null --max-time 2 "http://localhost:$PORT/"; then
-  die "port $PORT is in use by something this script did not start. Try another: PORT=6678 ./serve.sh"
+  die "port $PORT is in use by something this script did not start. Try another: PORT=6678 scripts/deploy.sh"
 fi
 
 # --- start ---
