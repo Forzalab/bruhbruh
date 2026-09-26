@@ -27,7 +27,6 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
   const live = ins.reduce((acc, id) => acc * 2 + (circuit.nodes[id].value ? 1 : 0), 0);
   const heads = [...ins.map((_, i) => letter(i)), ...outs.map((_, i) => (outs.length === 1 ? 'OUT' : `Q${i + 1}`))];
   const classic = ins.length === 2 && outs.length === 1; // the fitted A / B / OUT header glyphs apply only here
-  const digits = Math.max(2, String(rows.length).length);
 
   // Windowing: fixed row height measured from the first rendered row.
   const box = useRef(null);
@@ -56,7 +55,6 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
       <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
         <table>
           <thead><tr>
-            <th scope="col"><span className="hN">#</span></th>
             {heads.map((h) => h === 'OUT' && classic
               ? <th key={h} scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th>
               : <th key={h} scope="col"><span className={classic ? cls(h) : undefined}>{h}</span></th>)}
@@ -67,7 +65,6 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
               const i = first + k;
               return (
                 <tr key={i} className={i === live ? 'live' : ''} onClick={() => setSwitches(ins, row.slice(0, ins.length))}>
-                  <td>{fig(String(i + 1).padStart(digits, '0'))}</td>
                   {row.map((b, j) => <td key={j}>{fig(b)}</td>)}
                 </tr>
               );
