@@ -82,7 +82,7 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
           onDragStart={(e) => { if (off) return e.preventDefault(); e.dataTransfer.setData(DND, JSON.stringify(it)); e.dataTransfer.effectAllowed = 'copy';
             requestAnimationFrame(() => onDrag(true)); }} // after the drag image is taken
           onDragEnd={() => onDrag(false)}
-          onClick={() => !off && onAdd(it)}>
+          onClick={(e) => { if (off) return; onAdd(it); if (e.detail > 0) setOpen(false); }}>
           <Glyph kind={it.kind} type={it.type} />
         </button>
       </li>

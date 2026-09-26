@@ -120,16 +120,28 @@ export default function App() {
   // New node from the palette. `at` = flow position of the drop; none (click / Enter) = canvas centre,
   // nudged per add so repeated adds don't stack exactly.
   const switchFull = !canAddSwitch(circuit).ok;
+  const SIZE = { S: [86, 86], L: [114, 114], G: [112, 108] };   // flow units, as measured at zoom 1
+  const free = (at, kind) => {
+    const [w, h] = SIZE[kind];
+    const hit = (p) => view.some((n) => { const [nw, nh] = SIZE[n.type] ?? [112, 108];
+      return p.x < n.position.x + nw + 20 && p.x + w + 20 > n.position.x && p.y < n.position.y + nh + 20 && p.y + h + 20 > n.position.y; });
+    for (let r = 0; r < 12; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      const p = { x: Math.round((at.x + dx * 40) / 20) * 20, y: Math.round((at.y + dy * 40) / 20) * 20 };
+      if (!hit(p)) return p; }
+    return at;
+  };
   const addNode = (it, at) => {
     if (it.kind === 'S' && switchFull) return;
     const id = `${it.kind.toLowerCase()}${it.type ? it.type.toLowerCase() : ''}_${nextNode++}`; // "_" keeps added parts clear of the demo ids (s1, s2, g1, l1)
     if (!at) {
       const box = frame.current.querySelector('.canvas').getBoundingClientRect();
       const c = rf.screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
-      at = { x: c.x - 60 + ((nextNode % 5) * 20), y: c.y - 54 + ((nextNode % 5) * 20) };
+      at = { x: c.x - 60, y: c.y - 54 };
     }
+    at = free(at, it.kind);
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { id, kind: it.kind, ...(it.type && { type: it.type }), ...(it.kind === 'S' && { value: false }) } } }));
-    setView((v) => [...v, { id, type: it.kind, position: at, data: {} }]);
+    setView((v) => [...v.map((n) => ({ ...n, selected: false })), { id, type: it.kind, position: at, data: {}, selected: true }]);
   };
   const onDrop = (e) => {
     const raw = e.dataTransfer.getData(DND);
@@ -137,6 +149,7 @@ export default function App() {
     e.preventDefault();
     const p = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
     addNode(JSON.parse(raw), { x: p.x - 40, y: p.y - 54 }); // pointer lands near the glyph's middle
+    setPalOpen(false);
   };
 
   // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
