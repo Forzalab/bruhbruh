@@ -293,7 +293,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth .classic th:nth-child(1) { width: 30.38%; } .truth .classic th:nth-child(2) { width: 39.52%; }
 .truth .classic th:nth-child(3) { width: 30.10%; }
 /* Rows scroll inside the table box under a sticky header; a click on a row sets the switches. */
-.truth .tt { max-height: calc(360 * var(--u)); overflow-y: auto; scrollbar-width: thin; margin-top: calc(32 * var(--u) - 0.2 * max(calc(32.4 * var(--u)), calc(32.4 * var(--f)))); }
+.truth .tt { max-height: 100vh; /* Truth.jsx caps it to the room above the row-03 rule, so a taller row 02 shows more rows */ overflow-y: auto; scrollbar-width: thin; margin-top: calc(32 * var(--u) - 0.2 * max(calc(32.4 * var(--u)), calc(32.4 * var(--f)))); }
 .truth .tt table { margin-top: 0; }
 /* Scroll cues = the palette's .pal-more, unchanged (16x8u ink arrowhead in a 20u box), set in the cell's 20u right
    paper margin beside the table box, top and bottom: paper margin, never over a figure. */
