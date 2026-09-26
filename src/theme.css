@@ -182,7 +182,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .glyph .shape { width: 100%; height: 100%; }
 /* Palette stroke = the canvas 4 scaled with the glyph (4 x 0.41): same stroke-to-size ratio, so tray and canvas read
    equally black (Pillow ink density tray/canvas 0.92; a flat 4px on both measured 2.19x darker in the tray, RUI p.48-51). */
-.glyph .shape .body { stroke-width: calc(3 * .41 * var(--u)); vector-effect: non-scaling-stroke; }
+.glyph .shape .body { stroke-width: max(2px, calc(3 * .41 * var(--u))); vector-effect: non-scaling-stroke; }
 
 /* Scroll cues: a 16x8u solid ink arrowhead centred in a 20u (one baseline) paper margin at the list edge. The next part
    is cut off by that margin (overlap/peek, RUI p.170), which says "more below" by itself; the arrowhead confirms it.
