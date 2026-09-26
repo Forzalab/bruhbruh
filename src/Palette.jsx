@@ -79,6 +79,7 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
       <li key={label}>
         <button className="pal-item" draggable={!off} aria-disabled={off || undefined}
           aria-label={off ? `${label}, 13 switches max` : `Add ${label}`}
+          title={off ? '13 switches max' : undefined}
           onDragStart={(e) => { if (off) return e.preventDefault(); e.dataTransfer.setData(DND, JSON.stringify(it)); e.dataTransfer.effectAllowed = 'copy';
             requestAnimationFrame(() => onDrag(true)); }} // after the drag image is taken
           onDragEnd={() => onDrag(false)}
