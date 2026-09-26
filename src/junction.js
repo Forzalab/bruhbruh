@@ -5,7 +5,7 @@
 //   different nets            -> one line, same thickness, alternating lit/unlit dashes when the states differ
 import { route } from './route.js';
 
-export const JN = 'a';            // a = thick trunk, b = twin lines, c = dot only
+export const JN = 'b';            // a = thick trunk, b = twin lines, c = dot only
 export const DOT_R = 4.5;          // junction dot radius, flow px = 1.5 strokes (a 9px dot on a 3px wire)
 
 // list: [{ id, source, s, t, src, dst, others }] -> { id: pts | null }
