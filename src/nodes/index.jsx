@@ -86,21 +86,23 @@ function Stubs({ ins = [], out, wired }) {
 
 // Optical centre (RUI: centre by visual weight, not by box): x of the filled outline's area centroid. The bubble and
 // pointed noses stretch the box without adding mass, so box-centre sat 5-18px right of the shape's mass (measured).
-const massX = (() => {
+const mass = (() => {
   const memo = new Map();
   return (g) => {
     if (memo.has(g)) return memo.get(g);
     const c = document.createElement('canvas'); c.width = Math.ceil(g.w); c.height = Math.ceil(g.h);
     const x = c.getContext('2d'); x.fill(new Path2D(g.outline)); if (g.bubble) x.fill(new Path2D(g.bubble));
-    const d = x.getImageData(0, 0, c.width, c.height).data; let sx = 0, n = 0;
-    for (let i = 3; i < d.length; i += 4) if (d[i] > 127) { sx += ((i - 3) / 4) % c.width; n++; }
-    const v = n ? sx / n : g.w / 2; memo.set(g, v); return v;
+    const d = x.getImageData(0, 0, c.width, c.height).data; let sx = 0, sy = 0, n = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 127) { const p = (i - 3) / 4; sx += p % c.width; sy += Math.floor(p / c.width); n++; }
+    const v = n ? [sx / n, sy / n] : [g.w / 2, g.h / 2]; memo.set(g, v); return v;
   };
 })();
 
-// Delete X on node hover, on the top edge at the shape's optical centre (Tony's sketch); right-click still deletes (testing).
-const X = ({ g, label, data }) => <Remove label={label} onRemove={data.onRemove}
-  style={{ position: 'absolute', left: massX(g), top: PAD, transform: 'translate(-50%, -50%) scale(var(--rs))' }} />;
+// Delete X on node hover, INSIDE the shape at its optical centre (Tony picked variant E: the X lives where the lit
+// fill lives, so it never straddles the outline). The switch keeps it on its top edge: its inside is the toggle.
+// Right-click still deletes (testing).
+const X = ({ g, label, data, edge }) => { const [mx, my] = mass(g); return <Remove label={label} onRemove={data.onRemove}
+  style={{ position: 'absolute', left: mx, top: edge ? PAD : my, transform: 'translate(-50%, -50%) scale(var(--rs))' }} />; };
 
 const NAMES = { s1: 'A', s2: 'B' };
 
@@ -109,7 +111,7 @@ export function SwitchNode({ id, data }) {
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
       <Shape g={SWG} on={data.on} />
       <Stubs out={SWG.out} wired={data.wired} />
-      <X g={SWG} label="Delete switch" data={data} />
+      <X g={SWG} label="Delete switch" data={data} edge />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
