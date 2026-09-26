@@ -48,3 +48,8 @@ test('overlapping source and target boxes: never throws', () => {
   const p = route([100, 50], [90, 60], { src: box(0, 0, 100, 100), dst: box(90, 10, 100, 100) });
   assert.ok(p === null || bends(p) <= MAX_BENDS);
 });
+
+test('pin inside its own padded box still routes', () => {
+  const p = route([95, 50], [310, 150], { src: box(0, 0, 110, 100), dst: box(300, 100, 100, 100), others: [box(150, 0, 60, 100)] });
+  assert.ok(p); assert.ok(clear(p, [{ x: 136, y: -14, w: 88, h: 128 }]));
+});

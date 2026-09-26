@@ -54,7 +54,9 @@ export function stepPoints(s, t) {
 // Capped router. Returns points with <= MAX_BENDS corners that clear all boxes, or null (caller falls back).
 // ends = { src, dst } boxes of the wire's own nodes; others = every other node box.
 export function route(s, t, { src, dst, others = [] } = {}, maxBends = MAX_BENDS) {
-  const obs = [...others.map((b) => inflate(b, MARGIN)), ...[src, dst].filter(Boolean)];
+  // Pins can sit inside their own box (knobs, padding): trim the source box at the pin's x, and the target box too.
+  const own = [src && { ...src, w: Math.min(src.w, s[0] - src.x) }, dst && { ...dst, x: Math.max(dst.x, t[0]), w: dst.x + dst.w - Math.max(dst.x, t[0]) }];
+  const obs = [...others.map((b) => inflate(b, MARGIN)), ...own.filter((b) => b && b.w > 0)];
   const all = [...others, src, dst].filter(Boolean).map((b) => inflate(b, MARGIN));
   const xs1 = new Set([s[0] + STUB]), xs2 = new Set([t[0] - STUB]), ys = new Set([s[1], t[1]]);
   for (const b of all) { xs1.add(b.x + b.w); xs2.add(b.x); ys.add(b.y); ys.add(b.y + b.h); }
