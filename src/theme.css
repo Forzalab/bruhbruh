@@ -259,14 +259,18 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .disk:focus-visible { outline: max(2px, calc(3 * var(--u))) solid var(--ink); outline-offset: calc(5 * var(--u)); }
 .react-flow__node { cursor: grab; }
 
-/* Speech balloons (pit2 bub): every message is said by a part or by the logo, never by a box. Comic lettering
-   conventions (Blambot, "Comic Book Grammar & Tradition"): caps, bold for the stressed word, the tail aims at the
-   speaker's mouth and stops short of it. Placement here; the balloon style (one school per branch) sits at the end. */
-.say { position: absolute; margin: 0; z-index: 10; pointer-events: none; width: max-content; text-transform: uppercase; color: var(--ink); text-wrap: balance; }
-.say:empty { display: none; }
-.say-part { bottom: calc(100% + 30px); left: 50%; transform: translateX(-50%); max-width: 190px; } /* above the part, clear of its X */
-.say-logo { left: calc(786 * var(--u)); top: calc(30 * var(--u)); max-width: calc(158 * var(--u)); z-index: 6; } /* right of the wordmark's r */
-.say::before, .say::after { content: ''; position: absolute; }
+/* Speech balloons (pit2 bub-d): every message is said by a part or by the Figur wordmark, never by a box. Same drawing as
+   the palette hint: white 2:1 ellipse, ~0.25 cap ink line, curved tail; lettering = outlined Anime Ace 3 BB, cap 12u
+   (src/sayLettering.js, src/Say.jsx). The <p> is placed by its tail tip (--ax, --ay); --k = one u in that layer. */
+.say { position: absolute; margin: 0; z-index: 10; pointer-events: none; --k: 1px;
+  left: calc(var(--ax) - var(--dx) * var(--k)); top: calc(var(--ay) - var(--dy) * var(--k));
+  width: calc(var(--w) * var(--k)); height: calc(var(--h) * var(--k)); }
+.say svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.say .bal { fill: var(--paper); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
+.say .emph { fill: var(--ink); stroke: var(--ink); stroke-width: 0.5; stroke-linejoin: round; } /* Bold Italic held above the thickened Regular */
+.say .rest { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; } /* +0.022em, as the hint */
+.say-part { --ax: 42%; --ay: -9px; } /* tip just above the part's top edge, short of it */
+.say-logo { --k: var(--u); --ax: calc(771 * var(--u)); --ay: calc(112 * var(--u)); z-index: 6; } /* tip at the r's shoulder */
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }

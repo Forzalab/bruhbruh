@@ -13,7 +13,7 @@ Source: https://blambot.com/pages/comic-book-grammar-tradition. There are 37 ima
 
 **Not measured:** tail width and curve, and bold-italic stress weight. The run-length probe could not separate these reliably, so no numbers are given.
 
-**Not done:** the Anime Ace 3 BB .otf is not on this machine (`find / -iname "*anime*ace*"` returns nothing), so no balloons were built and there are no deltas.
+**Font:** Anime Ace 3 BB, supplied by Tony. Its phrases are outlined by gen-say-lettering.py and the .otf is not in the repo.
 
 | image | balloon WxH | aspect | outline px | cap px | outline/cap | leading/cap | pad x/cap | pad y/cap | text ink density | tail len px |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -50,3 +50,23 @@ Source: https://blambot.com/pages/comic-book-grammar-tradition. There are 37 ima
 | grammar_thought.jpg | 177x95 | 1.86 | 0.0 | 13 | 0.000 | 1.23 | 1.62 | 1.31 | 0.144 | 5 |
 | grammar_wavy.jpg | 199x147 | 1.35 | 0.0 | 12 | 0.000 | 1.39 | 1.30 | 1.48 | 0.167 | 62 |
 | grammar_whisper.jpg | 123x99 | 1.24 | 1.0 | 10 | 0.100 | 1.30 | 2.50 | 4.20 | 0.147 | 3 |
+
+## bub-d balloons vs ref (Pillow, 3x crops, same probe)
+
+| image | balloon WxH | aspect | outline px | cap px | outline/cap | leading/cap | pad x/cap | pad y/cap | text ink density | tail len px |
+|---|---|---|---|---|---|---|---|---|---|---|
+| d1-hint@3x.png | 535x298 | 1.80 | 8.0 | 51 | 0.157 | 1.55 | 1.47 | 1.12 | 0.253 | 63 |
+| d1-logo@3x.png | 450x199 | 2.26 | 9.0 | 39 | 0.231 | 1.17 | 3.49 | 0.90 | 0.318 | 9 |
+| d1-part@3x.png | 533x316 | 1.69 | 4.0 | 40 | 0.100 | 1.14 | 1.73 | 1.65 | 0.259 | 61 |
+
+**Deltas vs ref medians (part / logo):**
+
+| Measure | Ref | Part | Logo | Note |
+|---|---|---|---|---|
+| Aspect | 1.34 | 1.69 | 2.26 | By design: Tony's rule is a 2:1 ellipse, as in the hint |
+| Outline / cap | 0.157 | 0.100 | 0.231 | The probe is noisy here too. The drawn value is 3u at a 12u cap = 0.25, the hint's ratio. |
+| Leading / cap | 1.28 | 1.14 | 1.17 | Set to 1.28; the probe measures ink line height including the italic swash, so it reads short |
+| Pad x / cap | 1.12 | 1.73 | 3.49 | The 2:1 ellipse adds side room, most on the narrow 3-line logo phrase |
+| Pad y / cap | 0.96 | 1.65 | 0.90 | Same cause as pad x |
+| Ink density | 0.166 | 0.259 | 0.318 | The hint (Tony-approved) measures 0.253 on the same probe. The ref JPEGs are low-res and anti-aliased, which lowers density. |
+| Tail length | 13px, about 1 cap | about 1.5 caps | short (sideways) | |

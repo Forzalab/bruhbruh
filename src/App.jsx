@@ -5,7 +5,7 @@ import { nodeTypes, pinYs } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
-import { say } from './Say.jsx';
+import Say from './Say.jsx';
 
 const edgeTypes = { wire: Wire };
 
@@ -42,7 +42,7 @@ export default function App() {
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
-  const [status, setStatus] = useState({ text: '', bad: false });
+  const [status, setStatus] = useState({ phrase: null, text: '' }); // phrase = a key of sayLettering.js
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
   const [tucked, setTucked] = useState(false);
@@ -125,20 +125,20 @@ export default function App() {
 
   // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
   // Every message is a comic balloon (Blambot, Comic Book Grammar & Tradition): caps, *bold* marks the stressed word.
-  const REJECT_TEXT = { 'pin taken': 'That input *already* has a wire!' };
+  const REJECT_PHRASE = { 'pin taken': 'pinTaken' };
 
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
     if (!check.ok) {
-      const text = REJECT_TEXT[check.reason] ?? `*Can't* connect: ${check.reason}`;
-      setReject({ node: target, handle: targetHandle, text });
-      return setStatus({ text: '', bad: false }); // the gate says it (role=alert); the logo stays quiet
+      const phrase = REJECT_PHRASE[check.reason] ?? 'cantConnect';
+      setReject({ node: target, handle: targetHandle, phrase, text: phrase === 'cantConnect' ? `Can't connect: ${check.reason}` : undefined });
+      return setStatus({ phrase: null, text: '' }); // the gate says it (role=alert); the logo stays quiet
     }
     setReject(null);
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
-    setStatus({ text: '', bad: false }); // silent success: ref3 leaves row 03 empty
+    setStatus({ phrase: null, text: '' }); // silent success: ref3 leaves row 03 empty
   };
 
   // The drop target is decided HERE, by the port hit zones under the pointer (the same big zones a
@@ -163,8 +163,8 @@ export default function App() {
 
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
   const onPort = (node, handle) => {
-    if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: *pick an input!*`, bad: false }); }
-    if (!pending) return setStatus({ text: 'Pick an *output* first!', bad: true });
+    if (handle === 'out') { setPending(node); return setStatus({ phrase: null, text: `Wiring from ${node.toUpperCase()}: pick an input` }); }
+    if (!pending) return setStatus({ phrase: 'pickOutput', text: '' });
     setPending(null);
     onConnect({ source: pending, target: node, targetHandle: handle });
   };
@@ -178,7 +178,7 @@ export default function App() {
       wires: Object.fromEntries(Object.entries(c.wires).filter(([, w]) => !ids.includes(w.source) && !ids.includes(w.target))),
     }));
     setReject(null); setPending(null);
-    setStatus({ text: '', bad: false });
+    setStatus({ phrase: null, text: '' });
   };
   // Snap guides (Tony, Sep 25; Figma/Canva smart guides). A pin within SNAP flow units of another node's pin height
   // pulls the dragged node onto that line, and a thin dotted --ink-2 guide shows it. SNAP = 8: the 20u grid already
@@ -238,7 +238,7 @@ export default function App() {
       </div>
       <h1 className="wordmark" lang="sv" aria-label="Figur"><span className="sr">Figur</span><span aria-hidden="true"><span className="wF">F</span><span className="wi">i</span><span className="wg">g</span><span className="wu">u</span><span className="wr">r</span></span></h1>
       {/* Status lines are spoken by the logo: a balloon whose tail points at the wordmark. */}
-      <p className={`say say-logo ${status.bad ? 'bad' : ''}`} role="status">{say(status.text)}</p>
+      {status.phrase ? <Say phrase={status.phrase} className="say-logo" /> : <p className="sr" role="status">{status.text}</p>}
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part

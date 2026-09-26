@@ -1,6 +1,6 @@
 import { Handle as RFHandle, Position } from '@xyflow/react';
 import Remove from '../Remove.jsx';
-import { say } from '../Say.jsx';
+import Say from '../Say.jsx';
 import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
 
 const SWG = switchGeom(), LAMPG = lampGeom();
@@ -139,7 +139,7 @@ export function GateNode({ id, data }) {
       ))}
       <Handle nodeId={id} data={data} at={g.out} zone={zones.out} type="source" position={Position.Right} id="out" />
       {data.reject && (
-        <p className="reject say say-part" role="alert">{say(data.reject.text)}</p>
+        <Say phrase={data.reject.phrase} text={data.reject.text} className="say-part" role="alert" />
       )}
     </div>
   );
@@ -152,7 +152,7 @@ export function LampNode({ id, data }) {
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
       <X g={LAMPG} label="Delete lamp" data={data} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
-      {data.reject && <p className="reject say say-part" role="alert">{say(data.reject.text)}</p>}
+      {data.reject && <Say phrase={data.reject.phrase} text={data.reject.text} className="say-part" role="alert" />}
     </div>
   );
 }
