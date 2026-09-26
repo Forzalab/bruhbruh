@@ -163,7 +163,7 @@ export default function App() {
 
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
   const onPort = (node, handle) => {
-    if (handle === 'out') { setPending(node); return setStatus({ phrase: null, text: `Wiring from ${node.toUpperCase()}: pick an input` }); }
+    if (handle === 'out') { setPending(node); return setStatus({ phrase: 'pickInput', text: '' }); } // fixed phrase, outlined once (was "Wiring from S1: pick an input")
     if (!pending) return setStatus({ phrase: 'pickOutput', text: '' });
     setPending(null);
     onConnect({ source: pending, target: node, targetHandle: handle });
