@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Glyph } from './nodes/index.jsx';
 import Say from './Say.jsx';
+import { tourPending } from './Coach.jsx'; // the first-visit tour says this line itself (step 1)
 
 // Vertical palette (Tony, Sep 25): groups in/out | plain ("yea") | inverted ("nah"), glyphs only.
 // Each plain gate sits in the same slot as its inverted twin (AND/NAND, OR/NOR, XOR/NOT).
@@ -59,7 +60,7 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
   // Onboarding: the bubble shows the first time only, 1s after load, if the person has not started yet.
   // Once shown, the first click or key anywhere retires it for good; every later close/tuck just hides the bar.
   useEffect(() => {
-    if (seen()) return;
+    if (seen() || tourPending()) return;
     let shown = false;
     const t = setTimeout(() => { shown = true; setHint(true); }, 1000);
     const stop = () => { clearTimeout(t); if (shown) { setHint(false); markSeen(); } off(); };

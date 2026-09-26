@@ -427,3 +427,30 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .wipe-bubble .lettering { inset: auto; left: calc(132 * var(--bu)); top: calc(40 * var(--bu)); width: calc(174 * var(--bu)); height: auto; transform: translate(-50%, -50%); }
 .wipe-bubble .lettering path { fill: var(--ink); stroke: none; }
 .wipe-bubble .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; }
+
+/* First-visit coach marks (src/Coach.jsx). The overlay never takes a click: the veil is paint only, the person works
+   the real parts through it. Veil holes are square (no radius anywhere on the page). */
+.coach { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+.coach svg { position: absolute; inset: 0; overflow: visible; }
+.coach-a .veil { fill: var(--ink); fill-opacity: 0.6; }
+.coach-b .veil { fill: var(--paper); fill-opacity: 0.82; }
+.coach-b .panel { fill: none; stroke: var(--ink); stroke-width: 3; }
+.coach-b .cap { position: absolute; transform: translate(-3px, -100%); min-width: calc(28 * max(var(--u), 0.8px)); padding: 0 calc(6 * max(var(--u), 0.8px));
+  background: var(--caption); border: 3px solid var(--ink); border-bottom: 0; font: 800 calc(18 * max(var(--u), 0.8px))/1.4 var(--font); text-align: center; }
+.coach-arrow .shaft { fill: none; stroke: var(--ink); stroke-linecap: butt; }
+.coach-arrow .halo { fill: none; stroke: var(--paper); stroke-linecap: round; }
+.coach-arrow .head { fill: var(--ink); }
+.coach .drop { fill: none; stroke: var(--ink); stroke-linecap: butt; } /* drop spot: the dot rule, as the snap guides */
+.coach-arrow.on-veil .shaft { stroke: var(--paper); } .coach-arrow.on-veil .head { fill: var(--paper); } .coach-arrow.on-veil .halo { stroke: none; }
+.coach-say { --k: max(var(--u), 0.95px); z-index: 2; } /* Anime Ace cap 12k: >= 11.4px at any width */
+/* Marching dots only outside logic mode and only without reduced motion; logic mode is still. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-mode="logic"]) .coach-arrow .shaft { animation: coach-march 0.6s linear infinite; }
+}
+@keyframes coach-march { to { stroke-dashoffset: -30; } }
+.coach-bar, .coach-replay { font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.coach-bar { position: relative; z-index: 21; display: flex; align-items: center; gap: 0.8em; white-space: nowrap; }
+.coach-bar .n { font-weight: 800; font-variant-numeric: tabular-nums; }
+.coach-bar button, .coach-replay { font: inherit; text-transform: inherit; background: var(--paper); color: var(--ink); border: var(--rule) solid var(--ink); border-radius: 0; padding: 0.35em 0.7em; cursor: pointer; }
+.coach-replay { font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); font-variation-settings: 'wdth' 78, 'opsz' 36; }
+.coach-bar button:hover, .coach-replay:hover { background: var(--ink); color: var(--paper); }

@@ -8,6 +8,7 @@ import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
 import Controls from './Controls.jsx';
+import Coach from './Coach.jsx';
 
 const HISTORY = 10; // linear undo stack depth (Tony)
 import Say from './Say.jsx';
@@ -71,6 +72,7 @@ export default function App() {
   }, []);
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
+  const [helpCell, setHelpCell] = useState(null); // row 03 right: the tour's step counter / replay button
   const [tucked, setTucked] = useState(false);
   // Canvas scale = frame width / 1440, the same factor as the CSS --u (100cqw / 1440). React Flow's viewport zoom
   // scales node geometry, strokes and knobs together, so wires stay on pin centres (React Flow docs: Viewport, zoom).
@@ -406,7 +408,8 @@ export default function App() {
         <Controls canUndo={hist.past.length > 0} canRedo={hist.future.length > 0} canWipe={view.length > 0}
           armed={armed} setArmed={setArmed} onUndo={undo} onRedo={redo} onWipe={wipe} />
       </footer>
-      <div className="cell c-side r3 help" />
+      <div className="cell c-side r3 help" ref={setHelpCell} />
+      <Coach circuit={circuit} palOpen={palOpen} parts={view.length} slot={helpCell} />
     </div>
     </div>
   );
