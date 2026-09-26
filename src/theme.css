@@ -288,6 +288,18 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth tbody tr:not(.live):not(.pad):hover td { background: #f4f4f4; }
 /* L7: live row = --one fill with INK text: #111 on #ff5a1f is 6.6:1 (WCAG 1.4.3 AA), white on it was 3.0:1. */
 .truth tr.live td, .truth tr.live td.v0, .truth tr.live td.n { background: var(--one); color: var(--ink); }
+/* T3 variant C: column kinds by glyph + weight (M3: icon + label; Rams #4: the table speaks the canvas's shapes).
+   Each header carries its part's canvas silhouette: square = switch, D = gate, circle = lamp. Gate figures quieter,
+   lamp figures heavier, so the eye lands on inputs and result. */
+.truth th:not(.n)::before { content: ''; display: block; margin: 0 auto calc(7 * var(--u)); width: calc(14 * var(--u)); height: calc(14 * var(--u));
+  border: calc(3 * var(--u)) solid var(--ink); box-sizing: border-box; }
+.truth th.g::before { border-radius: 0 999px 999px 0; }
+.truth th.l::before { border-radius: 50%; background: var(--ink); }
+.truth th.n { vertical-align: bottom; }
+.truth td.g { font-size: max(calc(20 * var(--u)), calc(20 * var(--f))); }
+.truth td.g.v1 { font-weight: 560; }
+.truth td.l.v1 { font-weight: 900; font-stretch: 115%; }
+.truth th.first:not(.s), .truth td.first:not(.s) { border-left: var(--hair) solid var(--ink); }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
