@@ -10,23 +10,29 @@ const letter = (i) => String.fromCharCode(65 + i);
 export default function Truth({ circuit, view, fig, setSwitches }) {
   const byPos = (kind) => view.filter((n) => circuit.nodes[n.id]?.kind === kind)
     .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x).map((n) => n.id);
-  const ins = byPos('S'), outs = byPos('L');
-  const shape = JSON.stringify([ins, outs, circuit.wires, Object.values(circuit.nodes).map((n) => [n.id, n.kind, n.type])]);
+  const ins = byPos('S'), outs = byPos('L'), gates = byPos('G');
+  const shape = JSON.stringify([ins, outs, gates, circuit.wires, Object.values(circuit.nodes).map((n) => [n.id, n.kind, n.type])]);
   const rows = useMemo(() => {
-    const n = ins.length, all = [];
+    const n = ins.length, all = [], mid = [];
     for (let r = 0; r < 2 ** n; r++) {
       const bits = ins.map((_, i) => (r >> (n - 1 - i)) & 1);
       const nodes = { ...circuit.nodes };
       ins.forEach((id, i) => { nodes[id] = { ...nodes[id], value: !!bits[i] }; });
       const v = evaluate({ ...circuit, nodes });
       all.push([...bits, ...outs.map((id) => +!!v[id])]);
+      mid.push(gates.map((id) => +!!v[id])); // gate columns: intermediate values, shown between inputs and outputs
     }
-    return all;
+    return all.map((r, k) => [...r.slice(0, n), ...mid[k], ...r.slice(n)]);
   }, [shape]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const live = ins.reduce((acc, id) => acc * 2 + (circuit.nodes[id].value ? 1 : 0), 0);
-  const heads = [...ins.map((_, i) => letter(i)), ...outs.map((_, i) => (outs.length === 1 ? 'OUT' : `Q${i + 1}`))];
-  const classic = ins.length === 2 && outs.length === 1; // the fitted A / B / OUT header glyphs apply only here
+  // Column groups: s = switch (input), g = gate (intermediate), l = lamp (output). Each cell carries its group class
+  // so the variants can separate the three kinds of column.
+  const gType = gates.map((id) => circuit.nodes[id].type);
+  const heads = [...ins.map((_, i) => [letter(i), 's']),
+    ...gates.map((id, i) => [gType.filter((t) => t === gType[i]).length > 1 ? `${gType[i]}${gType.slice(0, i + 1).filter((t) => t === gType[i]).length}` : gType[i], 'g']),
+    ...outs.map((_, i) => [outs.length === 1 ? 'OUT' : `Q${i + 1}`, 'l'])];
+  const grp = (j) => heads[j][1] + (j === 0 || heads[j - 1][1] !== heads[j][1] ? ' first' : '');
   const digits = Math.max(2, String(rows.length).length);
 
   // Windowing: fixed row height measured from the first rendered row.
@@ -49,17 +55,14 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
     else if (live >= firstShown + fit) el.scrollTop = (live - fit + 1) * rowH; // always a whole-row boundary
   }, [live, rowH]);
 
-  const cls = (h) => ({ A: 'hA', B: 'hB' })[h];
   return (
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
-      <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
+      <div className="tt" ref={box} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
         <table>
           <thead><tr>
-            <th scope="col"><span className="hN">#</span></th>
-            {heads.map((h) => h === 'OUT' && classic
-              ? <th key={h} scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th>
-              : <th key={h} scope="col"><span className={classic ? cls(h) : undefined}>{h}</span></th>)}
+            <th scope="col" className="n">#</th>
+            {heads.map(([h], j) => <th key={h} scope="col" className={grp(j)}>{h}</th>)}
           </tr></thead>
           <tbody>
             {first > 0 && <tr className="pad" style={{ height: first * rowH }} aria-hidden="true" />}
@@ -67,8 +70,8 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
               const i = first + k;
               return (
                 <tr key={i} className={i === live ? 'live' : ''} onClick={() => setSwitches(ins, row.slice(0, ins.length))}>
-                  <td>{fig(String(i + 1).padStart(digits, '0'))}</td>
-                  {row.map((b, j) => <td key={j}>{fig(b)}</td>)}
+                  <td className="n">{String(i + 1).padStart(digits, '0')}</td>
+                  {row.map((b, j) => <td key={j} className={`${grp(j)} v${b}`}>{b}</td>)}
                 </tr>
               );
             })}
