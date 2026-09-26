@@ -1,6 +1,6 @@
 import { Handle as RFHandle, Position } from '@xyflow/react';
 import Remove from '../Remove.jsx';
-import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
+import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB, BLEED } from './geom.js';
 
 const SWG = switchGeom(), LAMPG = lampGeom();
 const HB = 20; // handle box centred on the knob chord: the wire end lands 10px out, inside the knob ink ring (6..12)
@@ -84,6 +84,21 @@ function Stubs({ ins = [], out, wired }) {
   );
 }
 
+// Pin "bleed" (Tony, Sep 26): the pin tip carrying a live (logic 1) wire shows the same orange as
+// the wire, so colour reads as flowing from the part straight into its wire instead of stopping
+// dead at the outline. Ink #111 (i.e. nothing drawn) still means logic 0 — only 1 gets a colour.
+// Small dot, no animation: it just sits inside the knob's paper-filled hollow, on top of the ink
+// outline stroke but inside its inner edge, so the outline itself is never recoloured.
+function PinBleed({ pins }) {
+  const lit = pins.filter((p) => p && p.on);
+  if (!lit.length) return null;
+  return (
+    <svg className="pin-bleed" aria-hidden="true">
+      {lit.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={BLEED} />)}
+    </svg>
+  );
+}
+
 // Optical centre (RUI: centre by visual weight, not by box): x of the filled outline's area centroid. The bubble and
 // pointed noses stretch the box without adding mass, so box-centre sat 5-18px right of the shape's mass (measured).
 const mass = (() => {
@@ -118,6 +133,7 @@ export function SwitchNode({ id, data }) {
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
       <Shape g={SWG} on={data.on} />
       <Stubs out={SWG.out} wired={data.wired} />
+      <PinBleed pins={[{ x: SWG.out[0], y: SWG.out[1], on: data.wired.out && data.on }]} />
       <X g={SWG} label="Delete switch" data={data} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
@@ -133,6 +149,10 @@ export function GateNode({ id, data }) {
     <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
       <Shape g={g} on={data.on} />
       <Stubs ins={g.in} out={g.out} wired={data.wired} />
+      <PinBleed pins={[
+        ...g.in.map(([x, y], i) => ({ x, y, on: data.inOn?.[i] })),
+        { x: g.out[0], y: g.out[1], on: data.wired.out && data.on },
+      ]} />
       <X g={g} label={`Delete ${data.type} gate`} data={data} />
       {g.in.map((at, i) => (
         <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
@@ -150,6 +170,7 @@ export function LampNode({ id, data }) {
     <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={data.on ? 'Lamp on' : 'Lamp off'}>
       <Shape g={LAMPG} on={data.on} />
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
+      <PinBleed pins={[{ x: LAMPG.in[0], y: LAMPG.in[1], on: data.inOn?.[0] }]} />
       <X g={LAMPG} label="Delete lamp" data={data} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
       {data.reject && <p className="reject" role="alert" style={{ top: LAMPG.in[1] }}>{data.reject.text}</p>}

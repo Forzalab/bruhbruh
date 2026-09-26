@@ -7,6 +7,9 @@ export const GAP = 6;            // paper gap between outline and orange inset
 export const INSET = STROKE / 2 + GAP; // centreline -> inset contour distance (9)
 export const KNOB = 9;           // knob centreline radius: ink reaches 12 from the outline centreline = a 9px bump past the 3px outer ink
 export const PAD = 12;           // svg padding around the outline centreline
+// Pin "bleed" dot radius: fits inside the knob bump's paper-filled hollow, just inside the ink
+// stroke, so a lit pin's colour touches the wire without redrawing any part of the outline.
+export const BLEED = KNOB - STROKE / 2;
 
 const f = (n) => +n.toFixed(3);
 

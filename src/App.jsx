@@ -79,7 +79,11 @@ export default function App() {
   const nodes = view.map((n) => ({
     ...n,
     data: { ...circuit.nodes[n.id], on: values[n.id],
-      wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
+      wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) },
+      // Per-pin input value (the wire's source value, or false unwired): lets a node's input knob
+      // "bleed" orange when the wire feeding it is live, without recomputing evaluate() itself.
+      inOn: [0, 1].map((pin) => { const w = wires.find((w) => w.target === n.id && w.pin === pin); return !!w && !!values[w.source]; }),
+      onToggle: () => { setReject(null); toggle(n.id); },
       reject: reject && reject.node === n.id ? reject : null,
       pending, onPort: (handle) => onPort(n.id, handle), onRemove: () => removeNodes([n.id]) },
   }));
