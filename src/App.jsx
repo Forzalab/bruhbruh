@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
+import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
@@ -70,8 +71,9 @@ export default function App() {
   // Pan/zoom are the user's (React Flow docs: Viewport). A resize rescales the current viewport by zoom/zoom_prev
   // instead of resetting it, so the user's own pan and zoom survive (React Flow docs: getViewport / setViewport).
   const [rf, setRf] = useState(null);
-  // T1 iter 3 (Tony, option c): user zoom (viewport / base) is capped to 0.75-1.5, and lines hold a constant
-  // 6px screen width across that whole range.
+  // T1 iter 3 (Tony, option c): user zoom (viewport / base) is capped to 0.75-1.5. T1 verdict (pit2/t1w-d):
+  // lines no longer hold a constant screen width across that range; they grow slightly bolder zooming in,
+  // screen px = STROKE * userZoom^ZOOM_EXP (see src/nodes/geom.js).
   const [userZoom, setUserZoom] = useState(1);
   const prevZoom = useRef(null);
   useLayoutEffect(() => {
@@ -258,7 +260,7 @@ export default function App() {
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
           (nodes like the switch button would otherwise swallow it). */}
-      <main style={{ '--stroke': `${6 / userZoom}px` }} className="cell c-main r2 canvas"
+      <main style={{ '--stroke': `${STROKE * userZoom ** (ZOOM_EXP - 1)}px` }} className="cell c-main r2 canvas"
         onDragOverCapture={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
         onDropCapture={onDrop} onPointerMove={wireGuides}>
         <ReactFlow
