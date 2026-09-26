@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Handle as RFHandle, Position } from '@xyflow/react';
 import Remove from '../Remove.jsx';
 import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB, INSET, BUB } from './geom.js';
@@ -56,17 +57,20 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // orange piece. The neck is drawn over the ink, so the outline opens exactly where the orange passes and the knob's
 // ink wraps around the neck on both sides; everywhere else the outline stays ink. When the body behind a lit pin is
 // unlit (e.g. one input of an AND at 1), the neck stops at the outline's inner ink edge: the wire's 1 enters, nothing to join.
-const KI = KNOB + 3; // knob ink tip from the pin centreline (the wire end lands inside it)
+const KI = KNOB + 5; // 2px past // knob ink tip from the pin centreline (the wire end lands inside it)
 const DEEP = INSET + 3; // reaches 3px into the lit inset contour so the joint has no seam
 const neck = (x0, x1, y) => `M${Math.min(x0, x1)} ${y - 3}H${Math.max(x0, x1)}V${y + 3}H${Math.min(x0, x1)}Z`;
 function bleeds(g, lit, bodyLit, on) {
   if (!lit) return '';
   let d = '';
   const ins = Array.isArray(g.in?.[0]) ? g.in : g.in ? [g.in] : [];
-  ins.forEach(([x, y], i) => { if (lit.in?.[i]) d += neck(x - KI, x + (bodyLit ? DEEP : 3), y); });
+  // Unlit body on a multi-input gate (Tony's sketch): the lit input fills ITS half of the inset (see Shape), so the
+  // neck still runs DEEP and joins that half-wedge.
+  const multi = ins.length > 1;
+  ins.forEach(([x, y], i) => { if (lit.in?.[i]) d += neck(x - KI, x + (bodyLit || multi ? DEEP : 3), y); });
   if (g.out && lit.out) {
     const [x, y] = g.out;
-    d += g.bubble ? (on ? neck(x - BUB, x + 10, y) : '') : neck(x - (bodyLit ? DEEP : 3), x + KI, y);
+    d += g.bubble ? (on ? neck(x - BUB, x + 10, y) : '') : neck(x - DEEP, x + KI, y);
   }
   return d;
 }
@@ -74,6 +78,10 @@ function bleeds(g, lit, bodyLit, on) {
 function Shape({ g, on, idle, lit }) {
   const bodyLit = !idle && (g.bubble ? !on : on);
   const z = idle ? '' : bleeds(g, lit, bodyLit, on);
+  // Half fills: body unlit, some inputs lit -> the inset clipped to the lit inputs' halves (split at the midline).
+  const cid = useId();
+  const halves = !idle && !bodyLit && lit && Array.isArray(g.in?.[0]) && g.in.length > 1
+    ? g.in.map((_, i) => lit.in?.[i] && (i === 0 ? [0, g.h / 2] : [g.h / 2, g.h])).filter(Boolean) : [];
   return (
     <svg className="shape" width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true">
       {g.extraCurve && <path className="body line" d={g.extraCurve} />}
@@ -81,6 +89,10 @@ function Shape({ g, on, idle, lit }) {
       {g.bubble && <path className="body" d={g.bubble} />}
       {!idle && (g.bubble ? !on : on) && <path className="lit" d={g.inset} />}
       {!idle && g.bubble && on && <path className="lit" d={g.bubbleInset} />}
+      {halves.length > 0 && <>
+        <clipPath id={cid}>{halves.map(([y0, y1], i) => <rect key={i} x={0} y={y0} width={g.w} height={y1 - y0} />)}</clipPath>
+        <path className="lit" d={g.inset} clipPath={`url(#${cid})`} />
+      </>}
       {z && <path className="lit" d={z} />}
     </svg>
   );
