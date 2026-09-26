@@ -5,6 +5,8 @@ import { nodeTypes, pinYs } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
+import Say from './Say.jsx';
+import Toasts, { TOAST_MS } from './Toasts.jsx';
 
 const edgeTypes = { wire: Wire };
 
@@ -27,7 +29,7 @@ const VIEW = [
   { id: 'l1', type: 'L', position: { x: 736, y: 181 }, data: {} },
 ];
 
-let nextWire = 1, nextNode = 1;
+let nextWire = 1, nextNode = 1, nextToast = 1;
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
 // Glyph spans are aria-hidden; one visually hidden run carries the whole word ("01", not "0 1").
@@ -41,7 +43,14 @@ export default function App() {
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
-  const [status, setStatus] = useState({ text: '', bad: false });
+  // Toasts (caption boxes): newest last; each removes itself after TOAST_MS.
+  const [toasts, setToasts] = useState([]);
+  const toast = (phrase) => {
+    const id = nextToast++;
+    setToasts((l) => [...l, { id, phrase }]);
+    setTimeout(() => setToasts((l) => l.filter((t) => t.id !== id)), TOAST_MS);
+  };
+  const [status, setStatus] = useState({ phrase: null, text: '' }); // phrase = a key of sayLettering.js
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
   const [tucked, setTucked] = useState(false);
@@ -123,20 +132,21 @@ export default function App() {
   };
 
   // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
-  const REJECT_TEXT = { 'pin taken': 'That input already has a wire' };
+  // Every message is a comic balloon (Blambot, Comic Book Grammar & Tradition): caps, *bold* marks the stressed word.
+  const REJECT_PHRASE = { 'pin taken': 'pinTaken' };
 
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
     if (!check.ok) {
-      const text = REJECT_TEXT[check.reason] ?? `Can't connect: ${check.reason}`;
-      setReject({ node: target, handle: targetHandle, text });
-      return setStatus({ text, bad: true });
+      const phrase = REJECT_PHRASE[check.reason] ?? 'cantConnect';
+      setReject({ node: target, handle: targetHandle, phrase, text: phrase === 'cantConnect' ? `Can't connect: ${check.reason}` : undefined });
+      return setStatus({ phrase: null, text: '' }); // the gate says it (role=alert); the logo stays quiet
     }
     setReject(null);
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
-    setStatus({ text: '', bad: false }); // silent success: ref3 leaves row 03 empty
+    setStatus({ phrase: null, text: '' }); // silent success: ref3 leaves row 03 empty
   };
 
   // The drop target is decided HERE, by the port hit zones under the pointer (the same big zones a
@@ -161,12 +171,15 @@ export default function App() {
 
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
   const onPort = (node, handle) => {
-    if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: pick an input`, bad: false }); }
-    if (!pending) return setStatus({ text: 'Pick an output first', bad: true });
+    if (handle === 'out') { setPending(node); return setStatus({ phrase: null, text: `Wiring from ${node.toUpperCase()}: pick an input` }); }
+    if (!pending) return setStatus({ phrase: 'pickOutput', text: '' });
     setPending(null);
     onConnect({ source: pending, target: node, targetHandle: handle });
   };
 
+  // Wipe the canvas: every part and wire goes, then a caption toast says so. No key yet: the parked T4 wipe button calls it.
+  // eslint-disable-next-line no-unused-vars
+  const wipe = () => { removeNodes(view.map((n) => n.id)); toast('wiped'); };
   // Node delete (double-click, or select + Backspace/Delete): drop the node and every wire touching it.
   const removeNodes = (ids) => {
     if (!ids.length) return;
@@ -176,7 +189,7 @@ export default function App() {
       wires: Object.fromEntries(Object.entries(c.wires).filter(([, w]) => !ids.includes(w.source) && !ids.includes(w.target))),
     }));
     setReject(null); setPending(null);
-    setStatus({ text: '', bad: false });
+    setStatus({ phrase: null, text: '' });
   };
   // Snap guides (Tony, Sep 25; Figma/Canva smart guides). A pin within SNAP flow units of another node's pin height
   // pulls the dragged node onto that line, and a thin dotted --ink-2 guide shows it. SNAP = 8: the 20u grid already
@@ -229,12 +242,14 @@ export default function App() {
       <div className="cell c-main r1" />
       <div className="cell c-side r1">
         <button className="disk" aria-pressed={showGrid} aria-label={showGrid ? 'Hide grid' : 'Show grid'} title={showGrid ? 'Hide grid' : 'Show grid'}
-          onClick={() => setShowGrid((g) => !g)}>
+          onClick={() => { setShowGrid(!showGrid); toast(showGrid ? 'gridOff' : 'gridOn'); }}>
           <svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="M-36.5 0H26M-0.6 -27.9L27.3 0L-0.6 27.9" /></svg>
         </button>
         <p className="lockup">Circuit<br /> editor</p>
       </div>
       <h1 className="wordmark" lang="sv" aria-label="Figur"><span className="sr">Figur</span><span aria-hidden="true"><span className="wF">F</span><span className="wi">i</span><span className="wg">g</span><span className="wu">u</span><span className="wr">r</span></span></h1>
+      {/* Status lines are spoken by the logo: a balloon whose tail points at the wordmark. */}
+      {status.phrase ? <Say phrase={status.phrase} className="say-logo" /> : <p className="sr" role="status">{status.text}</p>}
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
@@ -272,13 +287,13 @@ export default function App() {
           {showGrid && <Background gap={20} color="var(--grid)" />}
           <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
         </ReactFlow>
+        <Toasts list={toasts} />
         <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
       </main>
       <Truth circuit={circuit} view={view} fig={fig} setSwitches={setSwitches} />
 
       <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">
-        <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
       </footer>
       <div className="cell c-side r3 help" />
     </div>

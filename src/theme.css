@@ -38,6 +38,7 @@
   --ink-2: #767676;        /* de-emphasis ink, 4.54:1 on paper (disabled palette item) */
   --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
   --grid: #e2e2e2;
+  --caption: #fbf5d2;      /* toast caption fill only: Blambot caption cream, muted toward paper */
   --font: 'Roboto Flex Variable', 'Roboto Flex Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-help: 'Roboto Flex Variable', 'Help Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-label: 'Roboto Flex Variable', 'Label Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -196,14 +197,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    gap between the demo's two switches (ellipse centre 15u above the tab's, tip 4.5u above the tab's bottom), never on a node.
    Size from the ref's balloon : tab ratio (4.55 tab widths wide). Lettering = Anime Ace 3 BB outlines (src/hintLettering.js), the
    face the ref imitates; shipped as paths, never as a font. SVG box 200x130 drawn at 1.052u per unit. */
-.pal-hint { position: absolute; margin: 0; left: calc(var(--tw) / 2 - 6.3 * var(--u)); top: calc(50% - 65.5 * var(--u));
-  width: calc(210.4 * var(--u)); height: calc(136.8 * var(--u)); pointer-events: none; }
-.pal-hint svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pal-hint path { fill: var(--paper); stroke: var(--ink); stroke-width: 3.6; stroke-linejoin: round; }
-.pal-hint .lettering { position: absolute; left: calc(105.2 * var(--u)); top: calc(50.5 * var(--u)); inset-block-end: auto; inset-inline-end: auto;
-  width: calc(136 * var(--u)); height: auto; transform: translate(-50%, -50%); overflow: visible; } /* ref: text ~75% of the balloon width; scales with the balloon */
-.pal-hint .lettering path { fill: var(--ink); stroke: none; }
-.pal-hint .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; } /* +0.022em: Regular up to the ref's weight */
 .react-flow { background: transparent; }
 .react-flow__pane { cursor: default; }
 
@@ -259,11 +252,19 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .disk:focus-visible { outline: max(2px, calc(3 * var(--u))) solid var(--ink); outline-offset: calc(5 * var(--u)); }
 .react-flow__node { cursor: grab; }
 
-/* Inline rejection beside the failed port (GOV.UK Design System: error message next to the field).
-   22px clear of the node box so neither the knob nor its hover ring is covered (R6 defect 8). */
-.reject { position: absolute; right: calc(100% + 22px); transform: translateY(-50%); margin: 0; white-space: nowrap; z-index: 10;
-  padding: 3px 0 3px 10px; border-left: 4px solid var(--ink); background: var(--paper);
-  font: 700 14px/1.2 var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; color: var(--ink); }
+/* Speech balloons (pit2 bub-d): every message is said by a part or by the Figur wordmark, never by a box. Same drawing as
+   the palette hint: white 2:1 ellipse, ~0.25 cap ink line, curved tail; lettering = outlined Anime Ace 3 BB, cap 12u
+   (src/sayLettering.js, src/Say.jsx). The <p> is placed by its tail tip (--ax, --ay); --k = one u in that layer. */
+.say { position: absolute; margin: 0; z-index: 10; pointer-events: none; --k: 1px;
+  left: calc(var(--ax) - var(--dx) * var(--k)); top: calc(var(--ay) - var(--dy) * var(--k));
+  width: calc(var(--w) * var(--k)); height: calc(var(--h) * var(--k)); }
+.say svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.say .bal { fill: var(--paper); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
+.say .emph { fill: var(--ink); stroke: var(--ink); stroke-width: 0.5; stroke-linejoin: round; } /* Bold Italic held above the thickened Regular */
+.say .rest { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; } /* +0.022em, as the hint */
+.say-part { --ax: 42%; --ay: -9px; } /* tip just above the part's top edge, short of it */
+.pal-hint { --k: var(--u); --ax: calc(var(--tw) / 2); --ay: 50%; z-index: 6; } /* same balloon; tail tip at the tab arrow's centre y (Tony), x on the tab's right edge */
+.say-logo { --k: var(--u); --ax: calc(771 * var(--u)); --ay: calc(112 * var(--u)); z-index: 6; } /* tip at the r's shoulder */
 
 /* Truth table: block centred in row 02 (Tony delta 3). */
 .truth { display: flex; flex-direction: column; justify-content: center; padding: 0 calc(20 * var(--u)); }
@@ -294,8 +295,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
-.status .msg { font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
-.status .msg.bad { font-weight: 700; border-left: 0.2367em solid var(--ink); padding-left: 0.59172em; }
 
 .help { display: flex; align-items: center; justify-content: flex-end; padding: 0 calc(16 * var(--u)) 0 calc(8 * var(--u)); }
 .help p { margin: 0; white-space: nowrap; font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); letter-spacing: 0; font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
@@ -344,3 +343,17 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* Toasts (pit2 bub-f): comic CAPTION boxes for system news with no speaker (Blambot grammar_caps.jpg, first style:
+   the flat "MEANWHILE..." box). Flat rectangle, thin ink rule (0.14 cap, as measured), Italic caps, 0.45 x 0.5 cap
+   padding, one line (e1 layout). Fill = --caption, the ref's cream muted toward paper (e2 colouring; --one stays
+   logic 1 only). Stack: newest at the bottom,
+   gap 20u = one canvas grid line. */
+.toasts { position: absolute; right: calc(20 * var(--u)); bottom: calc(20 * var(--u)); z-index: 7; pointer-events: none;
+  display: flex; flex-direction: column; align-items: flex-end; gap: calc(20 * var(--u)); }
+.toast { margin: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); animation: toast-in 160ms ease-out; }
+.toast svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.toast .box { fill: var(--caption); stroke: var(--ink); stroke-width: 1.7; }
+.toast path { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(calc(8 * var(--u))); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
