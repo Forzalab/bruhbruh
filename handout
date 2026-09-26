@@ -173,6 +173,24 @@ Colorway and arrangement parody an adult video site (XNXX screenshots, analyzed 
 
 **Characters:** the gates on the canvas are the dateables. Personality = truth table.
 
+**Compatibility (locked Sep 26, Tony):** % of truth-table rows where both gates give the same output, out of all rows.
+`compat = (rows where outA == outB) / (total rows) × 100`
+Examples (2-input gates, 4 rows):
+
+| A B | AND | OR | NAND | XOR |
+|---|---|---|---|---|
+| 0 0 | 0 | 0 | 1 | 0 |
+| 0 1 | 0 | 1 | 1 | 1 |
+| 1 0 | 0 | 1 | 1 | 1 |
+| 1 1 | 1 | 1 | 0 | 0 |
+
+- AND vs OR → rows 00, 11 match → 2/4 = **50%**
+- AND vs NAND → no row matches → 0/4 = **0%**
+- OR vs XOR → rows 00, 01, 10 match → 3/4 = **75%**
+- any gate vs itself → **100%**
+
+**Love highlight:** while two gates "date" (the wire is being made, and on the match pop-up), the matched rows light up in the truth table, one by one, in the Date accent. Unmatched rows stay dim. Reduced motion → all matched rows light at once.
+
 **Charge:** positive vs negative gates. Proposal: inverting bubble = negative (NOT, NAND, NOR); no bubble = positive (AND, OR, XOR).
 
 **Evolution rules (Date mode):**

@@ -4,6 +4,7 @@
 # Safe to re-run: it restarts the server it started last time and nothing else.
 #   first time:  git clone <url> ~/gates_of_babylon
 #   every time:  ~/gates_of_babylon/scripts/deploy.sh
+#   no prompt:   YES=1 scripts/deploy.sh
 set -euo pipefail
 
 PORT="${PORT:-6677}"
@@ -26,7 +27,22 @@ case "$PORT" in ''|*[!0-9]*) die "PORT must be a number, got '$PORT'";; esac
 cd "$ROOT"
 info "Pulling main"
 git switch --quiet main || die "could not switch to main (uncommitted changes? run: git status)"
-git pull --ff-only --quiet || die "git pull failed (auth? local commits? run: git status)"
+git fetch --quiet origin main || die "git fetch failed (network? auth?)"
+AHEAD="$(git log --oneline origin/main..HEAD)"
+[ -z "$AHEAD" ] || die "local main has commits not on GitHub (fix with: git status / git log origin/main..HEAD):
+$AHEAD"
+NEW="$(git log --oneline --no-decorate HEAD..origin/main)"
+if [ -n "$NEW" ]; then
+  echo "==> New commits on main:"
+  echo "$NEW" | sed 's/^/      /'
+  if [ -t 0 ] && [ "${YES:-0}" != 1 ]; then
+    read -r -p "==> Pull and deploy these? [Y/n] " ans
+    case "$ans" in [nN]*) die "cancelled; nothing changed" ;; esac
+  fi
+  git merge --ff-only --quiet origin/main || die "fast-forward failed; run: git status"
+else
+  info "Already on the newest main"
+fi
 info "Building $(git rev-parse --short HEAD)"
 npm ci --no-audit --no-fund --loglevel=error || die "npm ci failed"
 npm run build --silent || die "build failed"
