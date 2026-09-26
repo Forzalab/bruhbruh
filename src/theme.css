@@ -313,7 +313,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth th .hO { letter-spacing: -0.061728em; } .truth th .hU { font-stretch: 115%; letter-spacing: -0.030864em; }
 .truth td .f4 { font-stretch: 50%; } /* N2: 4 was 20 vs ref3 17 */
 .truth td .f2 { font-stretch: 75%; } .truth td .f1 { font-stretch: 125%; font-variation-settings: 'XTRA' 520; }
-.truth tr.live td { background: var(--one); color: var(--paper); }
+.truth tr.live td { background: var(--one); color: var(--ink); }
 .truth tr:not(.live) td { font-weight: 560; } /* 1c: non-live rows one weight step down, same ink */
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
