@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
@@ -218,6 +218,32 @@ export default function App() {
   // A truth-table row click sets every input switch to that row's bits.
   const setSwitches = (ids, bits) => setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
     ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } }));
+
+  // Test-only hook (stripped from production builds): loads a whole circuit at once, skipping
+  // drag-and-drop, so e2e tests can assemble a circuit programmatically then drive the real UI.
+  // Node order in `circuit.nodes` becomes canvas order (top to bottom per kind), which is what
+  // Truth.jsx uses to pick input/output order.
+  const circuitRef = useRef(circuit); circuitRef.current = circuit;
+  const valuesRef = useRef(values); valuesRef.current = values;
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    window.__gob = {
+      load(next) {
+        let sy = 40, gy = 40, ly = 40;
+        const v = Object.values(next.nodes).map((n) => {
+          const position = n.kind === 'S' ? { x: 26, y: (sy += 80) - 80 }
+            : n.kind === 'L' ? { x: 750, y: (ly += 80) - 80 }
+            : { x: 400, y: (gy += 80) - 80 };
+          return { id: n.id, type: n.kind, position, data: {} };
+        });
+        setReject(null); setPending(null); setEdgeSel(new Set()); setStatus({ text: '', bad: false });
+        setCircuit(next);
+        setView(v);
+      },
+      state: () => ({ circuit: circuitRef.current, values: valuesRef.current }),
+    };
+    return () => { delete window.__gob; };
+  }, []);
 
   return (
     <div className="frame" ref={frame}>
