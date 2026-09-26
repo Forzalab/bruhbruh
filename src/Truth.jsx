@@ -41,6 +41,14 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
   useEffect(() => {
     const el = box.current; if (!el) return;
     const tr = el.querySelector('tbody tr:not(.pad)'); if (tr) setRowH(tr.getBoundingClientRect().height || 40);
+    const head = el.querySelector('thead')?.getBoundingClientRect().height || 0;
+    el.style.maxHeight = '';                       // re-read the CSS cap
+    // cap = the CSS max-height, but never past 20u above the row-03 rule (J-6 anchors the block at the top, so it fills downward)
+    const cell = el.closest('.truth').getBoundingClientRect();
+    const u = el.closest('.frame').clientWidth / 1440;
+    const room = cell.bottom - 20 * u - el.getBoundingClientRect().top;
+    const cap = el.clientHeight >= el.scrollHeight ? null : Math.min(parseFloat(getComputedStyle(el).maxHeight), room);
+    if (cap) el.style.maxHeight = `${head + Math.floor((cap - head) / rowH) * rowH}px`;
     setBoxH(el.clientHeight);
     cues(el);
   });
