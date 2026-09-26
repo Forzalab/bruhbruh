@@ -342,3 +342,17 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* Toasts (pit2 bub-e1): comic CAPTION boxes for system news with no speaker (Blambot grammar_caps.jpg, first style:
+   the flat "MEANWHILE..." box). Flat rectangle, thin ink rule (0.14 cap, as measured), Italic caps, 0.45 x 0.5 cap
+   padding, one line. Fill = --grid, the only tinted neutral in the theme: it marks the caption off from the white
+   balloons like the ref's cream does, without a new colour (--one stays logic 1 only). Stack: newest at the bottom,
+   gap 20u = one canvas grid line. */
+.toasts { position: absolute; left: calc(40 * var(--u)); bottom: calc(20 * var(--u)); z-index: 7; pointer-events: none;
+  display: flex; flex-direction: column; align-items: flex-start; gap: calc(20 * var(--u)); }
+.toast { margin: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); animation: toast-in 160ms ease-out; }
+.toast svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.toast .box { fill: var(--grid); stroke: var(--ink); stroke-width: 1.7; }
+.toast path { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(calc(8 * var(--u))); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
