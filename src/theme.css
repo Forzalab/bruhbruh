@@ -38,6 +38,7 @@
   --ink-2: #767676;        /* de-emphasis ink, 4.54:1 on paper (disabled palette item) */
   --one: #ff5a1f;          /* logic 1 + live table row, nothing else */
   --grid: #e2e2e2;
+  --hover: #e2e2e2;
   --caption: #fbf5d2;      /* toast caption fill only: Blambot caption cream, muted toward paper */
   --font: 'Roboto Flex Variable', 'Roboto Flex Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-help: 'Roboto Flex Variable', 'Help Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -122,7 +123,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   background: var(--ink); cursor: pointer; display: grid; place-items: center; }
 .disk svg { width: calc(100 * var(--u)); height: calc(100 * var(--u)); overflow: visible; }
 .disk path { fill: none; stroke: var(--paper); stroke-width: 13; stroke-linecap: butt; stroke-linejoin: miter; }
-.disk:hover { background: #000; box-shadow: 0 0 0 calc(4 * var(--u)) var(--paper), 0 0 0 calc(7 * var(--u)) var(--ink); }
+.disk:hover { background: var(--ink); box-shadow: 0 0 0 calc(4 * var(--u)) var(--paper), 0 0 0 calc(7 * var(--u)) var(--ink); }
 .disk[aria-pressed='true'] svg { transform: rotate(90deg); }
 .lockup { position: absolute; left: calc(206 * var(--u)); top: calc(96 * var(--u)); margin: 0; font: 800 max(calc(57.9 * var(--u)), calc(57.9 * var(--f)))/0.91537 var(--font); font-stretch: 112%; letter-spacing: 0; text-transform: uppercase; }
 
@@ -303,7 +304,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth tbody tr:not(.pad) { cursor: pointer; scroll-snap-align: start none; }
 .truth td { scroll-snap-align: none start; } /* sideways: snap to whole columns, so a cut header only ever means "scrolled" */
 .truth .tt { scroll-snap-type: both proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */
-.truth tbody tr:not(.live):not(.pad):hover td { background: var(--grid, #f2f2f2); }
+.truth tbody tr:not(.live):not(.pad):hover td { background: var(--hover); }
 .truth tbody tr:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
 /* Per-glyph fit (Pillow vs ref3 at cap 23 / 26). Roboto Flex has no 'tnum' feature: its default figures are
    already tabular (GSUB lists only liga/locl/pnum/rvrn), so ink width is fitted per figure with wdth and XTRA
