@@ -6,13 +6,14 @@ import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampG
 
 const SWG = switchGeom(), LAMPG = lampGeom();
 const HB = 20; // handle box centred on the knob chord: the wire end lands 10px out, inside the knob ink ring (6..12)
-const REACH = KNOB + 30; // how far a hit zone extends past the knob tip
+const REACH = KNOB + 50; // T4-tt: hit zone reaches 50 px past the knob tip into empty space (was 30)
+const EXT = 20; // T4-tt: end zones also reach 20 px above / below the node box; App.jsx clips every zone to the gap
 
 // Per-node hit zones (Tony's sketch): the region between the gate body and the node edge, tiled
 // by port so each side is fully covered with no gaps or overlaps. Rects are in node-local
 // coordinates (same space as geom.js's `at` points), {x, y, w, h}.
 const SW_X1 = PAD + SW.side;
-const SW_ZONES = { out: { x: SW_X1, y: 0, w: REACH, h: SWG.h } };
+const SW_ZONES = { out: { x: SW_X1, y: -EXT, w: REACH, h: SWG.h + 2 * EXT } };
 
 // Generic gate hit zones from its geometry: each input gets a vertical slice of the left edge
 // split at the midpoint between neighbouring pins (matches AND's in0/in1 split for the 2-pin case),
@@ -21,11 +22,11 @@ function gateZones(g) {
   const zones = {};
   const ys = g.in.map(([, y]) => y);
   g.in.forEach(([x, y], i) => {
-    const top = i === 0 ? 0 : (ys[i - 1] + y) / 2;
-    const bottom = i === ys.length - 1 ? g.h : (y + ys[i + 1]) / 2;
+    const top = i === 0 ? -EXT : (ys[i - 1] + y) / 2;
+    const bottom = i === ys.length - 1 ? g.h + EXT : (y + ys[i + 1]) / 2;
     zones[`in${i}`] = { x: x - REACH, y: top, w: REACH, h: bottom - top };
   });
-  zones.out = { x: g.out[0], y: 0, w: REACH, h: g.h };
+  zones.out = { x: g.out[0], y: -EXT, w: REACH, h: g.h + 2 * EXT };
   return zones;
 }
 
@@ -36,12 +37,21 @@ const GATE_GEOM = {
 const GATE_ZONES = Object.fromEntries(Object.entries(GATE_GEOM).map(([type, g]) => [type, gateZones(g)]));
 
 const LAMP_KX = LAMPG.in[0];
-const LAMP_ZONES = { in0: { x: LAMP_KX - REACH, y: 0, w: REACH, h: LAMPG.h } };
+const LAMP_ZONES = { in0: { x: LAMP_KX - REACH, y: -EXT, w: REACH, h: LAMPG.h + 2 * EXT } };
+
+// T4-tt: port geometry for the App's zone resolver. body = the part's ink box (node-local), pins = { handle: [x, y] }.
+export function portGeom(kind, type) {
+  if (kind === 'S') return { w: SWG.w, h: SWG.h, zones: SW_ZONES, pins: { out: SWG.out } };
+  if (kind === 'L') return { w: LAMPG.w, h: LAMPG.h, zones: LAMP_ZONES, pins: { in0: LAMPG.in } };
+  const g = GATE_GEOM[type];
+  return { w: g.w, h: g.h, zones: GATE_ZONES[type], pins: { ...Object.fromEntries(g.in.map((p, i) => [`in${i}`, p])), out: g.out } };
+}
 
 // Every port is a real tab stop (WCAG 2.1.1 / 2.4.7); Enter or Space wires it.
 // The box is centred on the knob, so the edge endpoint sits on the knob's centreline (y exact).
 // The hit area (::after) tiles the node's side instead, via CSS vars set from `zone`.
-function Handle({ nodeId, data, at, zone, ...p }) {
+function Handle({ nodeId, data, at, zone: base, ...p }) {
+  const zone = data.zones?.[p.id] ?? base; // clipped by App.jsx so no zone overlaps a neighbour's body or zone
   const key = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); data.onPort(p.id); } };
   const left = at[0] - HB / 2, top = at[1] - HB / 2;
   return <RFHandle {...p} tabIndex={0} role="button" onKeyDown={key}

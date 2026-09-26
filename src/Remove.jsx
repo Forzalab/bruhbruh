@@ -9,7 +9,7 @@ export default function Remove({ label, onRemove, onHover, style }) {
       style={{ ...style, '--rs': 1 / Math.sqrt(z) }}
       onPointerEnter={() => onHover?.(true)} onPointerLeave={() => onHover?.(false)}
       onClick={(e) => { e.stopPropagation(); onRemove(); }}>
-      <svg viewBox="-12 -12 24 24" aria-hidden="true"><path d="M-6 -6L6 6M6 -6L-6 6" /></svg>
+      <svg viewBox="-14 -14 28 28" aria-hidden="true"><path d="M-7 -7L7 7M7 -7L-7 7" /></svg>
     </button>
   );
 }

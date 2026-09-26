@@ -67,6 +67,16 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
   const cls = (h) => ({ A: 'hA', B: 'hB' })[h];
   const kind = (j) => (j < ins.length ? 'k-S' : 'k-L'); // column kind: switch (input) or lamp (output)
   const stop = live >= first && live < last ? live : first;
+  // T4-tt: no switch or no lamp = nothing to tabulate. Show an empty state, never stale rows or a stale live row.
+  if (!ins.length || !outs.length) return (
+    <aside className="cell c-side r2 truth" aria-label="Truth table">
+      <h2 className="label">Truth table</h2>
+      <div className="tt-empty" role="img" aria-label="Empty: add a switch and a lamp">
+        <svg aria-hidden="true" preserveAspectRatio="none" viewBox="0 0 100 100"><line x1="0" y1="0" x2="100" y2="100" /><line x1="100" y1="0" x2="0" y2="100" /></svg>
+        <p className="tag" aria-hidden="true">[x]</p>
+      </div>
+    </aside>
+  );
   return (
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
