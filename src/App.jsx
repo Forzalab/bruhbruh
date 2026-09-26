@@ -1,10 +1,21 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
-import { nodeTypes, pinYs } from './nodes/index.jsx';
+import { nodeTypes, pinYs, portGeom } from './nodes/index.jsx';
+import { resolveZones } from './zones.js';
+import { routeMetro as route, bends, NUDGE, jogShift } from './route.js';
+import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
+import Draft from './Draft.jsx';
 import Truth from './Truth.jsx';
+import { partNames } from './names.js';
+import Controls from './Controls.jsx';
+import Coach from './Coach.jsx';
+
+const HISTORY = 10; // linear undo stack depth (Tony)
+import Say from './Say.jsx';
+import Toasts, { TOAST_MS } from './Toasts.jsx';
 
 const edgeTypes = { wire: Wire };
 
@@ -27,7 +38,10 @@ const VIEW = [
   { id: 'l1', type: 'L', position: { x: 736, y: 181 }, data: {} },
 ];
 
-let nextWire = 1, nextNode = 1;
+// Dev-only test hook (stripped from the build): a harness may preset window.__GOB = { circuit, view }.
+const BOOT = import.meta.env.DEV ? window.__GOB : null;
+
+let nextWire = 1, nextNode = 1, nextToast = 1;
 
 // Per-figure spans: each figure gets its own width fit against ref3 (see theme.css, table figures).
 // Glyph spans are aria-hidden; one visually hidden run carries the whole word ("01", not "0 1").
@@ -35,15 +49,33 @@ const fig = (v) => [<span key="t" className="sr">{String(v)}</span>,
   <span key="g" aria-hidden="true">{[...String(v)].map((c, k) => <span key={k} className={'f' + c}>{c}</span>)}</span>];
 
 export default function App() {
-  const [circuit, setCircuit] = useState(START);
-  const [view, setView, onViewChange] = useNodesState(VIEW);
+  const [circuit, setCircuit] = useState(BOOT?.circuit ?? START);
+  const [view, setView, onViewChange] = useNodesState(BOOT?.view ?? VIEW);
   const [showGrid, setShowGrid] = useState(false);
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
-  const [status, setStatus] = useState({ text: '', bad: false });
+  // Toasts (caption boxes): newest last; each removes itself after TOAST_MS.
+  const [toasts, setToasts] = useState([]);
+  const toast = (phrase) => {
+    const id = nextToast++;
+    const topic = (p) => p.replace(/(On|Off)$/, '');
+    setToasts((l) => [...l.filter((t) => topic(t.phrase) !== topic(phrase)), { id, phrase }]);
+    setTimeout(() => setToasts((l) => l.filter((t) => t.id !== id)), TOAST_MS);
+  };
+  const [status, setStatus] = useState({ phrase: null, text: '' }); // phrase = a key of sayLettering.js
+  useEffect(() => { if (!reject) return; const t = setTimeout(() => setReject(null), TOAST_MS); return () => clearTimeout(t); }, [reject]);
+  useEffect(() => { if (!status.phrase) return; const t = setTimeout(() => setStatus({ phrase: null, text: '' }), TOAST_MS); return () => clearTimeout(t); }, [status.phrase]);
+  // Tony: a balloon goes after TOAST_MS or at the person's next action, whichever comes first. Capture phase runs
+  // before the action's own handler, so a balloon the action itself raises survives.
+  useEffect(() => {
+    const drop = () => { setReject(null); setStatus((s) => (s.phrase ? { phrase: null, text: '' } : s)); setToasts((l) => (l.length ? [] : l)); };
+    addEventListener('pointerdown', drop, true); addEventListener('keydown', drop, true);
+    return () => { removeEventListener('pointerdown', drop, true); removeEventListener('keydown', drop, true); };
+  }, []);
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
+  const [helpCell, setHelpCell] = useState(null); // row 03 right: the tour's step counter / replay button
   const [tucked, setTucked] = useState(false);
   // Canvas scale = frame width / 1440, the same factor as the CSS --u (100cqw / 1440). React Flow's viewport zoom
   // scales node geometry, strokes and knobs together, so wires stay on pin centres (React Flow docs: Viewport, zoom).
@@ -58,6 +90,20 @@ export default function App() {
   // Pan/zoom are the user's (React Flow docs: Viewport). A resize rescales the current viewport by zoom/zoom_prev
   // instead of resetting it, so the user's own pan and zoom survive (React Flow docs: getViewport / setViewport).
   const [rf, setRf] = useState(null);
+  // Play test: panning the empty canvas could push every part off-screen. When no part is visible, a "Back to parts"
+  // button shows in the canvas corner (visible, not a hidden shortcut) and fits the parts back in at the current zoom range.
+  const [lost, setLost] = useState(false);
+  const checkLost = (v) => {
+    if (!rf || !view.length) return setLost(false);
+    const el = document.querySelector('.canvas .react-flow'); if (!el) return;
+    const b = rf.getNodesBounds(view), W = el.clientWidth, H = el.clientHeight;
+    const x0 = b.x * v.zoom + v.x, y0 = b.y * v.zoom + v.y, x1 = x0 + b.width * v.zoom, y1 = y0 + b.height * v.zoom;
+    setLost(x1 < 40 || y1 < 0 || x0 > W || y0 > H);
+  };
+  // T1 iter 3 (Tony, option c): user zoom (viewport / base) is capped to 0.75-1.5. T1 verdict (pit2/t1w-d):
+  // lines no longer hold a constant screen width across that range; they grow slightly bolder zooming in,
+  // screen px = STROKE * userZoom^ZOOM_EXP (see src/nodes/geom.js).
+  const [userZoom, setUserZoom] = useState(1);
   const prevZoom = useRef(null);
   useLayoutEffect(() => {
     if (!rf) return;
@@ -72,15 +118,51 @@ export default function App() {
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
 
-  const toggle = (id) =>
+  // Undo/redo (T4): one linear stack of whole snapshots {circuit, view}; 10 deep; any new edit clears redo.
+  // `v` keeps the live view array's identity: two commits from ONE event (node delete, then its wires) collapse to one step.
+  const [armed, setArmed] = useState(false); // wipe: first click arms, second confirms
+  const [hist, setHist] = useState({ past: [], future: [] });
+  const snap = () => ({ circuit, v: view, view: view.map(({ id, type, position }) => ({ id, type, position, data: {} })) });
+  const commit = (s = snap()) => setHist((h) => {
+    const top = h.past[h.past.length - 1];
+    if (top && top.circuit === s.circuit && top.v === s.v) return h;
+    return { past: [...h.past, s].slice(-HISTORY), future: [] };
+  });
+  const restore = (s) => { setCircuit(s.circuit); setView(s.view); setReject(null); setPending(null); setEdgeSel(new Set()); setArmed(false); };
+  const undo = () => { if (!hist.past.length) return; const prev = hist.past[hist.past.length - 1];
+    setHist({ past: hist.past.slice(0, -1), future: [snap(), ...hist.future].slice(0, HISTORY) }); restore(prev); };
+  const redo = () => { if (!hist.future.length) return; const next = hist.future[0];
+    setHist({ past: [...hist.past, snap()].slice(-HISTORY), future: hist.future.slice(1) }); restore(next); };
+  const keys = useRef(); keys.current = { undo, redo };
+  useEffect(() => {
+    const k = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      if (e.target.closest?.('input, textarea, [contenteditable="true"]')) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z') { e.preventDefault(); e.shiftKey ? keys.current.redo() : keys.current.undo(); }
+      else if (key === 'y' && !e.metaKey) { e.preventDefault(); keys.current.redo(); } // Windows convention
+    };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, []);
+  const dragSnap = useRef(null); // snapshot at node-drag start; pushed on drop only if something moved
+
+  const toggle = (id) => {
+    commit();
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { ...c.nodes[id], value: !c.nodes[id].value } } }));
+  };
 
   const wires = Object.values(circuit.wires);
+  const names = partNames(view, circuit);
+  // T4-tt: enlarged pin hit zones, clipped against every neighbour (src/zones.js).
+  const zones = useMemo(() => resolveZones(view.filter((n) => circuit.nodes[n.id]).map((n) => ({ id: n.id, x: n.position.x, y: n.position.y,
+    g: portGeom(circuit.nodes[n.id].kind, circuit.nodes[n.id].type) }))), [view, circuit.nodes]);
   const nodes = view.map((n) => ({
     ...n,
-    data: { ...circuit.nodes[n.id], on: values[n.id],
-      wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
-      reject: reject && reject.node === n.id ? reject : null,
+    data: { ...circuit.nodes[n.id], on: values[n.id], name: names[n.id],
+      wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) },
+      lit: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin && values[w.source])), out: !!values[n.id] && wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
+      reject: reject && reject.node === n.id ? reject : null, zones: zones[n.id],
       pending, onPort: (handle) => onPort(n.id, handle), onRemove: () => removeNodes([n.id]) },
   }));
 
@@ -100,16 +182,84 @@ export default function App() {
   // New node from the palette. `at` = flow position of the drop; none (click / Enter) = canvas centre,
   // nudged per add so repeated adds don't stack exactly.
   const switchFull = !canAddSwitch(circuit).ok;
+  const SIZE = { S: [86, 86], L: [114, 114], G: [112, 108] };   // flow units, as measured at zoom 1
+  // Can every wire still find a legal route (route.js clearance rule) with node `id` at `at`?
+  const boxAt = (n, at) => { const m = rf?.getInternalNode(n.id); const [w, h] = m?.measured?.width ? [m.measured.width, m.measured.height] : SIZE[n.type] ?? [112, 108];
+    return { x: at.x, y: at.y, w, h }; };
+  const pinAt = (n, at, hid) => { const hb = rf?.getInternalNode(n.id)?.internals.handleBounds; const src = hid === 'out';
+    const h = (src ? hb?.source : hb?.target)?.find((k) => k.id === hid); if (!h) return null;
+    return [at.x + h.x + (src ? h.width : 0), at.y + h.y + h.height / 2]; };
+  // Ids of wires with no legal route (or a forward wire looping back) when node `id` sits at `at` (`extra` = a part not in the view yet).
+  const stuck = (id, at, extra) => {
+    const pos = (n) => (n.id === id ? at : n.position), all = extra ? [...view, extra] : view;
+    return Object.values(circuit.wires).filter((w) => {
+      const a = all.find((n) => n.id === w.source), b = all.find((n) => n.id === w.target); if (!a || !b) return false;
+      const s = pinAt(a, pos(a), 'out'), t = pinAt(b, pos(b), `in${w.pin}`); if (!s || !t) return false;
+      const r = route(s, t, { src: boxAt(a, pos(a)), dst: boxAt(b, pos(b)), others: all.filter((n) => n !== a && n !== b).map((n) => boxAt(n, pos(n))) });
+      return !r || (t[0] > s[0] && bends(r) > 2); // a forward wire forced into a 4-bend loop counts as stuck too
+    }).map((w) => w.id);
+  };
+  const worse = (now, base) => now.some((w) => !base.includes(w)); // a wire stuck now that was not stuck before
+  // One placement rule for add AND move: nearest grid spot (spiral outwards) that overlaps no part and leaves every
+  // wire a legal route. `id` = the part being placed (skipped as an obstacle), `ok` = the extra wire test.
+  const free = (at, kind, id, ok = () => true) => {
+    const [w, h] = SIZE[kind];
+    // LOCKED (Tony): the wordmark "g" hangs into the canvas on purpose; a part is never placed under it.
+    const gr = frame.current?.querySelector('.wordmark .wg')?.getBoundingClientRect();
+    const g0 = gr && rf?.screenToFlowPosition({ x: gr.left, y: gr.top }), g1 = gr && rf?.screenToFlowPosition({ x: gr.right, y: gr.bottom });
+    const underG = (p) => !!g0 && p.x < g1.x + 20 && p.x + w + 20 > g0.x && p.y < g1.y + 20 && p.y + h + 20 > g0.y;
+    // A NEW part must land fully inside the visible canvas (20 margin); a dragged part may go where the user put it.
+    const vr = !id && frame.current?.querySelector('.react-flow')?.getBoundingClientRect();
+    const v0 = vr && rf?.screenToFlowPosition({ x: vr.left, y: vr.top }), v1 = vr && rf?.screenToFlowPosition({ x: vr.right, y: vr.bottom });
+    const outside = (p) => !!v0 && (p.x < v0.x + 20 || p.y < v0.y + 20 || p.x + w > v1.x - 20 || p.y + h > v1.y - 20);
+    const hit = (p) => underG(p) || outside(p) || view.some((n) => { if (n.id === id) return false; const [nw, nh] = SIZE[n.type] ?? [112, 108];
+      return p.x < n.position.x + nw + 20 && p.x + w + 20 > n.position.x && p.y < n.position.y + nh + 20 && p.y + h + 20 > n.position.y; });
+    for (let r = 0; r < 12; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      const p = r === 0 && id ? at : { x: Math.round((at.x + dx * 40) / 20) * 20, y: Math.round((at.y + dy * 40) / 20) * 20 };
+      if (!hit(p) && ok(p)) return p; }
+    return at;
+  };
+  // Drop after a drag: if the part now leaves some wire with no legal route, nudge it to the nearest legal spot.
+  // No animation, no refusal; the move and the nudge are one state change.
+  // "Legal" = no wire stuck that was not already stuck before the drag (a wire that was already stuck elsewhere must not pin the part).
+  // Nudge cue: the spot the part was dropped on, as a dotted ghost (the dot rule), until the next action or 3 s. No motion.
+  const [ghost, setGhost] = useState(null);
+  useEffect(() => { if (!ghost) return; const off = () => setGhost(null), t = setTimeout(off, 3000);
+    const later = setTimeout(() => { addEventListener('pointerdown', off, true); addEventListener('keydown', off, true); }, 0);
+    return () => { clearTimeout(t); clearTimeout(later); removeEventListener('pointerdown', off, true); removeEventListener('keydown', off, true); }; }, [ghost]);
+  const dragFrom0 = useRef(null);
+  const settle = (_, node) => {
+    const me = view.find((n) => n.id === node.id), from = dragFrom0.current; dragFrom0.current = null; if (!me || !rf) return false;
+    const base = from ? stuck(me.id, from) : [];
+    const nudge = NUDGE !== 'never' && worse(stuck(me.id, node.position), base);
+    let p = nudge ? free(node.position, me.type, me.id, (q) => !worse(stuck(me.id, q), base)) : node.position;
+    // Jog rule: line a wired pin up with its partner when they sit < 20 apart (route.js jogShift), if that spot is legal.
+    const pinY = (n, at, hid) => pinAt(n, at, hid)?.[1];
+    const dys = Object.values(circuit.wires).flatMap((w) => {
+      if (w.source === me.id) { const o = view.find((n) => n.id === w.target); const a = o && pinY(o, o.position, `in${w.pin}`), b = pinY(me, p, 'out'); return a != null && b != null ? [a - b] : []; }
+      if (w.target === me.id) { const o = view.find((n) => n.id === w.source); const a = o && pinY(o, o.position, 'out'), b = pinY(me, p, `in${w.pin}`); return a != null && b != null ? [a - b] : []; }
+      return []; });
+    const dy = jogShift(dys);
+    if (dy) { const q = { x: p.x, y: p.y + dy }; if (free(q, me.type, me.id, () => true) === q && !worse(stuck(me.id, q), base)) p = q; }
+    if (p.x === node.position.x && p.y === node.position.y) return false;
+    if (nudge) setGhost({ ...boxAt(me, node.position) });
+    if (import.meta.env.DEV) (window.__nudges ??= []).push(Math.hypot(p.x - node.position.x, p.y - node.position.y)); // harness probe
+    setView((v) => v.map((n) => (n.id === me.id ? { ...n, position: p } : n)));
+    return true;
+  };
   const addNode = (it, at) => {
     if (it.kind === 'S' && switchFull) return;
+    commit();
     const id = `${it.kind.toLowerCase()}${it.type ? it.type.toLowerCase() : ''}_${nextNode++}`; // "_" keeps added parts clear of the demo ids (s1, s2, g1, l1)
     if (!at) {
       const box = frame.current.querySelector('.canvas').getBoundingClientRect();
       const c = rf.screenToFlowPosition({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
-      at = { x: c.x - 60 + ((nextNode % 5) * 20), y: c.y - 54 + ((nextNode % 5) * 20) };
+      at = { x: c.x - 60, y: c.y - 54 };
     }
+    const base = stuck(); at = free(at, it.kind, undefined, (q) => !worse(stuck(id, q, { id, type: it.kind, position: q }), base));
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { id, kind: it.kind, ...(it.type && { type: it.type }), ...(it.kind === 'S' && { value: false }) } } }));
-    setView((v) => [...v, { id, type: it.kind, position: at, data: {} }]);
+    setView((v) => [...v.map((n) => ({ ...n, selected: false })), { id, type: it.kind, position: at, data: {}, selected: true }]);
   };
   const onDrop = (e) => {
     const raw = e.dataTransfer.getData(DND);
@@ -117,23 +267,26 @@ export default function App() {
     e.preventDefault();
     const p = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
     addNode(JSON.parse(raw), { x: p.x - 40, y: p.y - 54 }); // pointer lands near the glyph's middle
+    setPalOpen(false);
   };
 
   // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
-  const REJECT_TEXT = { 'pin taken': 'That input already has a wire' };
+  // Every message is a comic balloon (Blambot, Comic Book Grammar & Tradition): caps, *bold* marks the stressed word.
+  const REJECT_PHRASE = { 'pin taken': 'pinTaken' };
 
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
     if (!check.ok) {
-      const text = REJECT_TEXT[check.reason] ?? `Can't connect: ${check.reason}`;
-      setReject({ node: target, handle: targetHandle, text });
-      return setStatus({ text, bad: true });
+      const phrase = REJECT_PHRASE[check.reason] ?? 'cantConnect';
+      setReject({ node: target, handle: targetHandle, phrase, text: phrase === 'cantConnect' ? `Can't connect: ${check.reason}` : undefined });
+      return setStatus({ phrase: null, text: '' }); // the gate says it (role=alert); the logo stays quiet
     }
     setReject(null);
+    commit();
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
-    setStatus({ text: '', bad: false }); // silent success: ref3 leaves row 03 empty
+    setStatus({ phrase: null, text: '' }); // silent success: ref3 leaves row 03 empty
   };
 
   // The drop target is decided HERE, by the port hit zones under the pointer (the same big zones a
@@ -148,9 +301,17 @@ export default function App() {
     dragFrom.current = null;
     if (!from || (cs.toHandle && cs.isValid)) return; // React Flow already connected it
     const pt = e.changedTouches ? e.changedTouches[0] : e;
-    const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__handle');
+    // React Flow turns pointer events off on same-kind handles during a drag, so hit-test the port zones by geometry
+    // (each handle's --hit-* vars are flow px; its 20 px box gives the zoom) to find a same-kind drop too.
+    const el = document.elementFromPoint(pt.clientX, pt.clientY)?.closest('.react-flow__handle') ?? [...document.querySelectorAll('.react-flow__handle.port')].find((h) => {
+      const r = h.getBoundingClientRect(), k = r.width / 20, v = (n) => parseFloat(h.style.getPropertyValue(n)) * k;
+      const x = r.left + v('--hit-left'), y = r.top + v('--hit-top');
+      return pt.clientX >= x && pt.clientX <= x + v('--hit-w') && pt.clientY >= y && pt.clientY <= y + v('--hit-h');
+    });
     const node = el?.closest('.react-flow__node')?.dataset.id;
-    if (!node || el.classList.contains(from.type)) return; // nothing there, or same-kind port
+    if (!node) return; // dropped on nothing
+    // Same-kind port (input->input, output->output): no silent refusal; mark the port it was dropped on (T4).
+    if (el.classList.contains(from.type)) return setReject({ node, handle: el.dataset.handleid, phrase: null });
     const to = { node, handle: el.dataset.handleid };
     const [src, dst] = from.type === 'source' ? [from, to] : [to, from];
     onConnect({ source: src.node, target: dst.node, targetHandle: dst.handle });
@@ -158,28 +319,52 @@ export default function App() {
 
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
   const onPort = (node, handle) => {
-    if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: pick an input`, bad: false }); }
-    if (!pending) return setStatus({ text: 'Pick an output first', bad: true });
+    if (handle === 'out') { setPending(node); return setStatus({ phrase: null, text: `Wiring from ${node.toUpperCase()}: pick an input` }); }
+    if (!pending) return setStatus({ phrase: 'pickOutput', text: '' });
     setPending(null);
     onConnect({ source: pending, target: node, targetHandle: handle });
   };
 
+  // Wipe the canvas: every part and wire goes, then a caption toast says so. No key yet: the parked T4 wipe button calls it.
+  // eslint-disable-next-line no-unused-vars
+  const wipe = () => { removeNodes(view.map((n) => n.id)); toast('wiped'); }; // removeNodes commits: one undo brings it all back
   // Node delete (double-click, or select + Backspace/Delete): drop the node and every wire touching it.
   const removeNodes = (ids) => {
     if (!ids.length) return;
+    commit();
     setView((v) => v.filter((n) => !ids.includes(n.id)));
     setCircuit((c) => ({
       nodes: Object.fromEntries(Object.entries(c.nodes).filter(([id]) => !ids.includes(id))),
       wires: Object.fromEntries(Object.entries(c.wires).filter(([, w]) => !ids.includes(w.source) && !ids.includes(w.target))),
     }));
     setReject(null); setPending(null);
-    setStatus({ text: '', bad: false });
+    setStatus({ phrase: null, text: '' });
   };
   // Snap guides (Tony, Sep 25; Figma/Canva smart guides). A pin within SNAP flow units of another node's pin height
   // pulls the dragged node onto that line, and a thin dotted --ink-2 guide shows it. SNAP = 8: the 20u grid already
   // quantizes positions, but pin heights differ per part (switch 43, gates 33/75, lamp 57), so grid snap alone never
   // lines pins up; 8 catches "nearly level" without fighting the grid.
   const SNAP = 8;
+  // Dev-only e2e hook (restored from pit2/archive-testB; scripts/e2e.mjs). Loads a whole circuit at once, skipping
+  // drag-and-drop, so e2e can assemble circuits then drive the real UI. import.meta.env.DEV is a compile-time false in
+  // `vite build`, so this whole block is dead-code-eliminated from dist (checked by scripts/e2e.mjs --check-build).
+  const circuitRef = useRef(circuit); circuitRef.current = circuit;
+  const valuesRef = useRef(values); valuesRef.current = values;
+  const viewRef = useRef(view); viewRef.current = view;
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    window.__gob = {
+      load(next, pos) {
+        let sy = 40, gy = 40, ly = 40;
+        const v = Object.values(next.nodes).map((n) => ({ id: n.id, type: n.kind, data: {}, position: pos?.[n.id]
+          ?? (n.kind === 'S' ? { x: 120, y: (sy += 100) - 100 } : n.kind === 'L' ? { x: 760, y: (ly += 100) - 100 } : { x: 420, y: (gy += 100) - 100 }) }));
+        restore({ circuit: next, view: v });
+      },
+      state: () => ({ circuit: circuitRef.current, values: valuesRef.current, pos: Object.fromEntries(viewRef.current.map((n) => [n.id, n.position])) }),
+    };
+    return () => { delete window.__gob; };
+  }, []);
+
   const [guides, setGuides] = useState([]);
   const pinsAbs = (n, which) => { const c = circuit.nodes[n.id]; if (!c) return []; const p = pinYs(c.kind, c.type);
     const ys = which === 'in' ? p.ins : which === 'out' ? (p.out == null ? [] : [p.out]) : [...p.ins, ...(p.out == null ? [] : [p.out])];
@@ -212,12 +397,13 @@ export default function App() {
     if (sel.length) setEdgeSel((prev) => { const next = new Set(prev); sel.forEach((ch) => (ch.selected ? next.add(ch.id) : next.delete(ch.id))); return next; });
     const gone = changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id);
     if (!gone.length) return;
+    commit();
     setCircuit((c) => ({ ...c, wires: Object.fromEntries(Object.entries(c.wires).filter(([id]) => !gone.includes(id))) }));
   };
 
   // A truth-table row click sets every input switch to that row's bits.
-  const setSwitches = (ids, bits) => setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
-    ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } }));
+  const setSwitches = (ids, bits) => (commit(), setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
+    ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } })));
 
   return (
     <div className="frame" ref={frame}>
@@ -226,19 +412,23 @@ export default function App() {
       <div className="cell c-main r1" />
       <div className="cell c-side r1">
         <button className="disk" aria-pressed={showGrid} aria-label={showGrid ? 'Hide grid' : 'Show grid'} title={showGrid ? 'Hide grid' : 'Show grid'}
-          onClick={() => setShowGrid((g) => !g)}>
+          onClick={() => { setShowGrid(!showGrid); toast(showGrid ? 'gridOff' : 'gridOn'); }}>
           <svg viewBox="-50 -50 100 100" aria-hidden="true"><path d="M-36.5 0H26M-0.6 -27.9L27.3 0L-0.6 27.9" /></svg>
         </button>
         <p className="lockup">Circuit<br /> editor</p>
       </div>
       <h1 className="wordmark" lang="sv" aria-label="Figur"><span className="sr">Figur</span><span aria-hidden="true"><span className="wF">F</span><span className="wi">i</span><span className="wg">g</span><span className="wu">u</span><span className="wr">r</span></span></h1>
+      {/* Status lines are spoken by the logo: a balloon whose tail points at the wordmark. */}
+      {status.phrase ? <Say phrase={status.phrase} className="say-logo" /> : <p className="sr" role="status">{status.text}</p>}
 
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
           (nodes like the switch button would otherwise swallow it). */}
-      <main className="cell c-main r2 canvas"
+      <main style={{ '--stroke': `${STROKE * userZoom ** (ZOOM_EXP - 1)}px`, '--zk': userZoom ** (ZOOM_EXP - 1) }} className="cell c-main r2 canvas" aria-label="Circuit canvas"
         onDragOverCapture={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
         onDropCapture={onDrop} onPointerMove={wireGuides}>
+        {/* Palette first in DOM: its tab is the first stop in the canvas (absolute, so nothing moves) */}
+        <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -254,29 +444,43 @@ export default function App() {
           onConnect={onConnect}
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
-          onPaneClick={() => setPalOpen(false)} // HIG: an overlay panel is transient; a click on the work closes it
-          onNodeDragStart={() => setTucked(true)}
-          onNodeDragStop={() => setTucked(false)}
+          onPaneClick={() => { setPalOpen(false); setReject(null); }} // HIG: an overlay panel is transient; a click on the work closes it
+          onNodeDragStart={(e, node) => { setTucked(true); dragSnap.current = snap(); dragFrom0.current = node.position; }}
+          onNodeDragStop={(e, node, dragged) => { setTucked(false); const from = dragFrom0.current; const nudged = settle(e, node); // nudge (if any) lands inside the same undo step as the drag
+            const s = dragSnap.current; dragSnap.current = null;
+            // Defaults round: decide from the drop event itself (every dragged node, final position) plus the nudge, never
+            // from the render-time `view` (stale by one frame on a fast drop, which skipped the snapshot: undo then
+            // jumped to an older step). The snapshot holds the exact pre-drag positions, so one undo = one drag.
+            const moved = nudged || (dragged ?? [node]).some((d) => { const o = s?.view.find((x) => x.id === d.id); return o && (o.position.x !== d.position.x || o.position.y !== d.position.y); })
+              || (from && (from.x !== node.position.x || from.y !== node.position.y));
+            if (s && moved) commit(s); }}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
           defaultViewport={{ x: 0, y: 0, zoom }}
-          minZoom={0.25}
-          maxZoom={4}
+          onMove={(_, v) => { setUserZoom(v.zoom / zoom); checkLost(v); }}
+          minZoom={0.75 * zoom}
+          maxZoom={1.5 * zoom}
           proOptions={{ hideAttribution: true }}
+          connectionLineComponent={Draft}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
-          <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
+          <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}
+            {ghost && <svg className="nudge-ghost" aria-hidden="true" style={{ left: ghost.x, top: ghost.y, width: ghost.w, height: ghost.h }}>
+              <rect x="1" y="1" width={ghost.w - 2} height={ghost.h - 2} /></svg>}</ViewportPortal>
         </ReactFlow>
-        <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
+        {lost && <button className="back-parts" onClick={() => { rf?.fitView({ padding: 0.15, minZoom: 0.75 * zoom, maxZoom: zoom, duration: 200 }); setLost(false); }}>Back to parts</button>}
+        <Toasts list={toasts} />
       </main>
       <Truth circuit={circuit} view={view} fig={fig} setSwitches={setSwitches} />
 
       <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">
-        <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
+        <Controls canUndo={hist.past.length > 0} canRedo={hist.future.length > 0} canWipe={view.length > 0}
+          armed={armed} setArmed={setArmed} onUndo={undo} onRedo={redo} onWipe={wipe} />
       </footer>
-      <div className="cell c-side r3 help" />
+      <div className="cell c-side r3 help" ref={setHelpCell} />
+      <Coach circuit={circuit} palOpen={palOpen} parts={view.length} slot={helpCell} />
     </div>
     </div>
   );

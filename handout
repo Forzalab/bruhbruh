@@ -153,9 +153,8 @@ Colorway and arrangement parody an adult video site (XNXX screenshots, analyzed 
 
 ## 8. Dating sim — behavior
 
-**Entry to Date mode — the ad banner:**
-- One out-of-place 468×60 ad banner in Logic mode, dating-ad parody, "JOIN NOW". Rotates 3 creatives every 5s (browser reduced-motion → creative 1 only). Click → Date mode, banner removed.
-- Creatives: AI-generated, then human-edited (crop + hand-drawn doodle layer). Refs: `1000099107.png` (dating banner set, ~50% of target composition), `1000099108.png`, `1000099112.jpg`, `1000099114.jpg`, `1000099115.png` (mirrored), `1000099097.webp`.
+**Entry to Date mode:**
+- A full dialog invites the user to try Date mode. If dismissed, a comic balloon says they can check in anytime (Tony, Sep 26).
 - Wordmark reads "Logic" in Logic mode, "Date" in Date mode. Same shape, re-themed.
 - Way back to Logic: the Date wordmark carries a visible "◂ LOGIC" label; click = back. Double-click on the wordmark also toggles, as a bonus only, never the only door.
 - Killed: auto-flip, the doodle door.
@@ -173,17 +172,40 @@ Colorway and arrangement parody an adult video site (XNXX screenshots, analyzed 
 
 **Characters:** the gates on the canvas are the dateables. Personality = truth table.
 
+**Compatibility (locked Sep 26, Tony):** % of truth-table rows where both gates give the same output, out of all rows.
+`compat = (rows where outA == outB) / (total rows) × 100`
+Examples (2-input gates, 4 rows):
+
+| A B | AND | OR | NAND | XOR |
+|---|---|---|---|---|
+| 0 0 | 0 | 0 | 1 | 0 |
+| 0 1 | 0 | 1 | 1 | 1 |
+| 1 0 | 0 | 1 | 1 | 1 |
+| 1 1 | 1 | 1 | 0 | 0 |
+
+- AND vs OR → rows 00, 11 match → 2/4 = **50%**
+- AND vs NAND → no row matches → 0/4 = **0%**
+- OR vs XOR → rows 00, 01, 10 match → 3/4 = **75%**
+- any gate vs itself → **100%**
+
+**Love highlight:** while two gates "date" (the wire is being made, and on the match pop-up), the matched rows light up in the truth table, one by one, in the Date accent. Unmatched rows stay dim. Reduced motion → all matched rows light at once.
+
 **Charge:** positive vs negative gates. Proposal: inverting bubble = negative (NOT, NAND, NOR); no bubble = positive (AND, OR, XOR).
 
+**Glow rule (locked Sep 26, Tony):** a pair glows "meant to be together" when BOTH hold:
+1. same charge (+ + or − −), the old charge rule flipped: same kind attracts;
+2. compatibility ≥ 75%.
+Otherwise → the red "hurt" reaction. Examples: OR+XOR (+ +, 75%) glows. AND+OR (+ +, 50%) hurts. AND+NAND (+ −, 0%) hurts.
+
 **Evolution rules (Date mode):**
-- Positive attracts negative.
+- Same charge attracts.
 - Unbonded gates decay via a **half-life function** behind a swappable interface (`decayHazard(N)`), so the math changes without touching the loop. `1/exp(N)` draft dropped.
 - A good pair, wired, spawns a random child gate after 15s, connected to both parents.
 - Every 30s each gate randomly attaches to some gate.
 
 **Pair reactions:**
-- (+ −) → borders glow positive, all bubbles clear, one "meant to be together" line — SpongeBob × Taylor Swift mashup.
-- (+ +) or (− −) → left block: "We Are Never Ever", right block: "Getting Back Together". Order fixed L→R. Both blocks + borders go red "hurt", no flash, 2–3s, then back. More "I hate you" puns TBD.
+- glow rule met → borders glow positive, all bubbles clear, one "meant to be together" line — SpongeBob × Taylor Swift mashup.
+- glow rule not met → left block: "We Are Never Ever", right block: "Getting Back Together". Order fixed L→R. Both blocks + borders go red "hurt", no flash, 2–3s, then back. More "I hate you" puns TBD.
 - Song and show references use **titles only**, no lyric lines.
 
 **Speech bubbles:** each gate pops a bubble instantly, random English/Chinese mix, Date mode. Content TBD.

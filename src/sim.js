@@ -51,7 +51,7 @@ export function canConnect(circuit, sourceId, targetId, pin) {
   if (!src || !dst) return { ok: false, reason: 'missing node' };
   if (src.kind === 'L') return { ok: false, reason: 'lamp has no output' };
   if (dst.kind === 'S') return { ok: false, reason: 'switch has no input' };
-  if (pin < 0 || pin >= pinCount(dst)) return { ok: false, reason: 'no such pin' };
+  if (!Number.isInteger(pin) || pin < 0 || pin >= pinCount(dst)) return { ok: false, reason: 'no such pin' };
   if (wiresInto(circuit, targetId).some((w) => w.pin === pin)) return { ok: false, reason: 'pin taken' };
   if (reaches(circuit, targetId, sourceId)) return { ok: false, reason: 'loop' };
   return { ok: true };
@@ -61,26 +61,24 @@ export function canConnect(circuit, sourceId, targetId, pin) {
 export function evaluate(circuit) {
   const out = {};
   const onStack = new Set();
+  const into = {};
+  for (const w of Object.values(circuit.wires)) (into[w.target] ??= []).push(w);
 
-  const inputs = (id) => {
-    const bits = Array(pinCount(circuit.nodes[id])).fill(false);
-    for (const w of wiresInto(circuit, id)) bits[w.pin] = out[w.source] ?? false;
-    return bits;
-  };
-
-  const apply = (id) => {
+  // Pull, memoised: each node computed once, so depth costs O(n), not O(paths).
+  const value = (id) => {
+    if (id in out) return out[id];
     if (onStack.has(id)) throw new Error(`loop at ${id}`);
     onStack.add(id);
     const node = circuit.nodes[id];
-    if (node.kind === 'S') out[id] = !!node.value;
-    else if (node.kind === 'L') out[id] = inputs(id)[0];
-    else out[id] = GATES[node.type].fn(...inputs(id));
-    for (const w of wiresFrom(circuit, id)) apply(w.target);
+    const bits = Array(pinCount(node)).fill(false);
+    for (const w of into[id] ?? []) bits[w.pin] = value(w.source);
+    out[id] = node.kind === 'S' ? !!node.value
+      : node.kind === 'L' ? bits[0]
+      : GATES[node.type].fn(...bits);
     onStack.delete(id);
+    return out[id];
   };
 
-  for (const node of Object.values(circuit.nodes)) {
-    if (node.kind !== 'L') apply(node.id);
-  }
+  for (const id of Object.keys(circuit.nodes)) value(id);
   return out;
 }
