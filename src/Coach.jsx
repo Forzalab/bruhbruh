@@ -5,10 +5,9 @@ import Say from './Say.jsx';
 // First-visit coach marks (blind test: nobody found wiring or the switch). Five steps; the person's own action
 // completes each one, so a step never times out while it waits for them. Only the last (read the table) asks for
 // no action: it follows the balloon rule (gone after 3 s or at the next pointer/key). Esc or SKIP ends the tour.
-// Three schools, one step list (VARIANT, set per branch; ?coach=a|b|c overrides for dogfood):
+// Two schools, one step list (VARIANT, set per branch; ?coach=a|b overrides for dogfood):
 //   a  spotlight   : the page dims to ink 60%, the parts the step needs stay lit (Apple-style coach marks).
 //   b  panels      : the page washes to paper 82%, each lit part gets a 3px ink panel frame + numbered caption box.
-//   c  arrow only  : no veil, no balloon; the dotted arrow and one line of help text in row 03.
 // The arrow keeps the site's dot rule: dash = w, gap = 2w, butt caps, w = the 2u rule; solid ink head.
 export const VARIANT = 'a';
 export const TOUR_KEY = 'gob.tour';
@@ -36,7 +35,7 @@ function measure(step, circuit, palOpen) {
   if (step === 0) {
     const tab = rect(q('.pal-tab')); if (!tab) return null;
     const [x, y] = mid(tab);
-    return { holes: [tab], arrow: [[x + 150, y], [tab.right, y]], say: 'hint', tip: [tab.right, y], k: 'lowleft' };
+    return { holes: [tab], arrow: [[x + 120, y + 110], [tab.right, y + 8]], say: 'hint', tip: [tab.right, y], k: 'lowleft' };
   }
   if (step === 1) {
     const item = rect(q('.pal-group:nth-child(2) .pal-item')) ?? rect(q('.pal-item')); if (!item) return null;
