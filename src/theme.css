@@ -345,3 +345,16 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* Variant B: Swiss / Rams. The balloon reduced to its function: a square-cornered panel on the grid's 2px rule, flush-left
+   caps, weight alone carries the stress, and a straight right-angle tail dropped on the speaker's axis. Less, but better. */
+.say { padding: 7px 10px 8px; background: var(--paper); border: 2px solid var(--ink); border-radius: 0;
+  font: 500 12px/1.25 var(--font); font-stretch: 100%; letter-spacing: 0.06em; text-align: left; }
+.say b { font-weight: 800; }
+.say-part, .say-logo.bad { border-left-width: 6px; }
+.say::before { background: var(--ink); }
+.say::after { background: var(--paper); }
+.say-part::before { width: 14px; height: 16px; bottom: -16px; left: calc(50% - 7px); clip-path: polygon(0 0, 100% 0, 0 100%); }
+.say-part::after { width: 10px; height: 11px; bottom: -9px; left: calc(50% - 5px); clip-path: polygon(0 0, 100% 0, 0 100%); }
+.say-logo::before { width: 16px; height: 14px; left: -16px; bottom: 10px; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.say-logo::after { width: 12px; height: 10px; left: -10px; bottom: 12px; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
