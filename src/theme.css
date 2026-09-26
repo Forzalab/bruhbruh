@@ -374,7 +374,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    gap 20u = one canvas grid line. */
 .toasts { position: absolute; right: calc(20 * var(--u)); bottom: calc(20 * var(--u)); z-index: 7; pointer-events: none;
   display: flex; flex-direction: column; align-items: flex-end; gap: calc(20 * var(--u)); }
-.toast { margin: 0; width: calc(var(--w) * var(--u)); height: calc(var(--h) * var(--u)); animation: toast-in 160ms ease-out; }
+.toast { margin: 0; width: calc(var(--w) * max(var(--u), 1px)); height: calc(var(--h) * max(var(--u), 1px)); animation: toast-in 160ms ease-out; }
 .toast svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .toast .box { fill: var(--caption); stroke: var(--ink); stroke-width: 1.7; }
 .toast path { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; }
