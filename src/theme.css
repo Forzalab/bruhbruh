@@ -288,6 +288,13 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth tbody tr:not(.live):not(.pad):hover td { background: #f4f4f4; }
 /* L7: live row = --one fill with INK text: #111 on #ff5a1f is 6.6:1 (WCAG 1.4.3 AA), white on it was 3.0:1. */
 .truth tr.live td, .truth tr.live td.v0, .truth tr.live td.n { background: var(--one); color: var(--ink); }
+/* T3 variant A: column groups by rule (Muller-Brockmann: fields separated by one rule weight). A --rule opens each
+   group; a caption (IN / GATES / OUT) sits over the group's first column. */
+.truth th { overflow: visible; }
+.truth th::before { content: '\00a0'; display: block; margin-bottom: calc(6 * var(--u)); font-size: 0.7em; font-weight: 600; letter-spacing: 0.1em; color: var(--ink-2); text-align: left; padding-left: calc(6 * var(--u)); }
+.truth th.first::before { content: attr(data-cap); }
+.truth th.first, .truth td.first { border-left: var(--rule) solid var(--ink); }
+.truth td.l.v1 { font-weight: 860; }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }

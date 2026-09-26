@@ -62,7 +62,7 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
         <table>
           <thead><tr>
             <th scope="col" className="n">#</th>
-            {heads.map(([h], j) => <th key={h} scope="col" className={grp(j)}>{h}</th>)}
+            {heads.map(([h], j) => <th key={h} scope="col" className={grp(j)} data-cap={{ s: 'In', g: 'Gates', l: 'Out' }[heads[j][1]]}>{h}</th>)}
           </tr></thead>
           <tbody>
             {first > 0 && <tr className="pad" style={{ height: first * rowH }} aria-hidden="true" />}
