@@ -357,18 +357,23 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 [data-v] .react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: var(--sw) calc(var(--sw) * var(--gap)); }
 [data-v] .guide { border-top: 0; height: var(--rw); transform: translateY(-50%);
   background: repeating-linear-gradient(to right, var(--ink-2) 0 var(--rw), transparent 0 calc(var(--rw) * 3)); }
-[data-v] .wire-draft { stroke: var(--ink); stroke-width: var(--sw); stroke-linejoin: miter; stroke-linecap: butt;
-  stroke-dasharray: var(--sw) calc(var(--sw) * var(--gap)); }
-[data-v='C'] .wire-draft { stroke-width: var(--rw); stroke-dasharray: none; }
+[data-v] .wire-draft { stroke: var(--ink); stroke-width: var(--rw); stroke-linejoin: miter; stroke-linecap: butt; }
+[data-v] .wire-draft-casing { stroke: var(--paper); stroke-width: calc(var(--rw) * 3); stroke-linecap: butt; stroke-linejoin: miter; }
+/* Lit wire optical correction (it.2): #ff5a1f has luminance 133 vs ink 17, so a 6px orange line carries the ink weight
+   of 3.08px (measured). Lit wire = stroke + one rule (A/C 8u, B 6u). */
+[data-v] .react-flow__edge.on .react-flow__edge-path { stroke-width: calc(var(--rw) * (var(--mult) + 1)); }
 [data-v] .react-flow__connectionline { overflow: visible; }
 [data-v] .glyph .shape .body { stroke-width: var(--rule); }
 [data-v] .pal-tab path { stroke-width: var(--rule); vector-effect: non-scaling-stroke; }
 [data-v] .pal-more path { fill: none; stroke: var(--ink); stroke-width: var(--rule); vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
 [data-v] .pal-more svg { overflow: visible; width: calc(16 * var(--u)); height: calc(8 * var(--u)); }
-[data-v] .remove path { stroke-width: var(--w-rule); }
+[data-v] .remove path { stroke-width: var(--xw, 2); }
+/* 44u invisible hit area around the 24u tile (Apple HIG 44pt); the tile itself is unchanged. */
+[data-v] .remove::before { content: ""; position: absolute; inset: -20px -10px 0 -10px; } /* grows up and sideways only: never over the part (a 44 box centred on the tile covered the switch toggle, measured) */
 /* C: no gradient. The fade becomes a dotted --ink-2 rule (dot language) at the list edge that has more parts. */
 [data-v='C'] .pal-list { -webkit-mask-image: none; mask-image: none; }
 [data-v='C'] .pal-more::before { content: ''; position: absolute; left: calc(20 * var(--u)); right: calc(20 * var(--u)); height: var(--rule);
   background: repeating-linear-gradient(to right, var(--ink-2) 0 var(--rule), transparent 0 calc(var(--rule) * 3)); }
-[data-v='C'] .pal-more.down::before { top: 0; } [data-v='C'] .pal-more.up::before { bottom: 0; }
-[data-v='C'] .pal-more { background: var(--paper); }
+[data-v='C'] .pal-more.down::before { top: calc(10 * var(--u)); } [data-v='C'] .pal-more.up::before { bottom: calc(10 * var(--u)); }
+[data-v='C'] .pal-more { background: var(--paper); height: calc(30 * var(--u)); }
+[data-v='C'] .pal-more.down { align-content: end; padding-bottom: calc(6 * var(--u)); } [data-v='C'] .pal-more.up { align-content: start; padding-top: calc(6 * var(--u)); }

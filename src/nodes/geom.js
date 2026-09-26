@@ -2,10 +2,10 @@
 // line weight), knobs as semicircles appended INTO the outline path (one continuous stroke),
 // and the lit state as a TRUE inset contour: the outline offset inward by (stroke/2 + gap).
 
-export const STROKE = 6;         // outline + wire weight
-export const GAP = 6;            // paper gap between outline and orange inset
-export const INSET = STROKE / 2 + GAP; // centreline -> inset contour distance (9)
-export const KNOB = 9;           // knob centreline radius: ink reaches 12 from the outline centreline = a 9px bump past the 3px outer ink
+export let STROKE = 6;         // outline + wire weight
+export let GAP = 6;            // paper gap between outline and orange inset
+export let INSET = STROKE / 2 + GAP; // centreline -> inset contour distance (9)
+export let KNOB = 9;           // knob centreline radius: ink reaches 12 from the outline centreline = a 9px bump past the 3px outer ink
 export const PAD = 12;           // svg padding around the outline centreline
 
 const f = (n) => +n.toFixed(3);
@@ -32,9 +32,9 @@ export function switchGeom() {
 /* ---------- Inversion bubble (IEEE Std 91 negation): a ring that IS the output ---------- */
 // It touches the body at (x, y) and the wire leaves from its far side. Lit = orange disc inside
 // the ring, so an inverting gate shows both values: body = before the NOT, bubble = the output.
-export const BUB = 12; // bubble centreline radius
+export let BUB = 12; // bubble centreline radius
 function bubbleAt(x, y) {
-  const cx = x + BUB, r = BUB - STROKE / 2 - 2;
+  const cx = x + BUB, r = BUB - STROKE / 2 - GAP / 3; // GAP/3 = 2 at scale 1 (was a literal 2: clogged when details scale)
   const ring = (R) => `M${cx - R} ${y}A${R} ${R} 0 1 1 ${cx + R} ${y}A${R} ${R} 0 1 1 ${cx - R} ${y}Z`;
   return { bubble: ring(BUB), bubbleInset: ring(r), out: [cx + BUB, y] };
 }
@@ -142,4 +142,11 @@ export function lampGeom() {
   const r = R - INSET;
   const inset = `M${cx - r} ${cy}A${r} ${r} 0 1 1 ${cx + r} ${cy}A${r} ${r} 0 1 1 ${cx - r} ${cy}Z`;
   return { w: cx + R + PAD, h: cy + R + PAD, outline, inset, in: [kx, cy] };
+}
+
+// T1 iteration 2: stroke-coupled details (stroke, knob, bubble, lit gap) are sized in SCREEN units, like the stroke:
+// s = flow units per 1u of screen (--k). Body proportions (PAD, H, a, R) stay in flow units and zoom with the canvas.
+// base = the variant's stroke in u (A/C 6, B 4). Call configure() then the *Geom() functions.
+export function configure(s = 1, base = 6) {
+  STROKE = base * s; GAP = 6 * s; INSET = STROKE / 2 + GAP; KNOB = 9 * s; BUB = 12 * s;
 }

@@ -17,7 +17,8 @@ function StrokeK({ frame }) {
     if (!dom) return;
     dom.style.setProperty('--k', frame / z);                              // flow units per 1u of screen
     dom.style.setProperty('--iz', 1 / z);                                 // flow units per 1 screen px
-    dom.style.setProperty('--rpx', Math.max(1, Math.round(2 * frame))); // the frame rule in whole screen px (= theme.css --rule)
+    dom.style.setProperty('--rpx', Math.max(1, Math.round(2 * frame)));
+    dom.style.setProperty('--xw', Math.max(1, Math.round(2 * frame)) / frame); // X glyph: whole screen px (svg units x frame = screen) // the frame rule in whole screen px (= theme.css --rule)
   }, [dom, frame, z]);
   return null;
 }
@@ -273,9 +274,9 @@ export default function App() {
           onNodeDragStop={() => setTucked(false)}
           snapToGrid
           snapGrid={[20, 20]}
-          onInit={setRf}
+          onInit={(i) => { setRf(i); window.__rf = i; }} // __rf: T1 measuring hook, remove before ship
           defaultViewport={{ x: 0, y: 0, zoom }}
-          minZoom={0.25}
+          minZoom={0.5}
           maxZoom={4}
           proOptions={{ hideAttribution: true }}
           connectionLineComponent={Draft}
