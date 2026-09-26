@@ -364,7 +364,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   .canvas { grid-area: 3 / 2 / 4 / 4; border-right: 0; }
   .truth { grid-area: 4 / 2 / 5 / 4; padding-block: 1.5rem; align-items: end; padding-top: 1.5rem; }
   .truth .label, .truth table { width: calc(23.5rem - 40 * var(--u)); }
-  .c-margin.r3 { grid-area: 5 / 1; } .status { grid-area: 5 / 2; } .help { grid-area: 5 / 3; }
+  .c-margin.r3 { grid-area: 5 / 1; } .status { grid-area: 5 / 2 / 6 / 4; border-right: 0; } .help { display: none; } /* T4: stacked = one full-width row 03, bar centred under the full-width canvas */
   .wordmark { left: calc(var(--gut) + 2 * var(--u)); }
 }
 .wire-hit { pointer-events: stroke; } /* wires are not selectable, so React Flow turns their events off; the hover band opts back in */
@@ -390,3 +390,40 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth td.k-S + td.k-L { box-shadow: inset var(--rule) 0 0 var(--ink); } /* inset like the header, so both rules sit on the same x */
 .truth thead th.k-S { box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); } /* one header rule weight across all columns */ /* the heavy header rule runs over the lamp group only: with the vertical rule it makes one ink corner that closes the outputs; the switch side keeps the row hairline */
 .truth thead th.k-S + th.k-L { box-shadow: inset var(--rule) 0 0 var(--ink), inset 0 calc(-1 * var(--rule)) 0 var(--ink); }
+
+/* ===== T4 it2: error mark, no selection frame, row-03 control bar ===== */
+.mark { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 11; }
+.mark circle { fill: none; stroke: var(--ink); stroke-width: var(--stroke); } /* SOLID: dotted = free pin stub, never 'refused' */
+.react-flow__node:has(.mark) .react-flow__handle.port { outline: none; } /* no pin square inside the ring */
+.react-flow .react-flow__node.selected { outline: none; } /* img4: no dashed selection frame; the X already shows selection */
+
+.status { padding: 0; display: flex; justify-content: center; align-items: stretch; }
+.ctl { display: flex; align-items: stretch; height: 100%; }
+.cb-wrap { position: relative; display: flex; }
+.cb { position: relative; margin: 0; padding: 0; border: 0; border-radius: 0; background: var(--paper); color: var(--ink); cursor: pointer;
+  display: grid; place-items: center; -webkit-tap-highlight-color: transparent; }
+.cb::before { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); } /* HIG 44pt */
+.cb svg { width: 50%; height: 50%; overflow: visible; } /* glyph = 50% of the cell; stroke = wire weight, never under 2px */
+.cb path { fill: none; stroke: currentColor; stroke-width: max(2px, var(--stroke)); vector-effect: non-scaling-stroke; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; }
+.cb:disabled { color: var(--ink-2); cursor: default; }
+.cb:focus-visible { outline: none; }
+
+/* Ruled cells: [undo][wipe][redo] = three SQUARE cells (side = row height) between 2u rules, centred in row 03. */
+.ctl { border-left: var(--rule) solid var(--ink); }
+.cb-wrap { height: 100%; aspect-ratio: 1; border-right: var(--rule) solid var(--ink); }
+.cb { width: 100%; height: 100%; }
+
+/* States. hover = ink fill; press = ink + paper frame; armed = PAPER cell with a 6u ink frame
+   (the wire weight x2, latched) + balloon: an alarm frame, never the same picture as hover. */
+.cb:not(:disabled):hover { background: var(--ink); color: var(--paper); }
+.cb:not(:disabled):active { background: var(--ink); color: var(--paper); box-shadow: inset 0 0 0 calc(5 * var(--u)) var(--ink), inset 0 0 0 calc(5 * var(--u) + var(--rule)) var(--paper); }
+.cb:focus-visible { outline: var(--rule) solid currentColor; outline-offset: calc(-8 * var(--u)); }
+.cb.armed, .cb.armed:hover { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 calc(6 * var(--u)) var(--ink); }
+
+.wipe-bubble { --bu: max(var(--u), 1px); /* lettering cap >= 11px at 1024 */ position: absolute; left: calc(50% - 36 * var(--bu)); bottom: calc(100% + 4 * var(--bu)); margin: 0; z-index: 20; pointer-events: none;
+  width: calc(240 * var(--bu)); height: calc(100 * var(--bu)); }
+.wipe-bubble svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wipe-bubble path { fill: var(--paper); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; } /* = .say .bal stroke */
+.wipe-bubble .lettering { inset: auto; left: calc(132 * var(--bu)); top: calc(40 * var(--bu)); width: calc(174 * var(--bu)); height: auto; transform: translate(-50%, -50%); }
+.wipe-bubble .lettering path { fill: var(--ink); stroke: none; }
+.wipe-bubble .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; }
