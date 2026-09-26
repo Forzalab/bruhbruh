@@ -26,6 +26,8 @@ const markSeen = () => { try { localStorage.setItem(HINT_KEY, '1'); } catch { /*
 // open/setOpen and `tucked` (a drag is running: bar slides away, state restored after) come from App.
 export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onAdd }) {
   const list = useRef(null);
+  const tab = useRef(null);
+  const byKey = useRef(false);
   const [more, setMore] = useState({ up: false, down: false });
   const [hint, setHint] = useState(false);
 
@@ -55,6 +57,19 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
     return () => { clearTimeout(t); off(); };
   }, []);
 
+  useEffect(() => {
+    if (open && byKey.current) { byKey.current = false;
+      requestAnimationFrame(() => list.current?.querySelector('.pal-item:not([aria-disabled])')?.focus()); }
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e) => { if (e.key !== 'Escape') return;
+      const inside = e.target.closest?.('.palette');
+      setOpen(false); if (inside) tab.current?.focus(); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [open]);
+
   const wheel = (e) => list.current?.scrollBy({ top: e.deltaY });
 
   const item = (it) => {
@@ -75,10 +90,14 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
   };
 
   return (
-    <div className={`palette ${open ? 'open' : ''} ${tucked ? 'tucked' : ''}`}
-      onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}>
+    <div className={`palette ${open ? 'open' : ''} ${tucked ? 'tucked' : ''}`}>
+      <button className="pal-tab" ref={tab} aria-expanded={open} aria-controls="pal-list" aria-label={open ? 'Close parts' : 'Open parts'}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') byKey.current = true; }}
+        onClick={() => setOpen(!open)}>
+        <svg viewBox="0 0 24 40" aria-hidden="true"><path d={open ? 'M16 8L6 20L16 32' : 'M8 8L18 20L8 32'} /></svg>
+      </button>
       <nav className="pal-bar" aria-label="Parts" aria-hidden={!open || undefined} inert={!open || undefined}>
-        <ul ref={list} className={`pal-list ${more.up ? 'fu' : ''} ${more.down ? 'fd' : ''}`} onScroll={measure}>
+        <ul ref={list} id="pal-list" className={`pal-list ${more.up ? 'fu' : ''} ${more.down ? 'fd' : ''}`} onScroll={measure}>
           {GROUPS.map((g, i) => <li key={i} className="pal-group"><ul>{g.map(item)}</ul></li>)}
         </ul>
         {/* Scroll cues: a bare ink arrowhead in a one-baseline paper margin, no box and no fill behind it (a solid block
@@ -86,9 +105,6 @@ export default function Palette({ open, setOpen, tucked, onDrag, switchFull, onA
             by accident) and hands the wheel to the list. */}
         <ScrollCues more={more} onWheel={wheel} />
       </nav>
-      <button className="pal-tab" aria-expanded={open} aria-label={open ? 'Close parts' : 'Open parts'} onClick={() => setOpen(!open)}>
-        <svg viewBox="0 0 24 40" aria-hidden="true"><path d={open ? 'M16 8L6 20L16 32' : 'M8 8L18 20L8 32'} /></svg>
-      </button>
       {hint && !open && !tucked && (
         <Say phrase="hint" className="pal-hint" />
       )}

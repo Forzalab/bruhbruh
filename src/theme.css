@@ -147,7 +147,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .palette.open.tucked .pal-tab { left: calc(var(--tw) / -2); }
 .pal-tab svg { width: calc(14 * var(--u)); height: calc(24 * var(--u)); overflow: visible; }
 .pal-tab path { fill: none; stroke: var(--ink); stroke-width: 3.5; stroke-linecap: butt; stroke-linejoin: miter; }
-.pal-tab:hover, .pal-tab:focus-visible { background: var(--ink); outline: none; }
+.pal-tab:hover, .pal-tab:focus-visible { background: var(--ink); } .pal-tab:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .pal-tab:hover path, .pal-tab:focus-visible path { stroke: var(--paper); }
 
 /* Column on the frame's baseline grid (20u). Glyphs = the canvas circuit at 0.41 (Tony: bigger, as in PR 3's first
