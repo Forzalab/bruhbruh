@@ -1,7 +1,8 @@
+import { useId } from 'react';
 import { Handle as RFHandle, Position } from '@xyflow/react';
 import Remove from '../Remove.jsx';
 import Say from '../Say.jsx';
-import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
+import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB, INSET, BUB } from './geom.js';
 
 const SWG = switchGeom(), LAMPG = lampGeom();
 const HB = 20; // handle box centred on the knob chord: the wire end lands 10px out, inside the knob ink ring (6..12)
@@ -53,7 +54,41 @@ function Handle({ nodeId, data, at, zone, ...p }) {
 // Outline = one path (body + knobs, one continuous stroke). Lit = second path: the true inset contour.
 // bubble (NAND/NOR/NOT) and extraCurve (XOR) are optional extra ink paths, same stroke system.
 // Inverting gates: the body shows the value before the NOT, the bubble shows the output.
-function Shape({ g, on, idle }) {
+// Pin bleed (Tony's sketch): the lit body fill flows OUT through the pin as a 6px neck and becomes the wire, one
+// orange piece. The neck is drawn over the ink, so the outline opens exactly where the orange passes and the knob's
+// ink wraps around the neck on both sides; everywhere else the outline stays ink. When the body behind a lit pin is
+// unlit (e.g. one input of an AND at 1), the neck stops at the outline's inner ink edge: the wire's 1 enters, nothing to join.
+export const XORV = 'e2';
+// Midline where the dotted empty half meets the orange half: f1 = orange dots, f2 = no midline, f3 = grey dots; f1/f3 sit 4px into the paper, off the orange edge.
+export const MIDV = 'f2';
+const KI = KNOB + 5; // 2px past // knob ink tip from the pin centreline (the wire end lands inside it)
+const DEEP = INSET + 3; // reaches 3px into the lit inset contour so the joint has no seam
+const neck = (x0, x1, y) => `M${Math.min(x0, x1)} ${y - 3}H${Math.max(x0, x1)}V${y + 3}H${Math.min(x0, x1)}Z`;
+function bleeds(g, lit, bodyLit, on) {
+  if (!lit) return '';
+  let d = '';
+  const ins = Array.isArray(g.in?.[0]) ? g.in : g.in ? [g.in] : [];
+  // Unlit body on a multi-input gate (Tony's sketch): the lit input fills ITS half of the inset (see Shape), so the
+  // neck still runs DEEP and joins that half-wedge.
+  const multi = ins.length > 1;
+  // XOR: its knob tips touch the extra back curve. XORV picks how the orange meets it (Tony decides):
+  // e1 = the extra curve opens at the neck, e2 = the curve stays ink over the neck (wire hops it), e3 = no neck.
+  const xo = g.extraCurve ? { e1: 6, e2: 0, e3: null }[XORV] : 0;
+  ins.forEach(([x, y], i) => { if (lit.in?.[i] && xo !== null) d += neck(x - KI - xo, x + (bodyLit || multi ? DEEP : 3), y); });
+  if (g.out && lit.out) {
+    const [x, y] = g.out;
+    d += g.bubble ? (on ? neck(x - BUB, x + 10, y) : '') : neck(x - DEEP, x + KI, y);
+  }
+  return d;
+}
+
+function Shape({ g, on, idle, lit }) {
+  const bodyLit = !idle && (g.bubble ? !on : on);
+  const z = idle ? '' : bleeds(g, lit, bodyLit, on);
+  // Half fills: body unlit, some inputs lit -> the inset clipped to the lit inputs' halves (split at the midline).
+  const cid = useId();
+  const halves = !idle && !bodyLit && lit && Array.isArray(g.in?.[0]) && g.in.length > 1
+    ? g.in.map((_, i) => lit.in?.[i] && (i === 0 ? [0, g.h / 2] : [g.h / 2, g.h])).filter(Boolean) : [];
   return (
     <svg className="shape" width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true">
       {g.extraCurve && <path className="body line" d={g.extraCurve} />}
@@ -61,6 +96,25 @@ function Shape({ g, on, idle }) {
       {g.bubble && <path className="body" d={g.bubble} />}
       {!idle && (g.bubble ? !on : on) && <path className="lit" d={g.inset} />}
       {!idle && g.bubble && on && <path className="lit" d={g.bubbleInset} />}
+      {halves.length > 0 && <>
+        <clipPath id={cid}>{halves.map(([y0, y1], i) => <rect key={i} x={0} y={y0} width={g.w} height={y1 - y0} />)}</clipPath>
+        <path className="lit" d={g.inset} clipPath={`url(#${cid})`} />
+      </>}
+      {z && <path className="lit" d={z} />}
+      {g.extraCurve && XORV === 'e2' && z && <path className="body line" d={g.extraCurve} />}
+      {halves.length === 1 && (() => {
+        // Tony's sketch: the unlit half = a dotted outline of its empty wedge, and the unlit pin's stub dots into it.
+        // Same dots as the free-pin stubs (.stubs line): --ink-2, 2px, 2 4, butt.
+        const j = halves[0][0] === 0 ? 1 : 0, [px, py] = g.in[j], off = MIDV === 'f2' ? 0 : 4;
+        return <g className="dots">
+          <clipPath id={cid + 'o'}><rect x={0} y={j ? g.h / 2 + off : 0} width={g.w} height={g.h / 2 - off} /></clipPath>
+          <clipPath id={cid + 'i'}><path d={g.inset} /></clipPath>
+          <path d={g.inset} clipPath={`url(#${cid}o)`} />
+          {MIDV !== 'f2' && <line className={MIDV === 'f1' ? 'one' : ''} x1={0} x2={g.w} clipPath={`url(#${cid}i)`}
+            y1={g.h / 2 + (j ? off : -off)} y2={g.h / 2 + (j ? off : -off)} />}
+          <line x1={px - KNOB + 3} x2={px + INSET} y1={py} y2={py} />
+        </g>;
+      })()}
     </svg>
   );
 }
@@ -117,7 +171,7 @@ const NAMES = { s1: 'A', s2: 'B' };
 export function SwitchNode({ id, data }) {
   return (
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
-      <Shape g={SWG} on={data.on} />
+      <Shape g={SWG} on={data.on} lit={data.lit} />
       <Stubs out={SWG.out} wired={data.wired} />
       <X g={SWG} label="Delete switch" data={data} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
@@ -131,7 +185,7 @@ export function GateNode({ id, data }) {
   const g = GATE_GEOM[data.type], zones = GATE_ZONES[data.type];
   return (
     <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
-      <Shape g={g} on={data.on} />
+      <Shape g={g} on={data.on} lit={data.lit} />
       <Stubs ins={g.in} out={g.out} wired={data.wired} />
       <X g={g} label={`Delete ${data.type} gate`} data={data} />
       {g.in.map((at, i) => (
@@ -148,7 +202,7 @@ export function GateNode({ id, data }) {
 export function LampNode({ id, data }) {
   return (
     <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={data.on ? 'Lamp on' : 'Lamp off'}>
-      <Shape g={LAMPG} on={data.on} />
+      <Shape g={LAMPG} on={data.on} lit={data.lit} />
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
       <X g={LAMPG} label="Delete lamp" data={data} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
