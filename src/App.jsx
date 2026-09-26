@@ -58,6 +58,10 @@ export default function App() {
   // Pan/zoom are the user's (React Flow docs: Viewport). A resize rescales the current viewport by zoom/zoom_prev
   // instead of resetting it, so the user's own pan and zoom survive (React Flow docs: getViewport / setViewport).
   const [rf, setRf] = useState(null);
+  // T1 iter 3 (Tony, option c): lines hold a constant screen width while the user's zoom (viewport / base) is in
+  // 0.75-1.5; outside that band they scale with the canvas. Zoom range capped at 0.5-2x base.
+  const [userZoom, setUserZoom] = useState(1);
+  const lineZ = Math.min(1.5, Math.max(0.75, userZoom));
   const prevZoom = useRef(null);
   useLayoutEffect(() => {
     if (!rf) return;
@@ -236,7 +240,7 @@ export default function App() {
       <div className="cell c-margin r2"><span className="rownum">{fig('02')}</span></div>
       {/* Part drops are caught here in the capture phase, so a drop that lands on an existing node still adds the part
           (nodes like the switch button would otherwise swallow it). */}
-      <main className="cell c-main r2 canvas"
+      <main style={{ '--stroke': `${6 / lineZ}px` }} className="cell c-main r2 canvas"
         onDragOverCapture={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
         onDropCapture={onDrop} onPointerMove={wireGuides}>
         <ReactFlow
@@ -261,8 +265,9 @@ export default function App() {
           snapGrid={[20, 20]}
           onInit={setRf}
           defaultViewport={{ x: 0, y: 0, zoom }}
-          minZoom={0.25}
-          maxZoom={4}
+          onMove={(_, v) => setUserZoom(v.zoom / zoom)}
+          minZoom={0.5 * zoom}
+          maxZoom={2 * zoom}
           proOptions={{ hideAttribution: true }}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
