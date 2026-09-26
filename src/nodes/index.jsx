@@ -98,11 +98,11 @@ const mass = (() => {
   };
 })();
 
-// Delete X on node hover, INSIDE the shape at its optical centre (Tony picked variant E: the X lives where the lit
-// fill lives, so it never straddles the outline). The switch keeps it on its top edge: its inside is the toggle.
+// Delete X on node hover, on the top edge at the shape's optical centre (Tony's sketch). Not inside the body (variant E):
+// the centre is where a node is grabbed, so an X there blocked dragging and turned a grab-click into a delete.
 // Right-click still deletes (testing).
-const X = ({ g, label, data, edge }) => { const [mx, my] = mass(g); return <Remove label={label} onRemove={data.onRemove}
-  style={{ position: 'absolute', left: mx, top: edge ? PAD : my, transform: 'translate(-50%, -50%) scale(var(--rs))' }} />; };
+const X = ({ g, label, data }) => <Remove label={label} onRemove={data.onRemove}
+  style={{ position: 'absolute', left: mass(g)[0], top: PAD, transform: 'translate(-50%, -50%) scale(var(--rs))' }} />;
 
 const NAMES = { s1: 'A', s2: 'B' };
 
@@ -111,7 +111,7 @@ export function SwitchNode({ id, data }) {
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
       <Shape g={SWG} on={data.on} />
       <Stubs out={SWG.out} wired={data.wired} />
-      <X g={SWG} label="Delete switch" data={data} edge />
+      <X g={SWG} label="Delete switch" data={data} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
