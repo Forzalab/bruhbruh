@@ -296,6 +296,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth td { scroll-snap-align: none start; } /* sideways: snap to whole columns, so a cut header only ever means "scrolled" */
 .truth .tt { scroll-snap-type: both proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */
 .truth tbody tr:not(.live):not(.pad):hover td { background: var(--grid, #f2f2f2); }
+.truth tbody tr:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
 /* Per-glyph fit (Pillow vs ref3 at cap 23 / 26). Roboto Flex has no 'tnum' feature: its default figures are
    already tabular (GSUB lists only liga/locl/pnum/rvrn), so ink width is fitted per figure with wdth and XTRA
    (XTRA = counter/white width, Google Fonts Roboto Flex axis docs). */

@@ -58,12 +58,13 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
 
   const cls = (h) => ({ A: 'hA', B: 'hB' })[h];
   const kind = (j) => (j < ins.length ? 'k-S' : 'k-L'); // column kind: switch (input) or lamp (output)
+  const stop = live >= first && live < last ? live : first;
   return (
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
       <div className="tt-wrap">
       <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => { setTop(e.currentTarget.scrollTop); cues(e.currentTarget); }}>
-        <table style={{ '--n': heads.length }}>
+        <table style={{ '--n': heads.length }} role="grid" aria-label="Truth table rows; arrow keys set the switches">
           <thead><tr>
             {heads.map((h, j) => h === 'OUT' && classic
               ? <th key={h} className={kind(j)} scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th>
@@ -74,7 +75,16 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
             {rows.slice(first, last).map((row, k) => {
               const i = first + k;
               return (
-                <tr key={i} className={i === live ? 'live' : ''} onClick={() => setSwitches(ins, row.slice(0, ins.length))}>
+                <tr key={i} className={i === live ? 'live' : ''} tabIndex={i === stop ? 0 : -1}
+                  aria-selected={i === live} data-row={i}
+                  onClick={() => setSwitches(ins, row.slice(0, ins.length))}
+                  onKeyDown={(e) => {
+                    const go = (j) => { if (j < 0 || j >= rows.length) return; e.preventDefault();
+                      setSwitches(ins, rows[j].slice(0, ins.length));
+                      requestAnimationFrame(() => box.current?.querySelector(`tr[data-row="${j}"]`)?.focus()); };
+                    if (e.key === 'ArrowDown') go(i + 1); else if (e.key === 'ArrowUp') go(i - 1);
+                    else if (e.key === 'Home') go(0); else if (e.key === 'End') go(rows.length - 1);
+                    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSwitches(ins, row.slice(0, ins.length)); } }}>
                   {row.map((b, j) => <td key={j} className={kind(j)}>{fig(b)}</td>)}
                 </tr>
               );
