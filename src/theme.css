@@ -288,6 +288,16 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .truth tbody tr:not(.live):not(.pad):hover td { background: #f4f4f4; }
 /* L7: live row = --one fill with INK text: #111 on #ff5a1f is 6.6:1 (WCAG 1.4.3 AA), white on it was 3.0:1. */
 .truth tr.live td, .truth tr.live td.v0, .truth tr.live td.n { background: var(--one); color: var(--ink); }
+/* T3 variant B: column kinds by tone (M3 surface-container tones; no new hue). Switches on paper, gates on a light
+   grey surface, the lamp column headed by an inverted ink block and set heavier. A paper gap splits the groups. */
+.truth table { border-collapse: separate; border-spacing: 0; }
+.truth td.g { background: #f1f1f1; }
+.truth th.g { background: #f1f1f1; }
+.truth thead th { padding: calc(9 * var(--u)) 0; }
+.truth thead th.l { background: var(--ink); color: var(--paper); }
+.truth td.l.v1 { font-weight: 860; }
+.truth th.first:not(.s), .truth td.first:not(.s) { border-left: calc(6 * var(--u)) solid var(--paper); }
+.truth tbody tr:not(.live):not(.pad):hover td.g { background: #e6e6e6; }
 
 /* Footer: status (left) and help bar (right). Delta 6: Medium caps, cap 12px, +0.08em, ink. */
 .status { display: flex; align-items: center; padding: 0 calc(16 * var(--u)); }
