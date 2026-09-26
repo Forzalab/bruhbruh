@@ -344,3 +344,31 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* ===== T1 prototype (?v=A|B|C). Weight tokens are px at 1440 (N * --u on screen). ===== */
+:root[data-v] { --w-hair: 1; --w-rule: 2; --w-stroke: 6; --mult: 3; --gap: 2; } /* dot = w x w square, gap = 2w; stroke = mult x rule */
+:root[data-v='B'] { --w-stroke: 4; --mult: 2; }
+[data-v] .react-flow { --k: 1; --iz: 1; --rpx: 2;
+  --rw: calc(var(--rpx) * var(--iz) * 1px); --sw: calc(var(--rw) * var(--mult)); }
+[data-v] .shape .body { stroke-width: var(--sw); }
+[data-v] .react-flow__edge-path { stroke-width: var(--sw); }
+[data-v] .stubs line { stroke-width: var(--rw); stroke-dasharray: var(--rw) calc(var(--rw) * var(--gap)); }
+[data-v] .armed .react-flow__edge-path,
+[data-v] .react-flow__edge.selected .react-flow__edge-path { stroke-dasharray: var(--sw) calc(var(--sw) * var(--gap)); }
+[data-v] .guide { border-top: 0; height: var(--rw); transform: translateY(-50%);
+  background: repeating-linear-gradient(to right, var(--ink-2) 0 var(--rw), transparent 0 calc(var(--rw) * 3)); }
+[data-v] .wire-draft { stroke: var(--ink); stroke-width: var(--sw); stroke-linejoin: miter; stroke-linecap: butt;
+  stroke-dasharray: var(--sw) calc(var(--sw) * var(--gap)); }
+[data-v='C'] .wire-draft { stroke-width: var(--rw); stroke-dasharray: none; }
+[data-v] .react-flow__connectionline { overflow: visible; }
+[data-v] .glyph .shape .body { stroke-width: var(--rule); }
+[data-v] .pal-tab path { stroke-width: var(--rule); vector-effect: non-scaling-stroke; }
+[data-v] .pal-more path { fill: none; stroke: var(--ink); stroke-width: var(--rule); vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
+[data-v] .pal-more svg { overflow: visible; width: calc(16 * var(--u)); height: calc(8 * var(--u)); }
+[data-v] .remove path { stroke-width: var(--w-rule); }
+/* C: no gradient. The fade becomes a dotted --ink-2 rule (dot language) at the list edge that has more parts. */
+[data-v='C'] .pal-list { -webkit-mask-image: none; mask-image: none; }
+[data-v='C'] .pal-more::before { content: ''; position: absolute; left: calc(20 * var(--u)); right: calc(20 * var(--u)); height: var(--rule);
+  background: repeating-linear-gradient(to right, var(--ink-2) 0 var(--rule), transparent 0 calc(var(--rule) * 3)); }
+[data-v='C'] .pal-more.down::before { top: 0; } [data-v='C'] .pal-more.up::before { bottom: 0; }
+[data-v='C'] .pal-more { background: var(--paper); }

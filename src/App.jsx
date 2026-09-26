@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
+import { ReactFlow, Background, useNodesState, ViewportPortal, useStore } from '@xyflow/react';
+import Draft from './Draft.jsx';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
@@ -7,6 +8,19 @@ import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
 
 const edgeTypes = { wire: Wire };
+
+// T1 stroke lock: --k = frame scale / viewport zoom. Canvas strokes are written as N px * --k, so they draw N * --u
+// screen px at ANY user zoom (the geometry zooms, the ink weight does not).
+function StrokeK({ frame }) {
+  const dom = useStore((s) => s.domNode), z = useStore((s) => s.transform[2]);
+  useLayoutEffect(() => {
+    if (!dom) return;
+    dom.style.setProperty('--k', frame / z);                              // flow units per 1u of screen
+    dom.style.setProperty('--iz', 1 / z);                                 // flow units per 1 screen px
+    dom.style.setProperty('--rpx', Math.max(1, Math.round(2 * frame))); // the frame rule in whole screen px (= theme.css --rule)
+  }, [dom, frame, z]);
+  return null;
+}
 
 // Sim data: the truth. Positions live separately in React Flow (view only).
 const START = {
@@ -264,7 +278,9 @@ export default function App() {
           minZoom={0.25}
           maxZoom={4}
           proOptions={{ hideAttribution: true }}
+          connectionLineComponent={Draft}
         >
+          <StrokeK frame={zoom} />
           {showGrid && <Background gap={20} color="var(--grid)" />}
           <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
         </ReactFlow>

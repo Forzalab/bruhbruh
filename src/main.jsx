@@ -3,6 +3,7 @@ import '@xyflow/react/dist/style.css';
 import './theme.css';
 import App from './App.jsx';
 
+{ const v = new URLSearchParams(location.search).get('v'); if (v) document.documentElement.dataset.v = v; }
 createRoot(document.getElementById('root')).render(<App />);
 
 // Zoom probe for theme.css (--dpr, --zoomed). devicePixelRatio changes with browser zoom; the matchMedia resolution

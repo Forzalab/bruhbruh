@@ -6,7 +6,7 @@ export default function Remove({ label, onRemove, onHover, style }) {
   const z = useStore((s) => s.transform[2]);
   return (
     <button className="remove nodrag nopan" aria-label={label} title={label}
-      style={{ ...style, '--rs': 1 / Math.sqrt(z) }}
+      style={{ ...style, '--rs': document.documentElement.dataset.v ? 'var(--k)' : 1 / Math.sqrt(z) }}
       onPointerEnter={() => onHover?.(true)} onPointerLeave={() => onHover?.(false)}
       onClick={(e) => { e.stopPropagation(); onRemove(); }}>
       <svg viewBox="-12 -12 24 24" aria-hidden="true"><path d="M-6 -6L6 6M6 -6L-6 6" /></svg>
