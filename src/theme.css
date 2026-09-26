@@ -236,7 +236,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   left: var(--hit-left); top: var(--hit-top); width: var(--hit-w); height: var(--hit-h); }
 .debug-hitzones .react-flow__handle.port::after { outline: 1px dashed red; background: rgba(255, 0, 0, 0.08); }
 .react-flow__handle.port:hover, .react-flow__handle.port.connectingto { outline: 2px solid var(--ink); outline-offset: 1px; }
-.react-flow__handle.port.picked { outline: 3px solid var(--ink); outline-offset: 1px; }
+.react-flow__handle.port.picked { outline: 3px solid var(--ink); outline-offset: 1px; background: var(--ink); }
+.react-flow__handle.port.picked:focus-visible { outline-offset: 4px; }
 
 /* Wires: 6px, orthogonal, ink = 0, orange = 1. */
 .react-flow__edge-path { stroke: var(--ink); stroke-width: var(--stroke); stroke-linejoin: miter; stroke-linecap: butt; }
