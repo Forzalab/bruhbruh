@@ -52,8 +52,8 @@ export function clear(pts, obstacles) {
 }
 // Full clearance: inner segments keep MARGIN from every box (own ones too); the first and last segment (pin runs)
 // keep MARGIN from foreign boxes and only stay outside the open interior of their own box.
-export function legal(pts, { src, dst, others = [] }, own) {
-  const far = others.map((b) => inflate(b, MARGIN)), mine = [src, dst].filter(Boolean).map((b) => inflate(b, MARGIN));
+export function legal(pts, { src, dst, others = [], margin = MARGIN }, own) {
+  const far = others.map((b) => inflate(b, margin)), mine = [src, dst].filter(Boolean).map((b) => inflate(b, margin));
   const n = pts.length; // pin runs are horizontal: out of the output going right, into the input going right
   if (n < 2 || pts[1][1] !== pts[0][1] || pts[1][0] <= pts[0][0] || pts[n - 2][1] !== pts[n - 1][1] || pts[n - 2][0] >= pts[n - 1][0]) return false;
   for (let i = 1; i < pts.length; i++) {
@@ -72,11 +72,11 @@ export function stepPoints(s, t) {
 
 // Capped router. Returns points with <= MAX_BENDS corners that clear all boxes, or null (caller falls back).
 // ends = { src, dst } boxes of the wire's own nodes; others = every other node box.
-export function route(s, t, { src, dst, others = [], prefer } = {}, maxBends = MAX_BENDS) {
+export function route(s, t, { src, dst, others = [], prefer, margin = MARGIN } = {}, maxBends = MAX_BENDS) {
   // Pins can sit inside their own box (knobs, padding): trim the source box at the pin's x, and the target box too.
   const own = [src && { ...src, w: Math.min(src.w, s[0] - src.x) }, dst && { ...dst, x: Math.max(dst.x, t[0]), w: dst.x + dst.w - Math.max(dst.x, t[0]) }];
   const ownObs = own.filter((b) => b && b.w > 0);
-  const all = [...others, src, dst].filter(Boolean).map((b) => inflate(b, MARGIN));
+  const all = [...others, src, dst].filter(Boolean).map((b) => inflate(b, margin));
   const xs1 = new Set([s[0] + STUB]), xs2 = new Set([t[0] - STUB]), ys = new Set([s[1], t[1]]);
   for (const b of all) { xs1.add(b.x + b.w); xs2.add(b.x); ys.add(b.y); ys.add(b.y + b.h); }
   const mids = new Set([(s[0] + t[0]) / 2, ...xs1, ...xs2]);
@@ -90,7 +90,7 @@ export function route(s, t, { src, dst, others = [], prefer } = {}, maxBends = M
     for (const y of ys) cands.push(clean([s, [x1, s[1]], [x1, y], [x2, y], [x2, t[1]], t]));
   let best = null, bestCost = Infinity;
   for (const p of cands) {
-    const n = bends(p); if (n > maxBends || !legal(p, { src, dst, others }, ownObs)) continue;
+    const n = bends(p); if (n > maxBends || !legal(p, { src, dst, others, margin }, ownObs)) continue;
     let cost = length(p) + 40 * n; // a corner costs two grid cells of length
     if (prefer != null && p.length > 2 && p[1][0] === prefer) cost -= 80; // fan-out: share the sibling's trunk
     if (cost < bestCost) { best = p; bestCost = cost; }
@@ -105,3 +105,10 @@ export function midpoint(pts) {
   for (let i = 1; i < pts.length; i++) { const l = Math.abs(pts[i][0] - pts[i - 1][0]) + Math.abs(pts[i][1] - pts[i - 1][1]); if (l > bl) { bl = l; bi = i; } }
   return [(pts[bi][0] + pts[bi - 1][0]) / 2, (pts[bi][1] + pts[bi - 1][1]) / 2];
 }
+
+// Metro (jn-metro, Tony's hypothesis test): when no route keeps the full 20px of paper, a wire may run a narrow
+// corridor as a lane instead of the part being moved. SQUEEZE = 3 from the box = 3 + 12 (PAD) - 1.5 - 1.5 = 12px of
+// paper, never inside an outline. NUDGE = 'last' moves the part only if even that fails; 'never' never moves it.
+export const SQUEEZE = 3;
+export const NUDGE = 'last';
+export const routeMetro = (s, t, o) => route(s, t, o) ?? route(s, t, { ...o, margin: SQUEEZE });

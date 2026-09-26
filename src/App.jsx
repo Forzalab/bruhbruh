@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
-import { route, bends } from './route.js';
+import { routeMetro as route, bends, NUDGE } from './route.js';
 import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
@@ -200,7 +200,7 @@ export default function App() {
   const settle = (_, node) => {
     const me = view.find((n) => n.id === node.id), from = dragFrom0.current; dragFrom0.current = null; if (!me || !rf) return;
     const base = from ? stuck(me.id, from) : [];
-    if (!worse(stuck(me.id, node.position), base)) return;
+    if (NUDGE === 'never' || !worse(stuck(me.id, node.position), base)) return;
     const p = free(node.position, me.type, me.id, (q) => !worse(stuck(me.id, q), base));
     setView((v) => v.map((n) => (n.id === me.id ? { ...n, position: p } : n)));
   };
