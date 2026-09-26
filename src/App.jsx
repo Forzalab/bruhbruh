@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
@@ -177,14 +177,9 @@ export default function App() {
     onConnect({ source: pending, target: node, targetHandle: handle });
   };
 
-  // Wipe the canvas: Shift+Backspace or Shift+Delete removes every part and wire, then a toast says so.
+  // Wipe the canvas: every part and wire goes, then a caption toast says so. No key yet: the parked T4 wipe button calls it.
+  // eslint-disable-next-line no-unused-vars
   const wipe = () => { removeNodes(view.map((n) => n.id)); toast('wiped'); };
-  const wipeRef = useRef(wipe); wipeRef.current = wipe;
-  useEffect(() => {
-    const k = (e) => { if (e.shiftKey && (e.key === 'Backspace' || e.key === 'Delete')) { e.preventDefault(); wipeRef.current(); } };
-    window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
-  }, []);
   // Node delete (double-click, or select + Backspace/Delete): drop the node and every wire touching it.
   const removeNodes = (ids) => {
     if (!ids.length) return;
