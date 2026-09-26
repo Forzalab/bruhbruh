@@ -189,7 +189,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .glyph .shape { width: 100%; height: 100%; }
 /* Palette stroke = the canvas 4 scaled with the glyph (4 x 0.41): same stroke-to-size ratio, so tray and canvas read
    equally black (Pillow ink density tray/canvas 0.92; a flat 4px on both measured 2.19x darker in the tray, RUI p.48-51). */
-.glyph .shape .body { stroke-width: max(2px, calc(3 * .41 * var(--u))); vector-effect: non-scaling-stroke; }
+.glyph .shape .body { stroke-width: var(--rule); vector-effect: non-scaling-stroke; } /* restored T1: whole screen px (--rule is pixel-rounded), so tray glyphs stay crisp */
 
 /* Scroll cues: a 16x8u solid ink arrowhead centred in a 20u (one baseline) paper margin at the list edge. The next part
    is cut off by that margin (overlap/peek, RUI p.170), which says "more below" by itself; the arrowhead confirms it.
@@ -197,8 +197,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .pal-more { position: absolute; left: 0; right: 0; height: calc(20 * var(--u)); background: transparent; display: none; place-items: center; cursor: default; }
 .pal-more.on { display: grid; }
 .pal-more.up { top: 0; } .pal-more.down { bottom: 0; }
-.pal-more svg { width: calc(16 * var(--u)); height: calc(8 * var(--u)); }
-.pal-more path { fill: var(--ink); }
+.pal-more svg { width: calc(16 * var(--u)); height: calc(8 * var(--u)); overflow: visible; }
+.pal-more path { fill: none; stroke: var(--ink); stroke-width: var(--rule); vector-effect: non-scaling-stroke; stroke-linejoin: miter; stroke-linecap: butt; } /* restored T1: open chevron, not a filled arrowhead */
 
 /* Onboarding bubble (once ever), matched to Tony's comic ref with Pillow: balloon 2:1 (ref 173x84), ~3.8u ink outline
    (ref 3-4px), short curved tail from the lower left whose tip touches the tab's right edge. The balloon sits in the
@@ -229,9 +229,11 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .node .remove { display: grid; opacity: 0; pointer-events: none; border-radius: 50%; }
 /* The X borrows its host's geometry (Tony, pick 3): wires are right angles -> square X; parts are arcs and
    bubbles -> round X. */
-.react-flow__node:hover .node .remove, .react-flow__node.selected .node .remove, .node .remove:focus-visible { opacity: 1; pointer-events: all; }
+.node .remove.show, .node .remove:focus-visible { opacity: 1; pointer-events: all; }
+/* Restored T2: the drawn ink + paper of a part is its own hover target (SVG hit test), so the X answers to the shape, not the box. */
+.shape .body.hit { pointer-events: visiblePainted; }
 /* Hovering the X previews the result: the wire goes dotted, like a free pin's stub. */
-.armed .react-flow__edge-path { stroke-dasharray: 2 6; }
+.armed .react-flow__edge-path { stroke-dasharray: var(--stroke) calc(var(--stroke) * 2); } /* one dot rule: dash = w, gap = 2w */
 .node { position: relative; }
 .switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
 
@@ -257,6 +259,10 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .react-flow__edge.on .react-flow__edge-path { stroke: var(--one); }
 .react-flow__edge.selected .react-flow__edge-path, .react-flow__edge:focus .react-flow__edge-path { stroke: var(--ink); stroke-dasharray: 12 6; }
 .react-flow__edge.on.selected .react-flow__edge-path, .react-flow__edge.on:focus .react-flow__edge-path { stroke: var(--one); }
+/* Draft wire (src/Draft.jsx): solid 2px pencil + paper casing, screen-constant. */
+.react-flow__connectionline { overflow: visible; }
+.wire-draft { stroke: var(--ink); stroke-width: 2px; vector-effect: non-scaling-stroke; stroke-linejoin: miter; stroke-linecap: butt; }
+.wire-draft-casing { stroke: var(--paper); stroke-width: 6px; vector-effect: non-scaling-stroke; stroke-linejoin: miter; stroke-linecap: butt; }
 
 /* Selection + focus: ink only (WCAG 2.2 SC 2.4.7, 2.4.11; 18.9:1 on paper). */
 .react-flow .react-flow__node.selected { outline: 2px dashed var(--ink); outline-offset: -2px; }
@@ -376,7 +382,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .wire-hit { pointer-events: stroke; } /* wires are not selectable, so React Flow turns their events off; the hover band opts back in */
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
-.guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+.guide { position: absolute; left: -10000px; width: 20000px; height: 2px; pointer-events: none; transform: translateY(-1px);
+  background: repeating-linear-gradient(to right, var(--ink-2) 0 2px, transparent 0 6px); } /* one dot rule: dash = w, gap = 2w (was CSS dotted = 1:1) */
 
 /* Toasts (pit2 bub-f): comic CAPTION boxes for system news with no speaker (Blambot grammar_caps.jpg, first style:
    the flat "MEANWHILE..." box). Flat rectangle, thin ink rule (0.14 cap, as measured), Italic caps, 0.45 x 0.5 cap

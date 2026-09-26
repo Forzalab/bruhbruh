@@ -7,6 +7,7 @@ import { routeMetro as route, bends, NUDGE } from './route.js';
 import { STROKE, ZOOM_EXP } from './nodes/geom.js';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
+import Draft from './Draft.jsx';
 import Truth from './Truth.jsx';
 import { partNames } from './names.js';
 import Controls from './Controls.jsx';
@@ -308,6 +309,25 @@ export default function App() {
   // quantizes positions, but pin heights differ per part (switch 43, gates 33/75, lamp 57), so grid snap alone never
   // lines pins up; 8 catches "nearly level" without fighting the grid.
   const SNAP = 8;
+  // Dev-only e2e hook (restored from pit2/archive-testB; scripts/e2e.mjs). Loads a whole circuit at once, skipping
+  // drag-and-drop, so e2e can assemble circuits then drive the real UI. import.meta.env.DEV is a compile-time false in
+  // `vite build`, so this whole block is dead-code-eliminated from dist (checked by scripts/e2e.mjs --check-build).
+  const circuitRef = useRef(circuit); circuitRef.current = circuit;
+  const valuesRef = useRef(values); valuesRef.current = values;
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    window.__gob = {
+      load(next, pos) {
+        let sy = 40, gy = 40, ly = 40;
+        const v = Object.values(next.nodes).map((n) => ({ id: n.id, type: n.kind, data: {}, position: pos?.[n.id]
+          ?? (n.kind === 'S' ? { x: 120, y: (sy += 100) - 100 } : n.kind === 'L' ? { x: 760, y: (ly += 100) - 100 } : { x: 420, y: (gy += 100) - 100 }) }));
+        restore({ circuit: next, view: v });
+      },
+      state: () => ({ circuit: circuitRef.current, values: valuesRef.current }),
+    };
+    return () => { delete window.__gob; };
+  }, []);
+
   const [guides, setGuides] = useState([]);
   const pinsAbs = (n, which) => { const c = circuit.nodes[n.id]; if (!c) return []; const p = pinYs(c.kind, c.type);
     const ys = which === 'in' ? p.ins : which === 'out' ? (p.out == null ? [] : [p.out]) : [...p.ins, ...(p.out == null ? [] : [p.out])];
@@ -400,6 +420,7 @@ export default function App() {
           minZoom={0.75 * zoom}
           maxZoom={1.5 * zoom}
           proOptions={{ hideAttribution: true }}
+          connectionLineComponent={Draft}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
           <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
