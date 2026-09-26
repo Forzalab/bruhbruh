@@ -236,6 +236,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .armed .react-flow__edge-path { stroke-dasharray: var(--stroke) calc(var(--stroke) * 2); } /* one dot rule: dash = w, gap = 2w */
 .node { position: relative; }
 .switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.switch::after { content: ''; position: absolute; inset: -8px 0 -8px -8px; } /* play test: corner near-misses; grows into paper, never right (the out pin zone) */
 
 /* Ports: invisible 16px boxes centred on the knob; the knob itself is part of the outline path. */
 .react-flow__handle.port { position: absolute; z-index: 1; transform: none; right: auto; bottom: auto; min-width: 0; min-height: 0;
@@ -444,16 +445,15 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 /* T3 Swedish name plates. Every length is flow px = u at userZoom 1 (React Flow scales flow px by frame/1440, the --u law);
    --zk = userZoom^(ZOOM_EXP-1) is the stroke's own zoom law, so plate type + keyline follow the parts exactly.
    23u type = 16.4px at 1024 (floor 16), 23px at 1440. Keyline = --stroke: the part's weight, one weight per object. */
-.plate { position: absolute; transform: translateX(-50%); margin-top: calc(var(--stroke) / 2 + 8px * var(--zk, 1));
-  display: grid; place-items: center; box-sizing: border-box; height: calc(32px * var(--zk, 1)); min-width: calc(32px * var(--zk, 1));
-  padding: 0 calc(6px * var(--zk, 1)); border: var(--stroke) solid var(--ink); border-radius: 0; background: var(--paper);
-  font: 700 calc(23px * var(--zk, 1))/1 var(--font); font-stretch: 100%; letter-spacing: 0.02em; color: var(--ink);
+.plate { position: absolute; transform: translateX(-50%); margin-top: calc(var(--stroke) / 2 + 6px * var(--zk, 1));
+  display: grid; place-items: center; box-sizing: border-box; height: calc(24px * var(--zk, 1)); min-width: calc(24px * var(--zk, 1));
+  padding: 0 calc(5px * var(--zk, 1)); border: 0; border-radius: 0; background: none;
+  font: 700 calc(20px * var(--zk, 1))/1 var(--font); font-stretch: 100%; letter-spacing: 0.02em; color: var(--ink);
   white-space: nowrap; pointer-events: none; user-select: none; z-index: 2; }
-.plate.on { background: var(--one); color: var(--paper); }  /* part = 1: orange plate, WHITE glyph (Tony: ink was hard to read) */
-.plate.bare { border-color: transparent; background: none; color: var(--ink-2); } /* gate: name only, not a column */
-.plate.p-tab { margin-top: calc(var(--stroke) * -0.5); }             /* joined: plate top rule = the part's bottom outline */
-.plate.p-ink:not(.bare) { background: var(--ink); color: var(--paper); }
-.plate.p-ink.on { background: var(--one); color: var(--paper); }
+/* combo-2: a name, not a part. No keyline box (the 3px box read as another component); lit = orange chip with a WHITE
+   letter (Tony), the only filled state; unlit = bare ink letters. Gates stay --ink-2. */
+.plate.on { background: var(--one); color: var(--paper); }
+.plate.bare { background: none; color: var(--ink-2); }
 /* T4-tt: empty truth table (no switch or no lamp): no rows, no live highlight; a placeholder box marks where art goes. */
 .tt-empty { position: relative; align-self: stretch; box-sizing: border-box; margin: calc(32 * var(--u)) calc(4 * var(--u)) 0; height: calc(260 * var(--u)); border: var(--rule) solid var(--ink); }
 .tt-empty svg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -468,7 +468,40 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .jn .twin { stroke: var(--ink); stroke-width: calc(var(--stroke) * 3); }
 .jn .twin-gap { stroke: var(--paper); stroke-width: var(--stroke); }
 .jn .mix0 { stroke: var(--ink); stroke-width: var(--stroke); }
-.jn .mix1 { stroke: var(--one); stroke-width: var(--stroke); stroke-dasharray: 10 10; }
+.jn .mix1 { stroke: var(--one); stroke-width: var(--stroke); stroke-dasharray: var(--stroke) calc(var(--stroke) * 2); } /* combo-2 V1: orange dots (the dot rule) riding an unbroken ink line; no paper gaps, so it never reads as armed/selected */
 .jn .dot { fill: var(--ink); stroke: none; }
 .react-flow__edge.on .jn .trunk, .react-flow__edge.on .jn .twin, .react-flow__edge.on .jn .dot { stroke: var(--one); fill: var(--one); }
 .react-flow__edge.on .jn .trunk, .react-flow__edge.on .jn .twin { fill: none; }
+/* First-visit coach marks (src/Coach.jsx). The overlay never takes a click: the veil is paint only, the person works
+   the real parts through it. Veil holes are square (no radius anywhere on the page). */
+.coach { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+.coach svg { position: absolute; inset: 0; overflow: visible; }
+.coach-a .veil { fill: var(--ink); fill-opacity: 0.6; }
+.coach-b .veil { fill: var(--paper); fill-opacity: 0.82; }
+.coach-b .panel { fill: none; stroke: var(--ink); stroke-width: 3; }
+.coach-b .cap { position: absolute; transform: translate(-3px, -100%); min-width: calc(28 * max(var(--u), 0.8px)); padding: 0 calc(6 * max(var(--u), 0.8px));
+  background: var(--caption); border: 3px solid var(--ink); border-bottom: 0; font: 800 calc(18 * max(var(--u), 0.8px))/1.4 var(--font); text-align: center; }
+.coach-arrow .shaft { fill: none; stroke: var(--ink); stroke-linecap: butt; }
+.coach-arrow .halo { fill: none; stroke: var(--paper); stroke-linecap: round; }
+.coach-arrow .head { fill: var(--ink); }
+.coach .drop { fill: none; stroke: var(--ink); stroke-linecap: butt; } /* drop spot: the dot rule, as the snap guides */
+.coach-arrow.on-veil .shaft { stroke: var(--paper); } .coach-arrow.on-veil .head { fill: var(--paper); } .coach-arrow.on-veil .halo { stroke: none; }
+.coach-say { --k: max(var(--u), 0.95px); z-index: 2; } /* Anime Ace cap 12k: >= 11.4px at any width */
+/* Marching dots only outside logic mode and only without reduced motion; logic mode is still. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-mode="logic"]) .coach-arrow .shaft { animation: coach-march 0.6s linear infinite; }
+}
+@keyframes coach-march { to { stroke-dashoffset: -30; } }
+.coach-bar, .coach-replay { font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); font-variation-settings: 'wdth' 78, 'opsz' 36; text-transform: uppercase; color: var(--ink); }
+.coach-bar { position: relative; z-index: 21; display: flex; align-items: center; gap: 0.8em; white-space: nowrap; }
+.coach-bar .n { font-weight: 800; font-variant-numeric: tabular-nums; }
+.coach-bar button, .coach-replay { font: inherit; text-transform: inherit; background: var(--paper); color: var(--ink); border: var(--rule) solid var(--ink); border-radius: 0; padding: 0.35em 0.7em; cursor: pointer; }
+.coach-replay { font: 500 max(calc(16.9 * var(--u)), calc(16.9 * var(--f)))/1 var(--font-help); font-variation-settings: 'wdth' 78, 'opsz' 36; }
+.coach-bar button:hover, .coach-replay:hover { background: var(--ink); color: var(--paper); }
+
+/* Play test: every part panned off-screen -> a visible way back (App.jsx `lost`). */
+.back-parts { position: absolute; right: calc(16 * var(--u)); top: calc(16 * var(--u)); z-index: 5; min-height: 44px; padding: 0 calc(14 * var(--u));
+  background: var(--paper); border: var(--rule) solid var(--ink); border-radius: 0; font: 700 max(calc(16 * var(--u)), 14px)/1 var(--font); color: var(--ink); cursor: pointer; }
+.back-parts:hover, .back-parts:focus-visible { background: var(--ink); color: var(--paper); }
+/* Play test: drawer items span the whole bar (the second group was 80u of a 100u bar, so corner clicks missed). */
+.pal-group + .pal-group ul { margin-inline: calc(-26 * var(--u)); }

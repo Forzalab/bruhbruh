@@ -47,9 +47,11 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
     // cap = the CSS max-height, but never past 20u above the row-03 rule (J-6 anchors the block at the top, so it fills downward)
     const cell = el.closest('.truth').getBoundingClientRect();
     const u = el.closest('.frame').clientWidth / 1440;
-    const room = cell.bottom - 20 * u - el.getBoundingClientRect().top;
-    const cap = el.clientHeight >= el.scrollHeight ? null : Math.min(parseFloat(getComputedStyle(el).maxHeight), room);
-    if (cap) el.style.maxHeight = `${head + Math.floor((cap - head) / rowH) * rowH}px`;
+    // combo-2 (Tony): the box ends 32u above the row-03 rule, the same margin as under TRUTH TABLE, and holds whole rows.
+    // Was: capped only when the rows overflowed 100vh, so a taller row 02 let 8-16 rows run to the cell's bottom rule.
+    const room = cell.bottom - 32 * u - el.getBoundingClientRect().top;
+    const cap = Math.min(parseFloat(getComputedStyle(el).maxHeight), room);
+    if (el.scrollHeight > cap + 0.5) el.style.maxHeight = `${head + Math.floor((cap - head) / rowH) * rowH}px`;
     setBoxH(el.clientHeight);
     cues(el);
   });

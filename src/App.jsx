@@ -11,6 +11,7 @@ import Draft from './Draft.jsx';
 import Truth from './Truth.jsx';
 import { partNames } from './names.js';
 import Controls from './Controls.jsx';
+import Coach from './Coach.jsx';
 
 const HISTORY = 10; // linear undo stack depth (Tony)
 import Say from './Say.jsx';
@@ -74,6 +75,7 @@ export default function App() {
   }, []);
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
+  const [helpCell, setHelpCell] = useState(null); // row 03 right: the tour's step counter / replay button
   const [tucked, setTucked] = useState(false);
   // Canvas scale = frame width / 1440, the same factor as the CSS --u (100cqw / 1440). React Flow's viewport zoom
   // scales node geometry, strokes and knobs together, so wires stay on pin centres (React Flow docs: Viewport, zoom).
@@ -88,6 +90,16 @@ export default function App() {
   // Pan/zoom are the user's (React Flow docs: Viewport). A resize rescales the current viewport by zoom/zoom_prev
   // instead of resetting it, so the user's own pan and zoom survive (React Flow docs: getViewport / setViewport).
   const [rf, setRf] = useState(null);
+  // Play test: panning the empty canvas could push every part off-screen. When no part is visible, a "Back to parts"
+  // button shows in the canvas corner (visible, not a hidden shortcut) and fits the parts back in at the current zoom range.
+  const [lost, setLost] = useState(false);
+  const checkLost = (v) => {
+    if (!rf || !view.length) return setLost(false);
+    const el = document.querySelector('.canvas .react-flow'); if (!el) return;
+    const b = rf.getNodesBounds(view), W = el.clientWidth, H = el.clientHeight;
+    const x0 = b.x * v.zoom + v.x, y0 = b.y * v.zoom + v.y, x1 = x0 + b.width * v.zoom, y1 = y0 + b.height * v.zoom;
+    setLost(x1 < 40 || y1 < 0 || x0 > W || y0 > H);
+  };
   // T1 iter 3 (Tony, option c): user zoom (viewport / base) is capped to 0.75-1.5. T1 verdict (pit2/t1w-d):
   // lines no longer hold a constant screen width across that range; they grow slightly bolder zooming in,
   // screen px = STROKE * userZoom^ZOOM_EXP (see src/nodes/geom.js).
@@ -416,7 +428,7 @@ export default function App() {
           snapGrid={[20, 20]}
           onInit={setRf}
           defaultViewport={{ x: 0, y: 0, zoom }}
-          onMove={(_, v) => setUserZoom(v.zoom / zoom)}
+          onMove={(_, v) => { setUserZoom(v.zoom / zoom); checkLost(v); }}
           minZoom={0.75 * zoom}
           maxZoom={1.5 * zoom}
           proOptions={{ hideAttribution: true }}
@@ -425,6 +437,7 @@ export default function App() {
           {showGrid && <Background gap={20} color="var(--grid)" />}
           <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
         </ReactFlow>
+        {lost && <button className="back-parts" onClick={() => { rf?.fitView({ padding: 0.15, minZoom: 0.75 * zoom, maxZoom: zoom, duration: 200 }); setLost(false); }}>Back to parts</button>}
         <Toasts list={toasts} />
       </main>
       <Truth circuit={circuit} view={view} fig={fig} setSwitches={setSwitches} />
@@ -434,7 +447,8 @@ export default function App() {
         <Controls canUndo={hist.past.length > 0} canRedo={hist.future.length > 0} canWipe={view.length > 0}
           armed={armed} setArmed={setArmed} onUndo={undo} onRedo={redo} onWipe={wipe} />
       </footer>
-      <div className="cell c-side r3 help" />
+      <div className="cell c-side r3 help" ref={setHelpCell} />
+      <Coach circuit={circuit} palOpen={palOpen} parts={view.length} slot={helpCell} />
     </div>
     </div>
   );

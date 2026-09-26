@@ -6,7 +6,8 @@ from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.boundsPen import BoundsPen
 
-F = '/tmp/claude-0/-home-user-gates-of-babylon/d9b3b872-48f2-5080-885a-6332ae6a3579/scratchpad/font/animeace3bb_ot/AnimeAce3BB_'
+import os
+F = os.environ.get('ANIME_ACE', '/tmp/claude-0/-home-user-gates-of-babylon/d9b3b872-48f2-5080-885a-6332ae6a3579/scratchpad/font/animeace3bb_ot/') + 'AnimeAce3BB_'
 REG, BI = TTFont(F + 'Regular.otf'), TTFont(F + 'BoldItalic.otf')
 CAP = 12.0
 K = CAP / 666            # font units -> u (Regular cap 666)
@@ -68,11 +69,14 @@ def balloon(w, h, tail):
     elif tail == 'lowleft':  # palette hint: speaker (the tab) below-left; balloon sits high, long curved tail
         a, b = pt(148), pt(166); tip = (-1.22 * rx, 0.62 * ry)
         c1 = (a[0] - 0.10 * rx, 0.66 * ry); c2 = (b[0] - 0.08 * rx, 0.36 * ry)
-    else:                # 'left': speaker to the lower left
+    else:                # 'left': speaker to the lower left ('right' = its mirror: speaker to the lower right)
         a, b = pt(152), pt(172); tip = (-rx - 1.4 * CAP, ry * 0.95)
         c1 = (a[0] - 0.25 * CAP, ry * 0.75); c2 = (b[0] - 0.5 * CAP, ry * 0.55)
+    sweep = 0
+    if tail == 'right':  # mirror x; the arc then runs the other way round
+        a, b, tip, c1, c2 = [(-x, y) for x, y in (a, b, tip, c1, c2)]; sweep = 1
     # ellipse from a, long way round to b, then tail b -> tip -> a
-    d = (f'M{r(a[0])} {r(a[1])}A{r(rx)} {r(ry)} 0 1 0 {r(b[0])} {r(b[1])}'
+    d = (f'M{r(a[0])} {r(a[1])}A{r(rx)} {r(ry)} 0 1 {sweep} {r(b[0])} {r(b[1])}'
          f'Q{r(c2[0])} {r(c2[1])} {r(tip[0])} {r(tip[1])}Q{r(c1[0])} {r(c1[1])} {r(a[0])} {r(a[1])}Z')
     # shift so the tip is the origin
     return d, rx, ry, tip
@@ -83,6 +87,11 @@ PHRASES = {
     'pickOutput': (['PICK AN', '*OUTPUT*', 'FIRST!'], 'left'),
     'pickInput': (['NOW PICK', 'AN *INPUT!*'], 'left'),
     'hint': (['*GATES* ARE', 'IN HERE.'], 'lowleft'),
+    # First-visit coach marks (src/Coach.jsx): each step is said by the part the step is about.
+    'tourDrag': (['DRAG ME', '*OUT!*'], 'left'),
+    'tourWire': (['DRAG MY *DOT*', 'TO A GATE DOT!'], 'down'),
+    'tourClick': (['CLICK MY', '*SQUARE!*'], 'down'),
+    'tourRead': (['EVERY *ROW*', 'IS ONE CASE.'], 'right'),
 }
 only = sys.argv[1:] or list(PHRASES)
 out = ['// Fixed UI phrases lettered in Anime Ace 3 BB (Blambot, Nate Piekos), outlined to SVG paths with fontTools like',
@@ -95,6 +104,7 @@ for key in only:
     w, h, e, rs = draw(lines)
     d, rx, ry, tip = balloon(w, h, tail)
     box = [-rx - 3 * CAP, -ry - INK, 2 * rx + 4.5 * CAP, 2 * ry + 2 * CAP + 2 * INK]
+    if tail == 'right': box[0] = -rx - 1.5 * CAP
     out.append(f"  {key}: {{ text: {json.dumps(' '.join(lines).replace('*', ''))}, tip: [{r(tip[0])}, {r(tip[1])}], view: [{', '.join(r(v) for v in box)}],")
     out.append(f"    balloon: '{d}',")
     out.append(f"    emph: '{e}',")
