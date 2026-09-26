@@ -283,8 +283,11 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
    paper margin beside the table box, top and bottom: paper margin, never over a figure. */
 .truth .tt-wrap { position: relative; }
 .truth .pal-more { left: 100%; right: auto; width: calc(20 * var(--u)); }
-.truth .tt:not(.classic) table { table-layout: auto; } /* matrix fix: 13 switches + lamps overflowed equal fixed columns; auto gives the Q / OUT heads their width */
-.truth .tt:not(.classic) tr:has(> th:nth-child(15)) th { font-stretch: 55%; } /* 15+ columns: heads take the 55% wdth already fitted for the old # glyph */
+/* Sideways: the same arrowhead turned 90 degrees, centred in the cell's left / right 20u paper margins. */
+.truth .pal-more.left, .truth .pal-more.right { top: 0; bottom: 0; height: auto; }
+.truth .pal-more.left { left: auto; right: 100%; }
+.truth .pal-more.left svg, .truth .pal-more.right svg { width: calc(8 * var(--u)); height: calc(16 * var(--u)); }
+.truth .tt table { width: calc(max(4, var(--n)) * 25%); } /* never squeeze: a column keeps its n = 3 width (1/4 of the box); past 4 columns the table scrolls sideways */
 .truth thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; border-bottom: 0; box-shadow: inset 0 calc(-1 * var(--rule)) 0 var(--ink); } /* sticky cells drop collapsed borders: draw the rule as a shadow */
 .truth tbody tr:not(.pad) { cursor: pointer; scroll-snap-align: start; }
 .truth .tt { scroll-snap-type: y proximity; } /* not mandatory: with windowed rows a long jump would snap back to the few rendered ones */

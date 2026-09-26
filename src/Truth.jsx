@@ -32,13 +32,17 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
   // Windowing: fixed row height measured from the first rendered row.
   const box = useRef(null);
   const [rowH, setRowH] = useState(40), [top, setTop] = useState(0), [boxH, setBoxH] = useState(400);
-  const [more, setMore] = useState({ up: false, down: false }); // palette's scroll cues: only where rows remain
+  const [more, setMore] = useState({ up: false, down: false, left: false, right: false }); // palette's scroll cues: only where rows / columns remain
+  const cues = (el) => {
+    const m = { up: el.scrollTop > 1, down: el.scrollTop + el.clientHeight < el.scrollHeight - 1,
+      left: el.scrollLeft > 1, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1 };
+    setMore((o) => (Object.keys(m).some((k) => m[k] !== o[k]) ? m : o));
+  };
   useEffect(() => {
     const el = box.current; if (!el) return;
     const tr = el.querySelector('tbody tr:not(.pad)'); if (tr) setRowH(tr.getBoundingClientRect().height || 40);
     setBoxH(el.clientHeight);
-    const m = { up: el.scrollTop > 1, down: el.scrollTop + el.clientHeight < el.scrollHeight - 1 };
-    if (m.up !== more.up || m.down !== more.down) setMore(m);
+    cues(el);
   });
   const first = Math.max(0, Math.floor(top / rowH) - 2), last = Math.min(rows.length, first + Math.ceil(boxH / rowH) + 5);
   // Keep the live row in view when the switches change.
@@ -58,8 +62,8 @@ export default function Truth({ circuit, view, fig, setSwitches }) {
     <aside className="cell c-side r2 truth" aria-label="Truth table">
       <h2 className="label">Truth table</h2>
       <div className="tt-wrap">
-      <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
-        <table>
+      <div className={`tt ${classic ? 'classic' : ''}`} ref={box} onScroll={(e) => { setTop(e.currentTarget.scrollTop); cues(e.currentTarget); }}>
+        <table style={{ '--n': heads.length }}>
           <thead><tr>
             {heads.map((h, j) => h === 'OUT' && classic
               ? <th key={h} className={kind(j)} scope="col" aria-label="OUT"><span className="sr">OUT</span><span aria-hidden="true"><span className="hO">O</span><span className="hU">U</span><span className="hT">T</span></span></th>
