@@ -366,3 +366,10 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .toast path { fill: var(--ink); stroke: var(--ink); stroke-width: 0.4; stroke-linejoin: round; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(calc(8 * var(--u))); } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+/* Column kind, colour only: lamp (output) columns sit on the page's one field grey (--grid), switch (input) columns
+   stay paper. On the canvas the switch is the paper square you press; the lamp is where the result shows. */
+.truth td.k-L, .truth thead th.k-L { background: var(--grid); }
+/* Column kind, rules only: one --rule ink rule stands between the switch (input) and lamp (output) columns,
+   the same weight as the header rule; signal crosses it left to right, as it does on the canvas. */
+.truth td.k-S + td.k-L { border-left: var(--rule) solid var(--ink); }
+.truth thead th.k-S + th.k-L { box-shadow: inset var(--rule) 0 0 var(--ink), inset 0 calc(-1 * var(--rule)) 0 var(--ink); }
