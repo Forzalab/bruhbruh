@@ -1,5 +1,6 @@
-import { Handle as RFHandle, Position } from '@xyflow/react';
+import { Handle as RFHandle, Position, useStore } from '@xyflow/react';
 import Remove from '../Remove.jsx';
+import { TAKEN_VIEWBOX, TAKEN_EMPH, LOOP_VIEWBOX, LOOP_EMPH } from '../t4Lettering.js';
 import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
 
 const SWG = switchGeom(), LAMPG = lampGeom();
@@ -113,6 +114,32 @@ export function pinYs(kind, type) {
 
 const NAMES = { s1: 'A', s2: 'B' };
 
+// T4: in-place error mark on the offending input pin. at = pin centre (node-local px), r = { text, reason }.
+// Static (no motion): appears on release, holds 2400 ms or until the next pointerdown (App.jsx).
+const ERR = new URLSearchParams(location.search).get('err') || 'occupant';
+function Reject({ at, r }) {
+  const z = useStore((st) => st.transform[2]); // tag words counter-scale like the delete X: 1/sqrt(zoom)
+  const [x, y] = at, tip = x - TIP; // TIP = knob ink tip (12 px left of the pin centre)
+  const plug = <path className="rj-plug" d={`M${x} ${y - KNOB}A${KNOB} ${KNOB} 0 0 0 ${x} ${y + KNOB}Z`} />;
+  const tag = (cls) => <span className={`rj-tag ${cls}`} style={{ left: x + 3, top: y - KNOB - 8, '--rs': 1 / Math.sqrt(z) }}>{r.text}</span>;
+  const ring = <circle className="rj-ring" cx={x} cy={y} r={20} />;
+  const svg = (kids) => <svg className="rj" aria-hidden="true">{kids}</svg>;
+  if (ERR === 'tag') return <>{svg(plug)}{tag('')}</>;
+  if (ERR === 'magenta') return <>{svg(<g className="mag">{plug}</g>)}{tag('mag')}</>;
+  if (ERR === 'combo') return <>{svg(<>{ring}{plug}</>)}{tag('')}</>;
+  if (ERR === 'hatch') return svg(<>
+    <defs><pattern id={`hx${x}${y}`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" /></pattern></defs>
+    <rect className="rj-hatch" x={tip - 24} y={y - 12} width={24} height={24} fill={`url(#hx${x}${y})`} />{plug}</>);
+  if (ERR === 'bubble') {
+    const [vb, d] = r.reason === 'loop' ? [LOOP_VIEWBOX, LOOP_EMPH] : [TAKEN_VIEWBOX, TAKEN_EMPH];
+    // ellipse 104x44 centred 66 px left and 34 px above the pin; straight tail to the knob tip
+    const cx = tip - 56, cy = y - 36, rx = 52, ry = 22;
+    return <>{svg(<>{plug}<path className="rj-bub" d={`M${cx + 30} ${cy + ry * Math.sqrt(1 - (30 / rx) ** 2)}A${rx} ${ry} 0 1 1 ${cx + 42} ${cy + ry * Math.sqrt(1 - (42 / rx) ** 2)}L${tip - 2} ${y - 4}Z`} /></>)}
+      <svg className="rj-letter" viewBox={vb} style={{ left: cx, top: cy, width: r.reason === 'loop' ? 80 : 60 }} aria-hidden="true"><path d={d} /></svg></>;
+  }
+  return svg(<>{ring}{plug}</>); // occupant (default): wordless; App dashes the wire(s) that cause it
+}
+
 export function SwitchNode({ id, data }) {
   return (
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
@@ -138,9 +165,7 @@ export function GateNode({ id, data }) {
         <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
       ))}
       <Handle nodeId={id} data={data} at={g.out} zone={zones.out} type="source" position={Position.Right} id="out" />
-      {data.reject && (
-        <p className="reject" role="alert" style={{ top: g.in[rejectPin][1] }}>{data.reject.text}</p>
-      )}
+      {data.reject && <Reject at={g.in[rejectPin]} r={data.reject} />}
     </div>
   );
 }
@@ -152,7 +177,7 @@ export function LampNode({ id, data }) {
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
       <X g={LAMPG} label="Delete lamp" data={data} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
-      {data.reject && <p className="reject" role="alert" style={{ top: LAMPG.in[1] }}>{data.reject.text}</p>}
+      {data.reject && <Reject at={LAMPG.in} r={data.reject} />}
     </div>
   );
 }

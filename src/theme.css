@@ -344,3 +344,70 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 
 /* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
 .guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }
+
+/* ===== T4 (bug day pit 2): feedback + control bar ===== */
+/* 3. No text is selectable anywhere (Tony). user-select is not inherited, but `auto` resolves to the parent's used
+   value, so `none` on html reaches every element; editable fields resolve to `contain` and stay usable (CSS UI 4 §6.1). */
+html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea, select, [contenteditable]:not([contenteditable='false']) { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+
+/* 2. Row 03 control bar: [undo] [wipe] [redo] */
+.status { padding: 0; }
+.ctl { flex: 1 1 auto; display: flex; align-items: center; height: 100%; }
+.cb-wrap { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; }
+.cb { position: relative; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; color: var(--ink); cursor: pointer;
+  display: grid; place-items: center; -webkit-tap-highlight-color: transparent; }
+.cb::before { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); } /* HIG: 44pt hit region */
+.cb svg { width: calc(24 * var(--u)); height: calc(24 * var(--u)); overflow: visible; }
+.cb path { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; }
+.cb:disabled { color: var(--ink-2); cursor: default; }
+.cb:focus-visible { outline: none; }
+
+/* C: Cells. Buttons ARE grid cells: 60u squares cut by 2u rules, flush-left in row 03. */
+.ctl-C .cb-wrap, .ctl-C > .cb { flex: none; width: calc(60 * var(--u)); height: 100%; border-right: var(--rule) solid var(--ink); }
+.ctl-C .cb-wrap .cb { width: 100%; height: 100%; }
+.ctl-C .cb:not(:disabled):hover, .ctl-C .cb.hover, .ctl-C .cb.armed { background: var(--ink); color: var(--paper); }
+.ctl-C .cb:not(:disabled):active, .ctl-C .cb.press { background: var(--ink); color: var(--paper);
+  box-shadow: inset 0 0 0 calc(6 * var(--u)) var(--ink), inset 0 0 0 calc(8 * var(--u)) var(--paper); }
+.ctl-C .cb:focus-visible, .ctl-C .cb.focus { outline: max(2px, calc(3 * var(--u))) solid currentColor; outline-offset: calc(-10 * var(--u)); }
+
+/* A: Disks. The grid toggle's ink disk (ref-undo-redo), 40u, centred under the canvas. */
+.ctl-A { justify-content: center; gap: calc(20 * var(--u)); }
+.ctl-A .cb { width: calc(40 * var(--u)); height: calc(40 * var(--u)); border-radius: 50%; background: var(--ink); color: var(--paper); }
+.ctl-A .cb svg { width: calc(22 * var(--u)); height: calc(22 * var(--u)); }
+.ctl-A .cb:not(:disabled):hover, .ctl-A .cb.hover, .ctl-A .cb.armed { box-shadow: 0 0 0 calc(3 * var(--u)) var(--paper), 0 0 0 calc(5 * var(--u)) var(--ink); }
+.ctl-A .cb:not(:disabled):active, .ctl-A .cb.press { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 var(--rule) var(--ink); }
+.ctl-A .cb:disabled { background: var(--paper); color: var(--ink-2); box-shadow: inset 0 0 0 var(--rule) var(--ink-2); }
+.ctl-A .cb:focus-visible, .ctl-A .cb.focus { outline: max(2px, calc(3 * var(--u))) solid var(--ink); outline-offset: calc(6 * var(--u)); }
+
+/* B: Tiles. The palette tab's square (2u rule, inverts on hover), 40u, flush-left at 16u. */
+.ctl-B { gap: calc(20 * var(--u)); padding-left: calc(16 * var(--u)); }
+.ctl-B .cb { width: calc(40 * var(--u)); height: calc(40 * var(--u)); background: var(--paper); box-shadow: inset 0 0 0 var(--rule) var(--ink); }
+.ctl-B .cb:not(:disabled):hover, .ctl-B .cb.hover, .ctl-B .cb.armed { background: var(--ink); color: var(--paper); }
+.ctl-B .cb:not(:disabled):active, .ctl-B .cb.press { background: var(--ink); color: var(--paper); box-shadow: inset 0 0 0 calc(4 * var(--u)) var(--ink), inset 0 0 0 calc(6 * var(--u)) var(--paper); }
+.ctl-B .cb:disabled { box-shadow: inset 0 0 0 var(--rule) var(--ink-2); }
+.ctl-B .cb:focus-visible, .ctl-B .cb.focus { outline: max(2px, calc(3 * var(--u))) solid var(--ink); outline-offset: calc(3 * var(--u)); }
+
+/* Wipe confirm bubble: palette-hint family. 240x100u box, ellipse centre (132, 40) rx 116 ry 36, straight tail tip at (36, 96). */
+.wipe-bubble { position: absolute; left: calc(50% - 36 * var(--u)); bottom: calc(100% + 2 * var(--u)); margin: 0; z-index: 20; pointer-events: none;
+  width: calc(240 * var(--u)); height: calc(100 * var(--u)); } /* tail tip (svg x 36) sits on the button's centre line */
+.wipe-bubble svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wipe-bubble path { fill: var(--paper); stroke: var(--ink); stroke-width: 3.6; stroke-linejoin: round; }
+.wipe-bubble .lettering { inset: auto; left: calc(132 * var(--u)); top: calc(40 * var(--u)); width: calc(174 * var(--u)); height: auto; transform: translate(-50%, -50%); }
+.wipe-bubble .lettering path { fill: var(--ink); stroke: none; }
+.wipe-bubble .lettering .rest { stroke: var(--ink); stroke-width: 22; stroke-linejoin: round; }
+
+/* 1. In-place error marks (node-local px, flow space) */
+.rj { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 11; }
+.rj-plug { fill: var(--ink); stroke: var(--ink); stroke-width: 6; }
+.rj .mag .rj-plug { fill: #c2006b; stroke: #c2006b; }
+.rj-ring { fill: none; stroke: var(--ink); stroke-width: 2; }
+.rj pattern line { stroke: var(--ink); stroke-width: 2; }
+.rj-hatch { stroke: var(--ink); stroke-width: 2; }
+.rj-bub { fill: var(--paper); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.rj-letter { position: absolute; height: auto; transform: translate(-50%, -50%); overflow: visible; pointer-events: none; z-index: 12; }
+.rj-letter path { fill: var(--ink); }
+.rj-tag { position: absolute; z-index: 12; transform: translate(-100%, -100%) scale(var(--rs, 1)); transform-origin: 100% 100%; white-space: nowrap; pointer-events: none;
+  background: var(--ink); color: var(--paper); padding: 5px 8px 5px 9px; font: 760 14px/1 var(--font); font-stretch: 112%; letter-spacing: 0.02em; text-transform: uppercase; }
+.rj-tag.mag { background: #c2006b; }
+.react-flow__edge.blocked .react-flow__edge-path { stroke-dasharray: 12 6; }

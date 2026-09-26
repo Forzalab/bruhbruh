@@ -1,10 +1,17 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes, pinYs } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 import Truth from './Truth.jsx';
+import Controls from './Controls.jsx';
+
+// T4 prototype switches (mockups only): ?err=tag|hatch|bubble|magenta|occupant &bar=A|B|C &icons=hook|step|arc
+const Q = new URLSearchParams(location.search);
+export const T4 = { err: Q.get('err') || 'occupant', bar: Q.get('bar') || 'C', icons: Q.get('icons') || 'step' };
+const HISTORY = 10; // linear undo stack depth (Tony)
+const REJECT_MS = 2400; // an error mark holds this long, or until the next pointerdown
 
 const edgeTypes = { wire: Wire };
 
@@ -41,7 +48,8 @@ export default function App() {
   const [reject, setReject] = useState(null); // inline error beside the failed port (GOV.UK error message)
   const [edgeSel, setEdgeSel] = useState(() => new Set()); // controlled wire selection, so Backspace can delete a wire
   const [pending, setPending] = useState(null); // keyboard wiring: source picked with Enter/Space
-  const [status, setStatus] = useState({ text: '', bad: false });
+  const [status, setStatus] = useState({ text: '', bad: false }); // screen-reader only now (visually hidden live region)
+  const [armed, setArmed] = useState(false); // wipe: first click arms, second confirms
   // Palette: open is the person's choice; tucked hides it only while a drag runs, so it comes back as it was.
   const [palOpen, setPalOpen] = useState(false);
   const [tucked, setTucked] = useState(false);
@@ -72,8 +80,47 @@ export default function App() {
   // Compute everything, then React commits the frame once. Drags never reach here.
   const values = useMemo(() => evaluate(circuit), [circuit]);
 
-  const toggle = (id) =>
+  // Undo/redo: one linear stack of whole snapshots {circuit, view}; 10 deep; any new edit clears redo.
+  const [hist, setHist] = useState({ past: [], future: [] });
+  // `v` keeps the live view array's identity: two commits from ONE event (e.g. React Flow deletes a node, then its
+  // wires) see the same circuit + view objects, so the second is dropped and one action = one undo step.
+  const snap = () => ({ circuit, v: view, view: view.map(({ id, type, position }) => ({ id, type, position, data: {} })) });
+  const commit = (s = snap()) => setHist((h) => {
+    const top = h.past[h.past.length - 1];
+    if (top && top.circuit === s.circuit && top.v === s.v) return h;
+    return { past: [...h.past, s].slice(-HISTORY), future: [] };
+  });
+  const restore = (s) => { setCircuit(s.circuit); setView(s.view); setReject(null); setPending(null); setEdgeSel(new Set()); setArmed(false); };
+  const undo = () => { if (!hist.past.length) return; const prev = hist.past[hist.past.length - 1];
+    setHist({ past: hist.past.slice(0, -1), future: [snap(), ...hist.future].slice(0, HISTORY) }); restore(prev); };
+  const redo = () => { if (!hist.future.length) return; const next = hist.future[0];
+    setHist({ past: [...hist.past, snap()].slice(-HISTORY), future: hist.future.slice(1) }); restore(next); };
+  const wipe = () => { commit(); setCircuit({ nodes: {}, wires: {} }); setView([]); setReject(null); setPending(null); setEdgeSel(new Set()); };
+  const keys = useRef(); keys.current = { undo, redo };
+  useEffect(() => {
+    const k = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      if (e.target.closest?.('input, textarea, [contenteditable="true"]')) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z') { e.preventDefault(); e.shiftKey ? keys.current.redo() : keys.current.undo(); }
+      else if (key === 'y' && !e.metaKey) { e.preventDefault(); keys.current.redo(); } // Windows convention
+    };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, []);
+  // Error mark lifetime: REJECT_MS, or the next pointerdown anywhere.
+  useEffect(() => {
+    if (!reject) return;
+    const t = setTimeout(() => setReject(null), REJECT_MS);
+    const d = () => setReject(null);
+    const arm = setTimeout(() => window.addEventListener('pointerdown', d, true), 0);
+    return () => { clearTimeout(t); clearTimeout(arm); window.removeEventListener('pointerdown', d, true); };
+  }, [reject]);
+
+  const toggle = (id) => {
+    commit();
     setCircuit((c) => ({ ...c, nodes: { ...c.nodes, [id]: { ...c.nodes[id], value: !c.nodes[id].value } } }));
+  };
 
   const wires = Object.values(circuit.wires);
   const nodes = view.map((n) => ({
@@ -93,7 +140,7 @@ export default function App() {
     type: 'wire',
     selectable: false, focusable: false, // a click on a wire does nothing; only its X deletes
     data: { onRemove: (id) => onEdgesChange([{ type: 'remove', id }]) },
-    className: values[w.source] ? 'on' : '',
+    className: `${values[w.source] ? 'on' : ''} ${['occupant', 'combo'].includes(T4.err) && reject?.wires?.includes(w.id) ? 'blocked' : ''}`,
     selected: edgeSel.has(w.id),
   }));
 
@@ -102,6 +149,7 @@ export default function App() {
   const switchFull = !canAddSwitch(circuit).ok;
   const addNode = (it, at) => {
     if (it.kind === 'S' && switchFull) return;
+    commit();
     const id = `${it.kind.toLowerCase()}${it.type ? it.type.toLowerCase() : ''}_${nextNode++}`; // "_" keeps added parts clear of the demo ids (s1, s2, g1, l1)
     if (!at) {
       const box = frame.current.querySelector('.canvas').getBoundingClientRect();
@@ -120,17 +168,31 @@ export default function App() {
   };
 
   // Plain-language copy for reasons a person might actually hit; anything else falls back to the raw reason.
-  const REJECT_TEXT = { 'pin taken': 'That input already has a wire' };
+  // Visible words: <= 2, uppercase (Tony). Full sentence goes to the screen-reader live region only.
+  const REJECT_TEXT = { 'pin taken': 'Pin taken', loop: 'No loops' };
+  const REJECT_SR = { 'pin taken': 'That input already has a wire', loop: 'That wire would make a loop' };
+  // Wires to point at: the occupant of the pin, or the path that would close the loop (target ... -> source).
+  const culprits = (reason, source, target, pin) => {
+    const ws = Object.values(circuit.wires);
+    if (reason === 'pin taken') return ws.filter((w) => w.target === target && w.pin === pin).map((w) => w.id);
+    if (reason === 'loop') {
+      const walk = (id, seen) => { if (id === source) return []; if (seen.has(id)) return null; seen.add(id);
+        for (const w of ws.filter((x) => x.source === id)) { const r = walk(w.target, seen); if (r) return [w.id, ...r]; } return null; };
+      return walk(target, new Set()) ?? [];
+    }
+    return [];
+  };
 
   const onConnect = ({ source, target, targetHandle }) => {
     const pin = Number(targetHandle.slice(2));
     const check = canConnect(circuit, source, target, pin);
     if (!check.ok) {
-      const text = REJECT_TEXT[check.reason] ?? `Can't connect: ${check.reason}`;
-      setReject({ node: target, handle: targetHandle, text });
-      return setStatus({ text, bad: true });
+      const text = REJECT_TEXT[check.reason] ?? 'No';
+      setReject({ node: target, handle: targetHandle, text, reason: check.reason, wires: culprits(check.reason, source, target, pin) });
+      return setStatus({ text: REJECT_SR[check.reason] ?? `Can't connect: ${check.reason}`, bad: true });
     }
     setReject(null);
+    commit();
     const id = `w${nextWire++}`;
     setCircuit((c) => ({ ...c, wires: { ...c.wires, [id]: { id, source, target, pin } } }));
     setStatus({ text: '', bad: false }); // silent success: ref3 leaves row 03 empty
@@ -141,6 +203,7 @@ export default function App() {
   // radius of each knob centre, ignores the zones, and could lose a fast release on a busy first load.
   // The drag origin is kept ourselves: on a fast release React Flow's connection state can already be cleared.
   const dragFrom = useRef(null);
+  const dragSnap = useRef(null); // snapshot at node-drag start; pushed on drop only if something moved
   const onConnectStart = (_, { nodeId, handleId, handleType }) => { dragFrom.current = { node: nodeId, handle: handleId, type: handleType }; setTucked(true); };
   const onConnectEnd = (e, cs) => {
     setTucked(false); setGuides([]);
@@ -159,7 +222,7 @@ export default function App() {
   // Keyboard wiring (WCAG 2.1.1): Enter/Space on an output picks it, on an input connects it.
   const onPort = (node, handle) => {
     if (handle === 'out') { setPending(node); return setStatus({ text: `Wiring from ${node.toUpperCase()}: pick an input`, bad: false }); }
-    if (!pending) return setStatus({ text: 'Pick an output first', bad: true });
+    if (!pending) { setReject({ node, handle, text: 'Output first', reason: 'no source', wires: [] }); return setStatus({ text: 'Pick an output first', bad: true }); }
     setPending(null);
     onConnect({ source: pending, target: node, targetHandle: handle });
   };
@@ -167,6 +230,7 @@ export default function App() {
   // Node delete (double-click, or select + Backspace/Delete): drop the node and every wire touching it.
   const removeNodes = (ids) => {
     if (!ids.length) return;
+    commit();
     setView((v) => v.filter((n) => !ids.includes(n.id)));
     setCircuit((c) => ({
       nodes: Object.fromEntries(Object.entries(c.nodes).filter(([id]) => !ids.includes(id))),
@@ -212,12 +276,13 @@ export default function App() {
     if (sel.length) setEdgeSel((prev) => { const next = new Set(prev); sel.forEach((ch) => (ch.selected ? next.add(ch.id) : next.delete(ch.id))); return next; });
     const gone = changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id);
     if (!gone.length) return;
+    commit();
     setCircuit((c) => ({ ...c, wires: Object.fromEntries(Object.entries(c.wires).filter(([id]) => !gone.includes(id))) }));
   };
 
   // A truth-table row click sets every input switch to that row's bits.
-  const setSwitches = (ids, bits) => setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
-    ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } }));
+  const setSwitches = (ids, bits) => (commit(), setCircuit((c) => ({ ...c, nodes: { ...c.nodes,
+    ...Object.fromEntries(ids.map((id, i) => [id, { ...c.nodes[id], value: !!bits[i] }])) } })));
 
   return (
     <div className="frame" ref={frame}>
@@ -255,8 +320,9 @@ export default function App() {
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onPaneClick={() => setPalOpen(false)} // HIG: an overlay panel is transient; a click on the work closes it
-          onNodeDragStart={() => setTucked(true)}
-          onNodeDragStop={() => setTucked(false)}
+          onNodeDragStart={() => { setTucked(true); dragSnap.current = snap(); }}
+          onNodeDragStop={() => { setTucked(false); const s = dragSnap.current; dragSnap.current = null;
+            if (s && view.some((n) => { const o = s.view.find((x) => x.id === n.id); return o && (o.position.x !== n.position.x || o.position.y !== n.position.y); })) commit(s); }}
           snapToGrid
           snapGrid={[20, 20]}
           onInit={setRf}
@@ -274,7 +340,10 @@ export default function App() {
 
       <div className="cell c-margin r3"><span className="rownum">{fig('03')}</span></div>
       <footer className="cell c-main r3 status">
-        <span className={`msg ${status.bad ? 'bad' : ''}`} role="status">{status.text}</span>
+        <Controls variant={T4.bar} icons={T4.icons} canUndo={hist.past.length > 0} canRedo={hist.future.length > 0}
+          canWipe={view.length > 0} armed={armed} setArmed={setArmed} onUndo={undo} onRedo={redo} onWipe={wipe}
+          force={window.__t4force} />
+        <span className="sr" role="status">{status.text}</span>
       </footer>
       <div className="cell c-side r3 help" />
     </div>
