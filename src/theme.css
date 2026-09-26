@@ -223,7 +223,9 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .remove svg { width: 24px; height: 24px; }
 .remove path { stroke: var(--paper); stroke-width: 2.5; stroke-linecap: butt; fill: none; }
 .remove:hover, .remove:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.node .remove { display: none; }
+.node .remove { display: none; border-radius: 50%; }
+/* The X borrows its host's geometry (Tony, pick 3): wires are right angles -> square X; parts are arcs and
+   bubbles -> round X. */
 .react-flow__node:hover .node .remove, .node .remove:focus-visible { display: grid; }
 /* Hovering the X previews the result: the wire goes dotted, like a free pin's stub. */
 .armed .react-flow__edge-path { stroke-dasharray: 2 6; }
