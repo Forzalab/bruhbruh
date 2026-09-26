@@ -104,6 +104,13 @@ const mass = (() => {
 const X = ({ g, label, data }) => <Remove label={label} onRemove={data.onRemove}
   style={{ position: 'absolute', left: mass(g)[0], top: PAD, transform: 'translate(-50%, -50%) scale(var(--rs))' }} />;
 
+// Pin heights in node-local coordinates, for snap guides: { ins: [y...], out: y | null }.
+export function pinYs(kind, type) {
+  if (kind === 'S') return { ins: [], out: SWG.out[1] };
+  if (kind === 'L') return { ins: [LAMPG.in[1]], out: null };
+  const g = GATE_GEOM[type]; return { ins: g.in.map(([, y]) => y), out: g.out[1] };
+}
+
 const NAMES = { s1: 'A', s2: 'B' };
 
 export function SwitchNode({ id, data }) {

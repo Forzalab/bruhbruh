@@ -330,3 +330,6 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   .wordmark { left: calc(var(--gut) + 2 * var(--u)); }
 }
 .wire-hit { pointer-events: stroke; } /* wires are not selectable, so React Flow turns their events off; the hover band opts back in */
+
+/* Snap guide: a thin dotted --ink-2 line across the canvas at the shared pin height (same language as pin stubs). */
+.guide { position: absolute; left: -10000px; width: 20000px; height: 0; border-top: 2px dotted var(--ink-2); pointer-events: none; transform: translateY(-1px); }

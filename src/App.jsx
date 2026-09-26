@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ReactFlow, Background, useNodesState } from '@xyflow/react';
+import { ReactFlow, Background, useNodesState, ViewportPortal } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
-import { nodeTypes } from './nodes/index.jsx';
+import { nodeTypes, pinYs } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
 import Wire from './Wire.jsx';
 
@@ -142,7 +142,7 @@ export default function App() {
   const dragFrom = useRef(null);
   const onConnectStart = (_, { nodeId, handleId, handleType }) => { dragFrom.current = { node: nodeId, handle: handleId, type: handleType }; setTucked(true); };
   const onConnectEnd = (e, cs) => {
-    setTucked(false);
+    setTucked(false); setGuides([]);
     const from = dragFrom.current;
     dragFrom.current = null;
     if (!from || (cs.toHandle && cs.isValid)) return; // React Flow already connected it
@@ -174,9 +174,36 @@ export default function App() {
     setReject(null); setPending(null);
     setStatus({ text: '', bad: false });
   };
+  // Snap guides (Tony, Sep 25; Figma/Canva smart guides). A pin within SNAP flow units of another node's pin height
+  // pulls the dragged node onto that line, and a thin dotted --ink-2 guide shows it. SNAP = 8: the 20u grid already
+  // quantizes positions, but pin heights differ per part (switch 43, gates 33/75, lamp 57), so grid snap alone never
+  // lines pins up; 8 catches "nearly level" without fighting the grid.
+  const SNAP = 8;
+  const [guides, setGuides] = useState([]);
+  const pinsAbs = (n, which) => { const c = circuit.nodes[n.id]; if (!c) return []; const p = pinYs(c.kind, c.type);
+    const ys = which === 'in' ? p.ins : which === 'out' ? (p.out == null ? [] : [p.out]) : [...p.ins, ...(p.out == null ? [] : [p.out])];
+    return ys.map((y) => n.position.y + y); };
+  const snapNode = (ch) => {
+    const me = view.find((n) => n.id === ch.id); if (!me) return ch;
+    const moved = { ...me, position: ch.position }; let best = null;
+    for (const y of pinsAbs(moved)) for (const o of view) if (o.id !== ch.id) for (const oy of pinsAbs(o)) {
+      const d = oy - y; if (Math.abs(d) <= SNAP && (!best || Math.abs(d) < Math.abs(best.d))) best = { d, y: oy };
+    }
+    setGuides(best ? [best.y] : []);
+    return best ? { ...ch, position: { ...ch.position, y: ch.position.y + best.d } } : ch;
+  };
   const onNodesChange = (changes) => {
     removeNodes(changes.filter((ch) => ch.type === 'remove').map((ch) => ch.id));
-    onViewChange(changes.filter((ch) => ch.type !== 'remove'));
+    // The release also carries a (grid-snapped) position: snap it too, or it undoes the alignment by up to 1px.
+    onViewChange(changes.filter((ch) => ch.type !== 'remove').map((ch) => (ch.type === 'position' && ch.position ? snapNode(ch) : ch)));
+    if (changes.some((ch) => ch.type === 'position' && ch.dragging === false)) setGuides([]);
+  };
+  // Wire drag: a guide on every pin of the other kind whose height is within SNAP of the cursor.
+  const wireGuides = (e) => {
+    const from = dragFrom.current; if (!from || !rf) return;
+    const { y } = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    const want = from.type === 'source' ? 'in' : 'out';
+    setGuides(view.filter((n) => n.id !== from.node).flatMap((n) => pinsAbs(n, want)).filter((py) => Math.abs(py - y) <= SNAP));
   };
 
   const onEdgesChange = (changes) => {
@@ -210,7 +237,7 @@ export default function App() {
           (nodes like the switch button would otherwise swallow it). */}
       <main className="cell c-main r2 canvas"
         onDragOverCapture={(e) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
-        onDropCapture={onDrop}>
+        onDropCapture={onDrop} onPointerMove={wireGuides}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -238,6 +265,7 @@ export default function App() {
           proOptions={{ hideAttribution: true }}
         >
           {showGrid && <Background gap={20} color="var(--grid)" />}
+          <ViewportPortal>{guides.map((y) => <div key={y} className="guide" style={{ top: y }} />)}</ViewportPortal>
         </ReactFlow>
         <Palette open={palOpen} setOpen={setPalOpen} tucked={tucked} onDrag={setTucked} switchFull={switchFull} onAdd={(it) => addNode(it)} />
       </main>
