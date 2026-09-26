@@ -215,8 +215,16 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
 .stubs { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .stubs line { stroke: var(--ink-2); stroke-width: 2; stroke-dasharray: 2 4; stroke-linecap: butt; }
 /* Hovering a wire previews its deletion in the stubs' language: it turns dotted (a click removes it). */
-.react-flow__edge:hover .react-flow__edge-path { stroke-dasharray: 2 6; }
-.react-flow__edge { cursor: pointer; }
+/* Delete X: the header's ink disk + white X. Hidden until its node or wire is hovered (or it has keyboard focus). */
+.remove { width: 24px; height: 24px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: var(--ink); cursor: pointer;
+  display: grid; place-items: center; pointer-events: all; z-index: 10; }
+.remove svg { width: 20px; height: 20px; }
+.remove path { stroke: var(--paper); stroke-width: 2.5; stroke-linecap: butt; fill: none; }
+.remove:hover, .remove:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.node .remove { display: none; }
+.react-flow__node:hover .node .remove, .node .remove:focus-visible { display: grid; }
+/* Hovering the X previews the result: the wire goes dotted, like a free pin's stub. */
+.armed .react-flow__edge-path { stroke-dasharray: 2 6; }
 .node { position: relative; }
 .switch { position: absolute; left: 9px; top: 9px; width: 68px; height: 68px; padding: 0; border: 0; background: transparent; cursor: pointer; }
 
@@ -321,3 +329,4 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font); -w
   .c-margin.r3 { grid-area: 5 / 1; } .status { grid-area: 5 / 2; } .help { grid-area: 5 / 3; }
   .wordmark { left: calc(var(--gut) + 2 * var(--u)); }
 }
+.wire-hit { pointer-events: stroke; } /* wires are not selectable, so React Flow turns their events off; the hover band opts back in */

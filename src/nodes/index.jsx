@@ -1,4 +1,5 @@
 import { Handle as RFHandle, Position } from '@xyflow/react';
+import Remove from '../Remove.jsx';
 import { switchGeom, andGeom, orGeom, notGeom, nandGeom, norGeom, xorGeom, lampGeom, SW, PAD, KNOB } from './geom.js';
 
 const SWG = switchGeom(), LAMPG = lampGeom();
@@ -83,6 +84,10 @@ function Stubs({ ins = [], out, wired }) {
   );
 }
 
+// Delete X on node hover, centred on the top edge of the outline (Tony's sketch); right-click still deletes (testing).
+const X = ({ w, label, data }) => <Remove label={label} onRemove={data.onRemove}
+  style={{ position: 'absolute', left: w / 2, top: PAD, transform: 'translate(-50%, -50%) scale(var(--rs))' }} />;
+
 const NAMES = { s1: 'A', s2: 'B' };
 
 export function SwitchNode({ id, data }) {
@@ -90,6 +95,7 @@ export function SwitchNode({ id, data }) {
     <div className="node sw" style={{ width: SWG.w, height: SWG.h }}>
       <Shape g={SWG} on={data.on} />
       <Stubs out={SWG.out} wired={data.wired} />
+      <X w={PAD * 2 + SW.side} label="Delete switch" data={data} />
       <button className={`switch nodrag ${data.on ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); data.onToggle(); }} aria-pressed={!!data.on}
         aria-label={`Switch ${NAMES[id] ?? id}, ${data.on ? 'on' : 'off'}`} />
       <Handle nodeId={id} data={data} at={SWG.out} zone={SW_ZONES.out} type="source" position={Position.Right} id="out" />
@@ -104,6 +110,7 @@ export function GateNode({ id, data }) {
     <div className="node gate" style={{ width: g.w, height: g.h }} role="img" aria-label={`${data.type} gate, output ${data.on ? 1 : 0}`}>
       <Shape g={g} on={data.on} />
       <Stubs ins={g.in} out={g.out} wired={data.wired} />
+      <X w={g.w} label={`Delete ${data.type} gate`} data={data} />
       {g.in.map((at, i) => (
         <Handle key={i} nodeId={id} data={data} at={at} zone={zones[`in${i}`]} type="target" position={Position.Left} id={`in${i}`} />
       ))}
@@ -120,6 +127,7 @@ export function LampNode({ id, data }) {
     <div className="node lamp" style={{ width: LAMPG.w, height: LAMPG.h }} role="img" aria-label={data.on ? 'Lamp on' : 'Lamp off'}>
       <Shape g={LAMPG} on={data.on} />
       <Stubs ins={[LAMPG.in]} wired={data.wired} />
+      <X w={LAMPG.w} label="Delete lamp" data={data} />
       <Handle nodeId={id} data={data} at={LAMPG.in} zone={LAMP_ZONES.in0} type="target" position={Position.Left} id="in0" />
       {data.reject && <p className="reject" role="alert" style={{ top: LAMPG.in[1] }}>{data.reject.text}</p>}
     </div>

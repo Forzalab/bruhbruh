@@ -3,6 +3,9 @@ import { ReactFlow, Background, useNodesState } from '@xyflow/react';
 import { canConnect, canAddSwitch, evaluate } from './sim.js';
 import { nodeTypes } from './nodes/index.jsx';
 import Palette, { DND } from './Palette.jsx';
+import Wire from './Wire.jsx';
+
+const edgeTypes = { wire: Wire };
 
 // Sim data: the truth. Positions live separately in React Flow (view only).
 const START = {
@@ -77,7 +80,7 @@ export default function App() {
     data: { ...circuit.nodes[n.id], on: values[n.id],
       wired: { in: [0, 1].map((pin) => wires.some((w) => w.target === n.id && w.pin === pin)), out: wires.some((w) => w.source === n.id) }, onToggle: () => { setReject(null); toggle(n.id); },
       reject: reject && reject.node === n.id ? reject : null,
-      pending, onPort: (handle) => onPort(n.id, handle) },
+      pending, onPort: (handle) => onPort(n.id, handle), onRemove: () => removeNodes([n.id]) },
   }));
 
   const edges = Object.values(circuit.wires).map((w) => ({
@@ -86,7 +89,9 @@ export default function App() {
     sourceHandle: 'out',
     target: w.target,
     targetHandle: `in${w.pin}`,
-    type: 'step',
+    type: 'wire',
+    selectable: false, focusable: false, // a click on a wire does nothing; only its X deletes
+    data: { onRemove: (id) => onEdgesChange([{ type: 'remove', id }]) },
     className: values[w.source] ? 'on' : '',
     selected: edgeSel.has(w.id),
   }));
@@ -210,10 +215,10 @@ export default function App() {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onNodeContextMenu={(e, n) => { e.preventDefault(); removeNodes([n.id]); }}
           onEdgeContextMenu={(e, w) => { e.preventDefault(); onEdgesChange([{ type: 'remove', id: w.id }]); }}
-          onEdgeClick={(e, w) => onEdgesChange([{ type: 'remove', id: w.id }])} // Tony: a click deletes a wire; hover previews it dotted
           connectionRadius={0}
           deleteKeyCode={['Backspace', 'Delete']}
           zoomOnDoubleClick={false}
