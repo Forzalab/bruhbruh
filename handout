@@ -193,15 +193,20 @@ Examples (2-input gates, 4 rows):
 
 **Charge:** positive vs negative gates. Proposal: inverting bubble = negative (NOT, NAND, NOR); no bubble = positive (AND, OR, XOR).
 
+**Glow rule (locked Sep 26, Tony):** a pair glows "meant to be together" when BOTH hold:
+1. same charge (+ + or − −), the old charge rule flipped: same kind attracts;
+2. compatibility ≥ 75%.
+Otherwise → the red "hurt" reaction. Examples: OR+XOR (+ +, 75%) glows. AND+OR (+ +, 50%) hurts. AND+NAND (+ −, 0%) hurts.
+
 **Evolution rules (Date mode):**
-- Positive attracts negative.
+- Same charge attracts.
 - Unbonded gates decay via a **half-life function** behind a swappable interface (`decayHazard(N)`), so the math changes without touching the loop. `1/exp(N)` draft dropped.
 - A good pair, wired, spawns a random child gate after 15s, connected to both parents.
 - Every 30s each gate randomly attaches to some gate.
 
 **Pair reactions:**
-- (+ −) → borders glow positive, all bubbles clear, one "meant to be together" line — SpongeBob × Taylor Swift mashup.
-- (+ +) or (− −) → left block: "We Are Never Ever", right block: "Getting Back Together". Order fixed L→R. Both blocks + borders go red "hurt", no flash, 2–3s, then back. More "I hate you" puns TBD.
+- glow rule met → borders glow positive, all bubbles clear, one "meant to be together" line — SpongeBob × Taylor Swift mashup.
+- glow rule not met → left block: "We Are Never Ever", right block: "Getting Back Together". Order fixed L→R. Both blocks + borders go red "hurt", no flash, 2–3s, then back. More "I hate you" puns TBD.
 - Song and show references use **titles only**, no lyric lines.
 
 **Speech bubbles:** each gate pops a bubble instantly, random English/Chinese mix, Date mode. Content TBD.
